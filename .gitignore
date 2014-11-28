@@ -1,0 +1,16 @@
+main
+build
+obj
+tags
+types_c.taghl
+types_py.taghl
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+program.log
+.exrc
+*.xyz
+:
+:w
+<
