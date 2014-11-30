@@ -1,5 +1,6 @@
 
 #include "headers.hpp"
+#ifdef USE_GUI
 
 #include "texture3D.hpp"
 #include "log.hpp"
@@ -59,3 +60,5 @@ void Texture3D::setData(void *data, GLenum sourceFormat, GLenum sourceType) {
 	_sourceFormat = sourceFormat;
 	_sourceType = sourceType;
 }
+
+#endif

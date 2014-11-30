@@ -2,14 +2,23 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/modules/")
-set(EXECUTABLE_OUTPUT_PATH "${CMAKE_SOURCE_DIR}")
 set(LIBRARY_OUTPUT_PATH "${CMAKE_SOURCE_DIR}/lib/${CMAKE_BUILD_TYPE}")
+set(EXECUTABLE_OUTPUT_PATH "${CMAKE_SOURCE_DIR}")
 
 project(Boids C CXX)
 set(BOIDS_MAJOR_VERSION 0)
 set(BOIDS_MINOR_VERSION 1)
 set(BOIDS_PATCH_VERSION 0)
 set(BOIDS_VERSION ${BOIDS_MAJOR_VERSION}.${BOIDS_MINOR_VERSION}.${BOIDS_PATCH_VERSION})
+
+# TODO # TODO # TODO # TODO # TODO # TODO ###
+set(MIN_COMPUTE_CAPABILITY "12")          #T#
+set(COMPUTE_CAPABILITY "12")              #O#
+set(ENABLE_GUI "1")                       ###
+set(CONSOLE_LOG_LEVEL "INFO")             #D#
+set(FILE_LOG_LEVEL "DEBUG")               #O#
+set(COUT_LOG_LEVEL "5")                   ###
+# TODO # TODO # TODO # TODO # TODO # TODO ###
 
 find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
@@ -85,6 +94,14 @@ file(GLOB_RECURSE header_files src/*.hpp)
 file(GLOB_RECURSE source_files src/*.cpp)
 file(GLOB_RECURSE template_files src/*.tpp)
 file(GLOB_RECURSE kernel_files src/*.cu)
+file(GLOB_RECURSE configure_files src/*.hpp.in)
+
+#Configure headers
+foreach(configIn ${configure_files})
+    string(REPLACE ".hpp.in" ".hpp.out" configOut "${configIn}")
+    configure_file("${configIn}" "${configOut}" @ONLY)
+    list(APPEND header_files "${configOut}")
+endforeach()
 
 #Local includes
 list(APPEND LOCAL_INCLUDE_DIRS "src/") #to avoid empty list
@@ -120,7 +137,7 @@ if(${CUDA_FOUND} AND NOT "${kernel_files}" STREQUAL "")
 endif()
 
 #Executables
-add_executable(main ${header_files} ${source_files} ${template_files})
+add_executable(main ${header_files} ${source_files} ${template_files} ${configure_files})
 
 #Link executable
 target_link_libraries(

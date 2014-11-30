@@ -1,5 +1,6 @@
 
 
+#include "log.hpp"
 #include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -15,7 +16,6 @@
 #include "log4cpp/PatternLayout.hh"
 
 #include "defines.hpp"
-#include "log.hpp"
 
 namespace log4cpp {
 

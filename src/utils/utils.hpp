@@ -3,6 +3,7 @@
 #define UTILS_H
 
 #include "headers.hpp"
+
 #include <string>
 #include <map>
 #include <vector>
@@ -46,8 +47,6 @@ namespace utils {
     }
 
 	const std::string toStringMemory(unsigned long bytes);
-
-	void checkFrameBufferStatus();
 }
 
 

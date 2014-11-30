@@ -1,5 +1,7 @@
 
 #include "headers.hpp"
+#ifdef USE_GUI
+
 #include "globals.hpp"
 #include "utils.hpp"
 #include "log.hpp"
@@ -80,4 +82,4 @@ void Globals::print(std::ostream &out) {
         out << "\n";
 }
 
-
+#endif

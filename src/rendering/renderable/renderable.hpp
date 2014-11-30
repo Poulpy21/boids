@@ -2,7 +2,7 @@
 #define _RENDERABLE_
 
 #include "headers.hpp"
-#include <QKeyEvent>
+#ifdef USE_GUI
 
 class Viewer;
 
@@ -50,5 +50,6 @@ class Renderable
 		virtual void mouseMoveEvent(QMouseEvent*, Viewer&) {};
 };
 
+#endif
 #endif
 

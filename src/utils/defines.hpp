@@ -2,20 +2,7 @@
 #ifndef DEFINES_H
 #define DEFINES_H
 
-//tout passe en DEBUG avec make debug
-//tout passe en WARN avec make release
-//par defaut la console est en INFO et le fichier en DEBUG
-#ifndef _CONSOLE_LOG_LEVEL
-#define _CONSOLE_LOG_LEVEL INFO
-#endif
-
-#ifndef _FILE_LOG_LEVEL
-#define _FILE_LOG_LEVEL DEBUG
-#endif
-
-#ifndef _COUT_LOG_LEVEL 
-#define _COUT_LOG_LEVEL 0
-#endif
+#include "config.hpp.out"
 
 #if defined(__CUDACC__) // NVCC
    #define ALIGN(n) __align__(n)

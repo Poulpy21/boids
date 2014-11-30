@@ -1,5 +1,8 @@
 
 #include "headers.hpp"
+
+#ifdef GUI_ENABLED
+
 #include "utils.hpp"
 #include <cmath>
 #include <sstream>
@@ -23,32 +26,6 @@ namespace utils {
 		return str;
 	}
 
-	void checkFrameBufferStatus() {
-        using log4cpp::log_console;
-
-		switch(glCheckFramebufferStatus(GL_FRAMEBUFFER))  {
-			case GL_FRAMEBUFFER_COMPLETE:
-				log_console->infoStream() << "Framebuffer complete !";
-				break;
-			case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:
-				log_console->errorStream() << "Framebuffer incomplete layer targets !";
-				exit(1);
-				break;
-			case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
-				log_console->errorStream() << "Framebuffer incomplete attachement !";
-				exit(1);
-				break;
-			case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
-				log_console->errorStream() << "Framebuffer missing attachment !";
-				exit(1);
-				break;
-			case GL_FRAMEBUFFER_UNSUPPORTED:
-				log_console->errorStream() << "Framebuffer unsupported !";
-				exit(1);
-				break;
-			default:
-				log_console->errorStream() << "Something went wrong when configuring the framebuffer !";
-				exit(1);
-		}
-	}
 }
+
+#endif

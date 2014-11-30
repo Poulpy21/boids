@@ -1,6 +1,8 @@
 
 #include "matrix.hpp"
 
+#ifdef GUI_ENABLED
+
 namespace Matrix {
 
 	
@@ -204,3 +206,5 @@ namespace Matrix {
         return res;
     }
 } 
+
+#endif

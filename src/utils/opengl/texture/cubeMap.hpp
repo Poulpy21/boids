@@ -2,6 +2,9 @@
 #define CUBEMAP_H
 
 #include "headers.hpp"
+
+#ifdef GUI_ENABLED
+
 #include "texture.hpp"
 
 class CubeMap : public Texture {
@@ -18,5 +21,6 @@ class CubeMap : public Texture {
 
 };
 
+#endif
 #endif /* end of include guard: CUBEMAP_H */
 

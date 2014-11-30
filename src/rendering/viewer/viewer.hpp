@@ -10,6 +10,8 @@
 #ifndef _VIEWER_
 #define _VIEWER_
 
+#ifdef GUI_ENABLED
+
 #include "headers.hpp"
 #include <list>
 
@@ -54,4 +56,5 @@ class Viewer : public QGLViewer
 		virtual std::string help() const;
 };
 
+#endif
 #endif

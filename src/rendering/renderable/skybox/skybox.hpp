@@ -2,6 +2,8 @@
 #define __SKYBOX_H__
 
 #include "headers.hpp"
+#ifdef USE_GUI
+
 #include "renderTree.hpp"
 #include "cubeMap.hpp"
 #include "program.hpp"
@@ -33,6 +35,6 @@ class Skybox : public RenderTree {
 		static unsigned int _targetsVBO;
 };
 		
-
+#endif
 #endif
 

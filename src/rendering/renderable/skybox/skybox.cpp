@@ -1,5 +1,7 @@
-#include "headers.hpp"
+
 #include "skybox.hpp"
+#ifdef USE_GUI
+
 #include "globals.hpp"
 	
 bool Skybox::_init = false;
@@ -147,3 +149,4 @@ Texture* Skybox::getCubeMap() {
     return _cubeMap; 
 }
 
+#endif

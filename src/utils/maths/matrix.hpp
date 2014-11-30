@@ -1,8 +1,10 @@
 
-#ifndef __MATRIX_H__
-#define __MATRIX_H__
+#ifndef _MATRIX_H
+#define _MATRIX_H
 
 #include "headers.hpp"
+
+#ifdef GUI_ENABLED
 
 namespace Matrix {
 		
@@ -34,6 +36,8 @@ namespace Matrix {
         // Row major matrix
         float *getColumn(const float *M, const unsigned int dim, const unsigned int col);
 }
+
+#endif
 
 #endif /* end of include guard: __MATRIX_H__ */
 

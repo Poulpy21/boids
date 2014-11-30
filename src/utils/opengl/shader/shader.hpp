@@ -3,6 +3,8 @@
 #define SHADER_H
 
 #include "headers.hpp"
+#ifdef GUI_ENABLED
+
 #include <string>
 
 class Shader {
@@ -22,4 +24,5 @@ class Shader {
 		const std::string getLocation() const;
 };
 
+#endif
 #endif /* end of include guard: SHADER_H */

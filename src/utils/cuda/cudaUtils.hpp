@@ -3,6 +3,8 @@
 #define _CUDA_UTILS_
 
 #include "headers.hpp"
+#ifdef USE_CUDA
+
 #include <log4cpp/Category.hh>
 
 #define CHECK_CUDA_ERRORS(ans) { gpuAssert((ans), __FILE__, __LINE__); }
@@ -15,4 +17,5 @@ namespace utils {
 void gpuAssert(cudaError_t code, const std::string &file, int line, bool abort = true);
 void checkKernelExecution();
 
+#endif
 #endif

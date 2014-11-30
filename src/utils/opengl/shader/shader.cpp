@@ -1,6 +1,7 @@
 
 #include "shader.hpp"
-#include "log.hpp"
+
+#ifdef USE_GUI
 
 #include <iostream>
 #include <sstream>
@@ -89,3 +90,5 @@ const std::string Shader::toStringShaderType() const {
 const std::string Shader::getLocation() const {
 	return location;
 }
+
+#endif

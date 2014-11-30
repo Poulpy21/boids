@@ -3,6 +3,9 @@
 #define GLOBALS_H
 
 #include "headers.hpp"
+
+#ifdef GUI_ENABLED
+
 #include "viewer.hpp"
 #include <ostream>
 #include <string>
@@ -22,7 +25,7 @@ class Globals {
 		static void init();
 		static void check();
 		static void print(std::ostream &out);
-	
+
 		static const unsigned char *glVersion;
 		static const unsigned char *glShadingLanguageVersion;
 			
@@ -47,6 +50,8 @@ class Globals {
         static float dt;
         static Vec<double> pos;
         static Vec<double> offset;
+
 };
 	
+#endif
 #endif /* end of include guard: GLOBALS_H */

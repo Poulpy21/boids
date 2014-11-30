@@ -3,6 +3,8 @@
 
 #include "headers.hpp"
 
+#ifdef GUI_ENABLED
+
 enum ParamType {F,I,IV,FV};
 
 union ParamData {
@@ -30,4 +32,5 @@ class Parameter {
 		ParamData _params;
 };
 
+#endif
 #endif /* end of include guard: PARAMETER_H */

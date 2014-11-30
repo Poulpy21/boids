@@ -4,6 +4,8 @@
 #define TEXTURE3D_H
 
 #include "headers.hpp"
+#ifdef GUI_ENABLED
+
 #include "texture.hpp"
 
 //SIZES SHOULD BE POWER OF TWO !
@@ -34,4 +36,5 @@ class Texture3D : public Texture {
 		GLenum _sourceFormat, _sourceType;
 };
 
+#endif
 #endif /* end of include guard: TEXTURE2D_H */

@@ -1,7 +1,6 @@
 
 #include "renderTree.hpp"
-#include "log.hpp"
-#include "matrix.hpp"
+#ifdef USE_GUI
 
 #include <cassert>
 #include <string>
@@ -190,3 +189,5 @@ void RenderTree::pushMatrixToChild(std::string childName, const float *matrix) {
 
 	children[childName]->relativeModelMatrix = tmp;
 }
+
+#endif

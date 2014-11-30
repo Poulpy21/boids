@@ -11,6 +11,8 @@ Makefile
 program.log
 .exrc
 *.xyz
+*.out
+*.old
 :
 :w
 <

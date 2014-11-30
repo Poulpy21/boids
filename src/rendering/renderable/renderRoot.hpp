@@ -3,6 +3,8 @@
 #define RENDERROOT_H
 
 #include "headers.hpp"
+#ifdef USE_GUI
+
 #include "renderTree.hpp"
 
 class RenderRoot : public RenderTree {
@@ -15,4 +17,5 @@ class RenderRoot : public RenderTree {
 		void drawDownwards(const float *currentTransformationMatrix = consts::identity4);
 };
 
+#endif
 #endif /* end of include guard: RENDERROOT_H */

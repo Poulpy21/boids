@@ -3,11 +3,12 @@
 #define RENDERTREE_H
 
 #include "headers.hpp"
+#ifdef USE_GUI
+
 #include "renderable.hpp"
 
 #include <string>
 #include <map>
-
 #include <iostream>
 
 // Depth first drawing tree
@@ -88,5 +89,6 @@ class RenderTree : public Renderable {
 		std::map<std::string, RenderTree*> children;
 };
 
+#endif
 #endif /* end of include guard: RENDERTREE_H */
 

@@ -1,6 +1,7 @@
-#include <QKeyEvent>
 
 #include "headers.hpp"
+#ifdef USE_GUI
+
 #include "viewer.hpp"
 #include "renderable.hpp"
 
@@ -150,3 +151,4 @@ std::string Viewer::help() const
     return text;
 }
 
+#endif

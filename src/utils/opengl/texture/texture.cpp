@@ -1,5 +1,7 @@
 
 #include "headers.hpp"
+#ifdef USE_GUI
+
 #include <sstream>
 #include <iterator>
 #include <algorithm>
@@ -179,3 +181,5 @@ bool Texture::compareFunc(std::pair<long, unsigned int> a, std::pair<long, unsig
 		return false;
 	}
 }
+
+#endif

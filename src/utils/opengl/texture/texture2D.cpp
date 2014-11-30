@@ -1,5 +1,6 @@
 
 #include "headers.hpp"
+#ifdef USE_GUI
 
 #include "texture2D.hpp"
 #include "log.hpp"
@@ -55,3 +56,4 @@ void Texture2D::bindAndApplyParameters(unsigned int location) {
 	locationsHitMap[location]++;
 }
 
+#endif

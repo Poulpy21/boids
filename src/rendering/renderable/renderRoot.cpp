@@ -1,5 +1,7 @@
 
 #include "renderRoot.hpp"
+#ifdef USE_GUI
+
 #include "globals.hpp"
 
 void RenderRoot::drawDownwards(const float *currentTransformationMatrix) {
@@ -36,3 +38,4 @@ void RenderRoot::drawDownwards(const float *currentTransformationMatrix) {
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
+#endif
