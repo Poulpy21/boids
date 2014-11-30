@@ -1,7 +1,14 @@
-boids
+Flocking simulation
 =====
 
 Flocking simulation, with so many cores. 
+
+Deploy 
+=====
+Ansible => https://github.com/ansible/ansible
+
+Initial code
+=====
 Sequential flocking simulation meant to be a starting code for parallel  
 programming class using MPI, OpenMP or CUDA/OpenCL.
 

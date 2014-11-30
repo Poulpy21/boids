@@ -10,7 +10,7 @@
 Workspace::Workspace(ArgumentParser &parser)
 {
 
-  na = parser("agents").asInt();
+  na = static_cast<unsigned int>(parser("agents").asInt());
 
   wCohesion = parser("wc").asDouble();
   wAlignment = parser("wa").asDouble();
