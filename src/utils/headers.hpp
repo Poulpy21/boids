@@ -1,7 +1,9 @@
 #ifndef _CUSTOM_HEADERS_H
 #define _CUSTOM_HEADERS_H
 
-#include <GL/glew.h> //1st include (mandatory)
+#include <mpi.h>
+
+#include <GL/glew.h> //1st gl include (mandatory)
 #include <GL/glut.h>
 
 // QT
@@ -60,8 +62,6 @@
 #include <QGLViewer/camera.h>
 #include <QGLViewer/quaternion.h>
 
-//#include <mpi.h>
-
 #include "defines.hpp"
 #include "log.hpp"
 
@@ -71,6 +71,7 @@
 
 #include "vec.hpp"
 #include "matrix.hpp"
+#include "types.hpp"
 
 #include "consts.hpp"
 #include "globals.hpp"

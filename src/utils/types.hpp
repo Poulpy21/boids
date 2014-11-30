@@ -7,7 +7,7 @@
 // Forward declaration
 class Agent;
 
-typedef double Real;
-typedef std::deque<Agent> Container;
+using Real = double;
+using Container = std::deque<Agent>;
 
 #endif
