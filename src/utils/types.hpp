@@ -1,6 +1,7 @@
 #ifndef TYPES
 #define TYPES
 
+#include "headers.hpp"
 #include <deque>
 
 // Forward declaration

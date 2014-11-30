@@ -11,13 +11,17 @@ set(BOIDS_MINOR_VERSION 1)
 set(BOIDS_PATCH_VERSION 0)
 set(BOIDS_VERSION ${BOIDS_MAJOR_VERSION}.${BOIDS_MINOR_VERSION}.${BOIDS_PATCH_VERSION})
 
-set(BUILD_SHARED_LIBS OFF)
 find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(GLUT REQUIRED)
 find_package(Qt4 REQUIRED QtCore QtGui QtXml QtOpenGL)
 find_package(QGLViewer REQUIRED)
 find_package(Log4cpp REQUIRED)
+if(!{OPENGL_GLU_FOUND})
+    message(FATAL_ERROR "GLU not found !")
+else()
+    message("--Found OpenGL libraries ${OPENGL_LIBRARIES} !")
+endif()
 
 find_package(MPI REQUIRED)
 find_package(OpenMP)
@@ -26,17 +30,16 @@ if(${CUDA_FOUND})
     include(CUDA_compute_capability)
 endif()
 
-
 #Compiler options
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     message("-- Compiling for ${CMAKE_SYSTEM_NAME} with Clang...")
     set(CXX_FLAGS "-std=c++11 -m64")
-    set(CXX_WERR "-Wall -Wextra -Wmissing-format-attribute -Wmissing-noreturn -Wredundant-decls -Wsequence-point -Wswitch-default -Wdeprecated -Wunreachable-code  -Wsign-conversion -Wno-old-style-cast -Wcovered-switch-default -Wmissing-variable-declarations -Wfloat-equal -Wunknown-warning-option")
+    set(CXX_WERR "-Wall -Wextra -Wmissing-format-attribute -Wmissing-noreturn -Wredundant-decls -Wsequence-point -Wswitch-default -Wdeprecated -Wunreachable-code  -Wno-sign-conversion -Wno-old-style-cast -Wcovered-switch-default -Wmissing-variable-declarations -Wfloat-equal -Wunknown-warning-option")
     set(CXX_WNOERR "-Wno-weak-vtables -Wno-c++98-compat-pedantic -Wno-unused-parameter -Wno-deprecated-register -Wno-conversion -Wno-shadow -Wno-padded -Wno-global-constructors -Wno-exit-time-destructors -Wno-source-uses-openmp -Wno-effc++")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     message("-- Compiling for ${CMAKE_SYSTEM_NAME} with GCC...")
     set(CXX_FLAGS "-std=c++11 -m64")
-    set(CXX_WERR "-Wall -Wextra -Wmissing-format-attribute -Wmissing-noreturn -Wredundant-decls -Wsequence-point -Wdeprecated -Wunreachable-code -Wno-old-style-cast -Wfloat-equal -Wsuggest-attribute=const -Wsuggest-attribute=pure -Wsign-conversion -Wdouble-promotion")
+    set(CXX_WERR "-Wall -Wextra -Wmissing-format-attribute -Wmissing-noreturn -Wredundant-decls -Wsequence-point -Wdeprecated -Wunreachable-code -Wno-old-style-cast -Wfloat-equal -Wsuggest-attribute=const -Wsuggest-attribute=pure -Wno-sign-conversion -Wdouble-promotion")
     set(CXX_WNOERR "-Wno-unused-parameter -Wno-conversion -Wno-shadow -Wno-padded -Wno-effc++")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
     message("-- Compiling for ${CMAKE_SYSTEM_NAME} with Intel C++...")
@@ -122,17 +125,17 @@ add_executable(main ${header_files} ${source_files} ${template_files})
 #Link executable
 target_link_libraries(
     main 
-    ${OPENGL_LIBRARIES}  #OpenGl
-    ${GLEW_LIBRARIES}    #Glew
-    ${GLUT_glut_LIBRARY} #Glut
-    ${QGLVIEWER_LIBRARY} #QGlViewer
     Qt4::QtGui           #QtGui
     Qt4::QtCore          #QtCore
     Qt4::QtXml           #QtXml
     Qt4::QtOpenGL        #QtOpenGL
+    ${QGLVIEWER_LIBRARY} #QGlViewer
     ${LOG4CPP_LIBRARIES} #Log4cpp
     ${MPI_CXX_LIBRARIES} #MPI
     ${CUDA_LIBRARIES}    #Cuda
     ${CUDA_KERNELS}      #Cuda Kernels
+    ${OPENGL_LIBRARIES}  #OpenGl
+    ${GLEW_LIBRARIES}    #Glew
+    ${GLUT_glut_LIBRARY} #Glut
 )
 

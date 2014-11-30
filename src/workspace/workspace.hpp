@@ -1,8 +1,7 @@
-/*
-*/
 #ifndef  WORKSPACE
 #define  WORKSPACE
 
+#include "headers.hpp"
 #include "parser.hpp"
 #include "types.hpp"
 

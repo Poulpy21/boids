@@ -1,6 +1,7 @@
 #ifndef VECTOR
 #define VECTOR
 
+#include "headers.hpp"
 #include <iostream>
 #include <cmath>
 #include "types.hpp"

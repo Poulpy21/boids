@@ -1,6 +1,7 @@
 #ifndef AGENT_HXX
 #define AGENT_HXX
 
+#include "headers.hpp"
 #include "types.hpp"
 #include "vector.hpp"
 

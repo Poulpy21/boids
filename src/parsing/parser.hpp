@@ -2,6 +2,7 @@
 #define PARSER
 
 // Type converions from string
+#include "headers.hpp"
 #include <sstream>
 #include <iostream>
 #include <algorithm>
@@ -67,7 +68,7 @@ class ArgumentParser
 
         template <typename T>
             void addOption(const std::string arg, const T val) {
-                std::string value = static_cast<std::ostringstream*>( &(std::ostringstream() << val) )->str();
+                std::string value = static_cast<std::stringstream*>( &(std::stringstream() << val) )->str();
                 mapArguments[arg] = Value(value);
             }
 
