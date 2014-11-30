@@ -4,11 +4,22 @@ Flocking simulation
 Flocking simulation, with so many cores. 
 
 Deploy 
-=====
+===
 Ansible => https://github.com/ansible/ansible
 
+Requirements:
+===
+GCC 4.8.2
+MPI 1.8.3
+Log4cpp
+
+Optional:
+CUDA Toolkit 6.5
+Glew, Glut, Qt4
+QGLViewer
+
 Initial code
-=====
+===
 Sequential flocking simulation meant to be a starting code for parallel  
 programming class using MPI, OpenMP or CUDA/OpenCL.
 
