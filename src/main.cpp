@@ -22,19 +22,19 @@ int main(int argc, char **argv) {
     //int provided = -1;
     //MPI_Init_thread(&argc, &argv, claimed, &provided);
     
-    int myid, numprocs;
+    //int myid, numprocs;
 
-    MPI_Init(&argc,&argv);
-    MPI_Comm_size(MPI_COMM_WORLD,&numprocs);
-    MPI_Comm_rank(MPI_COMM_WORLD,&myid);
+    //MPI_Init(&argc,&argv);
+    //MPI_Comm_size(MPI_COMM_WORLD,&numprocs);
+    //MPI_Comm_rank(MPI_COMM_WORLD,&myid);
 
     /* print out my rank and this run's PE size*/
-    printf("Hello from %d\n",myid);
-    printf("Numprocs is %d\n",numprocs);
+    //printf("Hello from %d\n",myid);
+    //printf("Numprocs is %d\n",numprocs);
 
-    MPI_Finalize();
+    //MPI_Finalize();
 
-    return EXIT_SUCCESS;
+    //return EXIT_SUCCESS;
 
     // Create parser
     ArgumentParser parser;
