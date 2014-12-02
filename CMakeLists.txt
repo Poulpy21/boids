@@ -29,7 +29,7 @@ find_package(Log4cpp REQUIRED)
 if(!{OPENGL_GLU_FOUND})
     message(FATAL_ERROR "GLU not found !")
 else()
-    message("--Found OpenGL libraries ${OPENGL_LIBRARIES} !")
+    message("-- Found OpenGL libraries including GLU !")
 endif()
 
 find_package(MPI REQUIRED)
