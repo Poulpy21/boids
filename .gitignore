@@ -9,6 +9,7 @@ cmake_install.cmake
 Makefile
 program.log
 .exrc
+*.o
 *.xyz
 *.out
 *.old
@@ -16,3 +17,4 @@ program.log
 :w
 <
 *~
+onlineHosts
