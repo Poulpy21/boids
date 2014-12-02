@@ -112,8 +112,8 @@ endforeach()
 list(REMOVE_DUPLICATES LOCAL_INCLUDE_DIRS)
 
 #Header directories
-include_directories(
-    ${LOCAL_INCLUDE_DIRS} 
+include_directories(${LOCAL_INCLUDE_DIRS})
+include_directories(SYSTEM 
     ${OPENGL_INCLUDE_DIR}
     ${GLEW_INCLUDE_DIRS} 
     ${GLUT_INCLUDE_DIR}
@@ -138,6 +138,22 @@ endif()
 
 #Executables
 add_executable(main ${header_files} ${source_files} ${template_files} ${configure_files})
+
+#Compile QT as SYSTEM
+set_property(TARGET Qt4::QtCore APPEND PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES 
+    ${QT_INCLUDE_DIR}
+    ${QT_QTCORE_INCLUDE_DIR}
+    ${QT_MKSPECS_DIR}/default
+)
+set_property(TARGET Qt4::QtGui APPEND PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES 
+    ${QT_QTGUI_INCLUDE_DIR}
+)
+set_property(TARGET Qt4::QtXml APPEND PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES 
+    ${QT_QTXML_INCLUDE_DIR}
+)
+set_property(TARGET Qt4::QtOpenGL APPEND PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES 
+    ${QT_QTOPENGL_INCLUDE_DIR}
+)
 
 #Link executable
 target_link_libraries(
