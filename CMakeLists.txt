@@ -120,7 +120,7 @@ include_directories(SYSTEM
     ${QGLVIEWER_INCLUDE_DIR}
     ${CUDA_INCLUDE_DIRS} 
     ${LOG4CPP_INCLUDE_DIRS} 
-    ${MPI_INCLUDE_PATH}      #MPI
+    ${MPI_INCLUDE_PATH}  
 )
 
 #Library directories
