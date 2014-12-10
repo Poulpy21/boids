@@ -172,3 +172,8 @@ target_link_libraries(
     ${GLUT_glut_LIBRARY} #Glut
 )
 
+add_custom_target(run
+    COMMAND mpirun -np 1 ${EXECUTABLE_OUTPUT_PATH}/main -agents 20 && ${EXECUTABLE_OUTPUT_PATH}/script/visu.sh 20
+    DEPENDS main
+    WORKING_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}
+)
