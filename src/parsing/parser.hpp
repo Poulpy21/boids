@@ -33,7 +33,7 @@ class Value
             if (content == "") return def;
             return atoi(content.c_str());
         }
-        
+
         bool asBool(bool def=false) const
         {
             if (content == "") return def;

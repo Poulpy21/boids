@@ -23,6 +23,21 @@ function colorecho(){
     exec 1>&3
 }
 
+function scriptFolder() {
+    local SOURCE="${BASH_SOURCE[0]}"
+    
+    # resolve $SOURCE until the file is no longer a symlink
+    while [ -h "$SOURCE" ]; do
+        local DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+        local SOURCE="$(readlink "$SOURCE")"
+        # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+        [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" 
+    done
+    
+    local DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+    echo "$DIR"
+}
+
 
 function extract() {
     #echo "Extracting $1 to folder $2 ..."

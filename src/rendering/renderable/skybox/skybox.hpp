@@ -11,30 +11,30 @@
 
 class Skybox : public RenderTree {
     public:
-		//files order : POS_X NEG_X POS_Y NEG_Y POS_Z NEG_Z
+        //files order : POS_X NEG_X POS_Y NEG_Y POS_Z NEG_Z
         Skybox (const std::string &folder, const std::string &fileNames, const std::string &format);
         ~Skybox ();
 
-		void drawDownwards(const float *currentTransformationMatrix = consts::identity4);
+        void drawDownwards(const float *currentTransformationMatrix = consts::identity4);
         Texture* getCubeMap();
 
     private:
         Texture *_cubeMap;
-		Program *_program;
+        Program *_program;
 
-		std::map<std::string, int> _uniformLocations;
+        std::map<std::string, int> _uniformLocations;
 
-		void makeProgram();
+        void makeProgram();
 
-		static void initVBOs();
+        static void initVBOs();
 
-		static float _vertexCoords[];
-	
-		static bool _init;
-		static unsigned int _vertexVBO;
-		static unsigned int _targetsVBO;
+        static float _vertexCoords[];
+
+        static bool _init;
+        static unsigned int _vertexVBO;
+        static unsigned int _targetsVBO;
 };
-		
+
 #endif
 #endif
 
