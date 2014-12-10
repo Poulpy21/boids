@@ -1,6 +1,9 @@
+#include <mpi.h>
 
 // Agent (particle model)
 #include <cstdio>
+#include <iostream>
+#include <cmath>
 
 #include "headers.hpp"
 #include "agent.hpp"
@@ -8,55 +11,124 @@
 #include "parser.hpp"
 #include "workspace.hpp"
 
+struct Options {
+    unsigned long int nAgents;
+    unsigned long int nSteps;
+    double wCohesion;
+    double wAlignment;
+    double wSeparation;
+    double rCohesion;
+    double rAlignment;
+    double rSeparation;
+
+    Options() {};
+
+    Options(ArgumentParser &parser) {
+        nAgents     = static_cast<unsigned long int>(parser("agents").asInt());
+        nSteps      = static_cast<unsigned long int>(parser("steps").asInt());
+        wCohesion   = parser("wc").asDouble();
+        wAlignment  = parser("wa").asDouble();
+        wSeparation = parser("ws").asDouble();
+        rCohesion   = parser("rc").asDouble();
+        rAlignment  = parser("ra").asDouble();
+        rSeparation = parser("rs").asDouble();
+    }
+
+    friend std::ostream& operator<<(std::ostream &stream, Options &opt) {
+        return stream << opt.nAgents << " "
+                      << opt.nSteps << " "
+                      << opt.wCohesion << " "
+                      << opt.wAlignment << " "
+                      << opt.wSeparation << " "
+                      << opt.rCohesion << " "
+                      << opt.rAlignment << " "
+                      << opt.rSeparation;
+    }
+};
+
+
 // Main class for running the parallel flocking sim
 int main(int argc, char **argv) {
 
-    //using log4cpp::log_console;
-    //log4cpp::initLogs();
+    using log4cpp::log_console;
+    log4cpp::initLogs();
 
-    //static const char* MPI_levels[4] = {"MPI_THREAD_SINGLE", "MPI_THREAD_FUNNELED", "MPI_THREAD_SERIALIZED", "MPI_THREAD_MULTIPLE"}; 
+    MPI_Init(&argc,&argv); 
+    
+    int rank, size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    //int claimed = MPI_THREAD_MULTIPLE;
-    //int provided = -1;
-    //MPI_Init_thread(&argc, &argv, claimed, &provided);
+    MPI_Comm comm;
+    float dim_float = std::pow(size,1.0/3);
+    if (rank == 0 && fmod(dim_float,1.0) > 0.0) {
+        std::cout << "Run this with -np a cubed number" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+    int dim = (float) dim_float;
+    int dimensions[3] = {dim, dim, dim};
+    int wrap[3] = {1,1,1};
+    int reorder = 1;
+    MPI_Cart_create(MPI_COMM_WORLD, 3, dimensions, wrap, reorder, &comm);
 
-    //int myid, numprocs;
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
 
-    //MPI_Init(&argc,&argv);
-    //MPI_Comm_size(MPI_COMM_WORLD,&numprocs);
-    //MPI_Comm_rank(MPI_COMM_WORLD,&myid);
+    // Get the name of this processor (usually the hostname).  We call                                                      
+    // memset to ensure the string is null-terminated.  Not all MPI                                                        
+    // implementations null-terminate the processor name since the MPI                                                     
+    // standard specifies that the name is *not* supposed to be returned                                                   
+    // null-terminated.                                                                                                    
+    char name[MPI_MAX_PROCESSOR_NAME];
+    int len;
+    memset(name,0,MPI_MAX_PROCESSOR_NAME);
+    MPI_Get_processor_name(name, &len);
+    memset(name+len,0,MPI_MAX_PROCESSOR_NAME-len);
 
-    /* print out my rank and this run's PE size*/
-    //printf("Hello from %d\n",myid);
-    //printf("Numprocs is %d\n",numprocs);
+    int coords[3];
+    MPI_Cart_coords(comm, rank, 3, coords);
 
-    //MPI_Finalize();
+    std::cout << "Number of tasks=" << size << " My rank=" << rank << " My name="<< name 
+              << " My coords=" << coords[0] << "/" << coords[1] << "/" << coords[2] << "." << std::endl;
+    
+    Options opt;
+    if (rank == 0) {
 
-    //return EXIT_SUCCESS;
+        // Create parser
+        ArgumentParser parser;
 
-    // Create parser
-    ArgumentParser parser;
+        // Add options to parser
+        parser.addOption("agents", 640);
+        parser.addOption("steps", 500);
+        parser.addOption("wc", 12);
+        parser.addOption("wa", 15);
+        parser.addOption("ws", 35);
 
-    // Add options to parser
-    parser.addOption("agents", 640);
-    parser.addOption("steps", 500);
-    parser.addOption("wc", 12);
-    parser.addOption("wa", 15);
-    parser.addOption("ws", 35);
+        parser.addOption("rc", 0.11);
+        parser.addOption("ra", 0.15);
+        parser.addOption("rs", 0.01);
 
-    parser.addOption("rc", 0.11);
-    parser.addOption("ra", 0.15);
-    parser.addOption("rs", 0.01);
+        // Parse command line arguments
+        parser.setOptions(argc, argv);
 
-    // Parse command line arguments
-    parser.setOptions(argc, argv);
+        opt = Options(parser);
+    }
+    
+    MPI_Bcast(&opt, sizeof(Options)/sizeof(double), MPI_DOUBLE, 0, comm);
+    std::cout << "Options for rank " << rank << " : " << opt << std::endl; 
 
+    //Workspace workspace(opt, ....)
+
+    /*
     // Create workspace
     Workspace workspace(parser);
 
     // Launch simulation
     int nSteps = parser("steps").asInt();
     workspace.simulate(nSteps);
+    */
 
-    return 0;
+    MPI_Finalize();
+
+    return EXIT_SUCCESS;
 }

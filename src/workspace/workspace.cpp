@@ -21,18 +21,21 @@ Workspace::Workspace(ArgumentParser &parser) :
     rAlignment = parser("ra").asDouble();
     rSeparation = parser("rs").asDouble();
 
-    this->init();}
+    this->init();
+}
 
-    Workspace::Workspace(size_t nAgents,
-            Real wc, Real wa, Real ws,
-            Real rc, Real ra, Real rs) :
-        na(nAgents), dt(.05), time(0),
-        wCohesion(wc), wAlignment(wa), wSeparation(ws),
-        rCohesion(rc), rAlignment(ra), rSeparation(rs),
-        maxU(2.)
-{ this->init();}
+Workspace::Workspace(size_t nAgents,
+        Real wc, Real wa, Real ws,
+        Real rc, Real ra, Real rs) :
+    na(nAgents), dt(.05), time(0),
+    wCohesion(wc), wAlignment(wa), wSeparation(ws),
+    rCohesion(rc), rAlignment(ra), rSeparation(rs),
+    maxU(2.)
+{ 
+    this->init();
+}
 
-void  Workspace::init(){
+void  Workspace::init() {
     domainsize = 1.0;
 
     // Random generator seed
