@@ -10,8 +10,8 @@
 #define CHECK_CUDA_ERRORS(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 
 namespace utils {
-		void printCudaDevices(std::ostream &outputStream);
-		void logCudaDevices(log4cpp::Category &log_output);
+    void printCudaDevices(std::ostream &outputStream);
+    void logCudaDevices(log4cpp::Category &log_output);
 }
 
 void gpuAssert(cudaError_t code, const std::string &file, int line, bool abort = true);

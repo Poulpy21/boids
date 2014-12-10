@@ -8,13 +8,13 @@
 #include "renderTree.hpp"
 
 class RenderRoot : public RenderTree {
-	
-	public:
-		explicit RenderRoot(bool active = true) : RenderTree(active) {};
 
-		~RenderRoot() {};
-		
-		void drawDownwards(const float *currentTransformationMatrix = consts::identity4);
+    public:
+        explicit RenderRoot(bool active = true) : RenderTree(active) {};
+
+        ~RenderRoot() {};
+
+        void drawDownwards(const float *currentTransformationMatrix = consts::identity4);
 };
 
 #endif

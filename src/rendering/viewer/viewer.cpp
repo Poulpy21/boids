@@ -40,10 +40,10 @@ void Viewer::init()
     this->setAddKeyFrameKeyboardModifiers(Qt::ControlModifier); // Alt ne marchait pas
 
     this->setSceneRadius(100.0f);
-	this->camera()->setZNearCoefficient(0.00001);
-	this->camera()->setZClippingCoefficient(1000.0);
+    this->camera()->setZNearCoefficient(0.00001);
+    this->camera()->setZClippingCoefficient(1000.0);
 
-	//TODO
+    //TODO
     //setAnimationPeriod(20); // 50Hz
 
     std::list<Renderable *>::iterator it;
@@ -120,8 +120,8 @@ void Viewer::keyPressEvent(QKeyEvent *e)
     else if (e->key()==Qt::Key_R) {
         toggleRecord = !toggleRecord;
 
-    // ... and so on with all events to handle here!
-    
+        // ... and so on with all events to handle here!
+
     } else {
         // if the event is not handled here, process it as default
         QGLViewer::keyPressEvent(e);

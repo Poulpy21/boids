@@ -15,11 +15,11 @@ int main(int argc, char **argv) {
     //log4cpp::initLogs();
 
     //static const char* MPI_levels[4] = {"MPI_THREAD_SINGLE", "MPI_THREAD_FUNNELED", "MPI_THREAD_SERIALIZED", "MPI_THREAD_MULTIPLE"}; 
-    
+
     //int claimed = MPI_THREAD_MULTIPLE;
     //int provided = -1;
     //MPI_Init_thread(&argc, &argv, claimed, &provided);
-    
+
     //int myid, numprocs;
 
     //MPI_Init(&argc,&argv);
