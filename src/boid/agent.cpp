@@ -1,10 +1,11 @@
 #include "agent.hpp"
 
-Agent::Agent(const Vector &pos, const Vector &vel, const Vector &dir){
-    position = pos;
-    velocity = vel;
-    direction = dir;
-}
+Agent::Agent() : position(), velocity(), direction()
+{}
+
+Agent::Agent(const Vector &pos, const Vector &vel, const Vector &dir) : 
+    position(pos), velocity(vel), direction(dir)
+{}
 
 
 Vector Agent::separation(Container &agent_list, size_t index, double rad) {

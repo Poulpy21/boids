@@ -8,6 +8,6 @@
 class Agent;
 
 using Real = double;
-using Container = std::deque<Agent>;
+using Container = std::vector<Agent>;
 
 #endif

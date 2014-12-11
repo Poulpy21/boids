@@ -10,6 +10,7 @@
 #include "types.hpp"
 #include "parser.hpp"
 #include "workspace.hpp"
+#include "communicator.hpp"
 
 struct Options {
     unsigned long int nAgents;
