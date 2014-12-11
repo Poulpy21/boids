@@ -3,7 +3,7 @@
 #include <fstream>
 #include <ctime>
 
-#include "agent.hpp"
+#include "../boid/agent.hpp"
 #include "vector.hpp"
 #include "workspace.hpp"
 
@@ -66,7 +66,7 @@ void Workspace::move()
 
     // Integration in time using euler method
     for(size_t k = 0; k< na; k++){
-        agents[k].velocity += agents[k].direction;
+        agents[k].velocity += dt*agents[k].direction;
 
         double speed = agents[k].velocity.norm();
         if (speed > maxU) {
