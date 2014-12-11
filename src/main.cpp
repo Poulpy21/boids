@@ -5,7 +5,7 @@
 #include <iostream>
 #include <cmath>
 
-#include "headers.hpp"
+#include "utils/headers.hpp"
 #include "agent.hpp"
 #include "types.hpp"
 #include "parser.hpp"
@@ -60,17 +60,14 @@ int main(int argc, char **argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
     MPI_Comm comm;
-    float dim_float = std::pow(size,1.0/3);
-    if (rank == 0 && fmod(dim_float,1.0) > 0.0) {
-        std::cout << "Run this with -np a cubed number" << std::endl;
-        exit(EXIT_FAILURE);
+    int dimensions[3] = {0,0,0};
+    MPI_Dims_create(size, 3, dimensions);
+    if (rank == 0) {
+        log_console->infoStream() << "[MPI] Cartesian grid dimensions : " << dimensions[0] << "/" << dimensions[1] << "/" << dimensions[2]; 
     }
-    int dim = (float) dim_float;
-    int dimensions[3] = {dim, dim, dim};
     int wrap[3] = {1,1,1};
     int reorder = 1;
     MPI_Cart_create(MPI_COMM_WORLD, 3, dimensions, wrap, reorder, &comm);
-
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &size);
 
@@ -115,7 +112,7 @@ int main(int argc, char **argv) {
     }
     
     MPI_Bcast(&opt, sizeof(Options)/sizeof(double), MPI_DOUBLE, 0, comm);
-    std::cout << "Options for rank " << rank << " : " << opt << std::endl; 
+    //std::cout << "Options for rank " << rank << " : " << opt << std::endl; 
 
     //Workspace workspace(opt, ....)
 
