@@ -28,6 +28,13 @@ find_package(OpenMP)
 find_package(CUDA 6.5)
 if(${CUDA_FOUND})
     include(CUDA_compute_capability)
+else()
+    set(CUDA_TOOLKIT_ROOT_DIR "")
+    set(CUDA_NVCC_EXECUTABLE "")
+    set(CUDA_INCLUDE_DIRS "")
+    set(CUDA_CUDART_LIBRARY "")
+    set(CUDA_LIBRARIES "")
+    set(CUDA_LIBRARY_DIRS "")
 endif()
 
 #Compiler options
