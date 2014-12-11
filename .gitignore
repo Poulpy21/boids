@@ -1,5 +1,4 @@
 main
-build
 obj
 tags
 types_c.taghl
@@ -10,7 +9,12 @@ cmake_install.cmake
 Makefile
 program.log
 .exrc
+*.o
 *.xyz
+*.out
+*.old
 :
 :w
 <
+*~
+onlineHosts

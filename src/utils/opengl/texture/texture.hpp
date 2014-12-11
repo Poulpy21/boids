@@ -3,6 +3,8 @@
 #define TEXTURE_H
 
 #include "headers.hpp"
+#ifdef GUI_ENABLED
+
 #include <string>
 #include <map>
 #include <list>
@@ -58,4 +60,5 @@ class Texture {
 		static bool compareFunc(std::pair<long, unsigned int> a, std::pair<long, unsigned int> b);
 };
 
+#endif
 #endif /* end of include guard: TEXTURE_H */

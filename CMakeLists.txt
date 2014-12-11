@@ -2,14 +2,23 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/modules/")
-set(EXECUTABLE_OUTPUT_PATH "${CMAKE_SOURCE_DIR}")
 set(LIBRARY_OUTPUT_PATH "${CMAKE_SOURCE_DIR}/lib/${CMAKE_BUILD_TYPE}")
+set(EXECUTABLE_OUTPUT_PATH "${CMAKE_SOURCE_DIR}")
 
 project(Boids C CXX)
 set(BOIDS_MAJOR_VERSION 0)
 set(BOIDS_MINOR_VERSION 1)
 set(BOIDS_PATCH_VERSION 0)
 set(BOIDS_VERSION ${BOIDS_MAJOR_VERSION}.${BOIDS_MINOR_VERSION}.${BOIDS_PATCH_VERSION})
+
+# TODO # TODO # TODO # TODO # TODO # TODO ###
+set(MIN_COMPUTE_CAPABILITY "12")          #T#
+set(COMPUTE_CAPABILITY "12")              #O#
+set(ENABLE_GUI "1")                       ###
+set(CONSOLE_LOG_LEVEL "INFO")             #D#
+set(FILE_LOG_LEVEL "DEBUG")               #O#
+set(COUT_LOG_LEVEL "5")                   ###
+# TODO # TODO # TODO # TODO # TODO # TODO ###
 
 find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
@@ -20,7 +29,7 @@ find_package(Log4cpp REQUIRED)
 if(!{OPENGL_GLU_FOUND})
     message(FATAL_ERROR "GLU not found !")
 else()
-    message("--Found OpenGL libraries ${OPENGL_LIBRARIES} !")
+    message("-- Found OpenGL libraries including GLU !")
 endif()
 
 find_package(MPI REQUIRED)
@@ -92,6 +101,14 @@ file(GLOB_RECURSE header_files src/*.hpp)
 file(GLOB_RECURSE source_files src/*.cpp)
 file(GLOB_RECURSE template_files src/*.tpp)
 file(GLOB_RECURSE kernel_files src/*.cu)
+file(GLOB_RECURSE configure_files src/*.hpp.in)
+
+#Configure headers
+foreach(configIn ${configure_files})
+    string(REPLACE ".hpp.in" ".hpp.out" configOut "${configIn}")
+    configure_file("${configIn}" "${configOut}" @ONLY)
+    list(APPEND header_files "${configOut}")
+endforeach()
 
 #Local includes
 list(APPEND LOCAL_INCLUDE_DIRS "src/") #to avoid empty list
@@ -102,15 +119,15 @@ endforeach()
 list(REMOVE_DUPLICATES LOCAL_INCLUDE_DIRS)
 
 #Header directories
-include_directories(
-    ${LOCAL_INCLUDE_DIRS} 
+include_directories(${LOCAL_INCLUDE_DIRS})
+include_directories(SYSTEM 
     ${OPENGL_INCLUDE_DIR}
     ${GLEW_INCLUDE_DIRS} 
     ${GLUT_INCLUDE_DIR}
     ${QGLVIEWER_INCLUDE_DIR}
     ${CUDA_INCLUDE_DIRS} 
     ${LOG4CPP_INCLUDE_DIRS} 
-    ${MPI_INCLUDE_PATH}      #MPI
+    ${MPI_INCLUDE_PATH}  
 )
 
 #Library directories
@@ -127,7 +144,23 @@ if(${CUDA_FOUND} AND NOT "${kernel_files}" STREQUAL "")
 endif()
 
 #Executables
-add_executable(main ${header_files} ${source_files} ${template_files})
+add_executable(main ${header_files} ${source_files} ${template_files} ${configure_files})
+
+#Compile QT as SYSTEM
+set_property(TARGET Qt4::QtCore APPEND PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES 
+    ${QT_INCLUDE_DIR}
+    ${QT_QTCORE_INCLUDE_DIR}
+    ${QT_MKSPECS_DIR}/default
+)
+set_property(TARGET Qt4::QtGui APPEND PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES 
+    ${QT_QTGUI_INCLUDE_DIR}
+)
+set_property(TARGET Qt4::QtXml APPEND PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES 
+    ${QT_QTXML_INCLUDE_DIR}
+)
+set_property(TARGET Qt4::QtOpenGL APPEND PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES 
+    ${QT_QTOPENGL_INCLUDE_DIR}
+)
 
 #Link executable
 target_link_libraries(
@@ -146,3 +179,8 @@ target_link_libraries(
     ${GLUT_glut_LIBRARY} #Glut
 )
 
+add_custom_target(run
+    COMMAND mpirun -np 1 ${EXECUTABLE_OUTPUT_PATH}/main -agents 20 && ${EXECUTABLE_OUTPUT_PATH}/script/visu.sh 20
+    DEPENDS main
+    WORKING_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}
+)

@@ -1,0 +1,2 @@
+-host localhost -np 1 testMpi 
+-host localhost -np 2 -wdir home/gauthier/hpc testMpi

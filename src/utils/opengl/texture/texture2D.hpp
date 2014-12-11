@@ -3,6 +3,8 @@
 #define TEXTURE2D_H
 
 #include "headers.hpp"
+#ifdef GUI_ENABLED
+
 #include "texture.hpp"
 
 class Texture2D : public Texture {
@@ -21,4 +23,5 @@ class Texture2D : public Texture {
 
 };
 
+#endif
 #endif /* end of include guard: TEXTURE2D_H */

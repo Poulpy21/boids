@@ -1,101 +1,103 @@
 
 #include "matrix.hpp"
 
+#ifdef GUI_ENABLED
+
 namespace Matrix {
 
-	
-	float* multMat4f(const float *m1, const float* m2) {
-		float *m = new float[16]();
 
-		for (int i = 0; i < 4; i++) {
-			for (int j = 0; j < 4; j++) {
-				for (int k = 0; k < 4; k++) {
-					m[4*i+j] += m1[4*i+k] * m2[4*k+j];
-				}
-			}
-		}
+    float* multMat4f(const float *m1, const float* m2) {
+        float *m = new float[16]();
 
-		return m;
-	}
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+                for (int k = 0; k < 4; k++) {
+                    m[4*i+j] += m1[4*i+k] * m2[4*k+j];
+                }
+            }
+        }
 
-	
-	
-	void scaleMat4f(float* M, float alpha) {
-		M[0]*=alpha;
-		M[5]*=alpha;
-		M[10]*=alpha;
-	}
+        return m;
+    }
 
-	void scaleMat4f(float* M, float alpha, float beta, float gamma) {
-		M[0]*=alpha;
-		M[5]*=beta;
-		M[10]*=gamma;
-	}
 
-	void scaleMat4f(float* M, Vec<float> &v) {
-		M[0]*=v.x;
-		M[5]*=v.y;
-		M[10]*=v.z;
-	}
 
-	void translateMat4f(float* M, float x, float y, float z) {
-		M[3]+=x;
-		M[7]+=y;
-		M[11]+=z;
-	}
-	void translateMat4f(float* M, Vec<float> &v) {
-		M[3]+=v.x;
-		M[7]+=v.y;
-		M[11]+=v.z;
-	}
-		
-	void setOffsetMat4f(float *M, float x, float y, float z) {
-		M[3]=x;
-		M[7]=y;
-		M[11]=z;
-	}
+    void scaleMat4f(float* M, float alpha) {
+        M[0]*=alpha;
+        M[5]*=alpha;
+        M[10]*=alpha;
+    }
 
-	void setOffsetMat4f(float *M, Vec<float> &v) {
-		M[3]=v.x;
-		M[7]=v.y;
-		M[11]=v.z;
-	}
-		
-	void setRotationMat4f(float *M, qglviewer::Quaternion rot, float scale) {
+    void scaleMat4f(float* M, float alpha, float beta, float gamma) {
+        M[0]*=alpha;
+        M[5]*=beta;
+        M[10]*=gamma;
+    }
 
-		double R[16];
-		rot.getMatrix(R);
+    void scaleMat4f(float* M, Vec<float> &v) {
+        M[0]*=v.x;
+        M[5]*=v.y;
+        M[10]*=v.z;
+    }
 
-		for (int i = 0; i < 3; i++) {
-			for (int j = 0; j < 3; j++) {
-				M[4*i+j] = (float) R[4*j+i];
-                                if(i==j)
-                                        M[4*i+j]*=scale;
-			}
-		}
-	}
+    void translateMat4f(float* M, float x, float y, float z) {
+        M[3]+=x;
+        M[7]+=y;
+        M[11]+=z;
+    }
+    void translateMat4f(float* M, Vec<float> &v) {
+        M[3]+=v.x;
+        M[7]+=v.y;
+        M[11]+=v.z;
+    }
 
-	void rotateMat4f(float* M, qglviewer::Quaternion const &quat) {
+    void setOffsetMat4f(float *M, float x, float y, float z) {
+        M[3]=x;
+        M[7]=y;
+        M[11]=z;
+    }
 
-		double *rot = new double[16];
-		float *rotf = new float[16];
+    void setOffsetMat4f(float *M, Vec<float> &v) {
+        M[3]=v.x;
+        M[7]=v.y;
+        M[11]=v.z;
+    }
 
-		quat.getMatrix(rot);
+    void setRotationMat4f(float *M, qglviewer::Quaternion rot, float scale) {
 
-		for (int i = 0; i < 16; i++) {
-			rotf[i] = rot[i];
-		}
+        double R[16];
+        rot.getMatrix(R);
 
-		const float *res = multMat4f(rotf, M);
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                M[4*i+j] = (float) R[4*j+i];
+                if(i==j)
+                    M[4*i+j]*=scale;
+            }
+        }
+    }
 
-		for (int i = 0; i < 16; i++) {
-			M[i] = res[i];
-		}
+    void rotateMat4f(float* M, qglviewer::Quaternion const &quat) {
 
-		delete [] res;
-		delete [] rot;
-		delete [] rotf;
-	}
+        double *rot = new double[16];
+        float *rotf = new float[16];
+
+        quat.getMatrix(rot);
+
+        for (int i = 0; i < 16; i++) {
+            rotf[i] = rot[i];
+        }
+
+        const float *res = multMat4f(rotf, M);
+
+        for (int i = 0; i < 16; i++) {
+            M[i] = res[i];
+        }
+
+        delete [] res;
+        delete [] rot;
+        delete [] rotf;
+    }
 
     float *transpose(const float *M, const unsigned int dim) {
         float *tr = new float[dim*dim];
@@ -108,12 +110,12 @@ namespace Matrix {
 
         return tr;
     }
-    
+
     float *inverseMat3f(const float *M) {
         float *inv = new float[9];
         float det = M[0] * (M[4] * M[8] - M[7] * M[5]) -
-                    M[1] * (M[3] * M[8] - M[5] * M[6]) +
-                    M[2] * (M[3] * M[7] - M[4] * M[6]);
+            M[1] * (M[3] * M[8] - M[5] * M[6]) +
+            M[2] * (M[3] * M[7] - M[4] * M[6]);
 
         if (fabs(det) < 0.000000000001) {
             std::cout << "[Matrix] inverseMat3f: det = 0 !" << std::endl;
@@ -204,3 +206,5 @@ namespace Matrix {
         return res;
     }
 } 
+
+#endif

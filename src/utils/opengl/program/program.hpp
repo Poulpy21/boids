@@ -3,6 +3,9 @@
 #define PROGRAM_H
 
 #include "headers.hpp"
+
+#ifdef GUI_ENABLED
+
 #include "shader.hpp"
 #include "texture.hpp"
 #include <string>
@@ -53,4 +56,5 @@ class Program {
 };
 
 
+#endif
 #endif /* end of include guard: PROGRAM_H */

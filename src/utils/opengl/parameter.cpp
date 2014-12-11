@@ -1,6 +1,8 @@
 
 #include "parameter.hpp"
 
+#ifdef USE_GUI
+
 Parameter::Parameter(GLenum paramName_, int param_) :
 	_type(ParamType::I), _paramName(paramName_)
 {
@@ -36,3 +38,5 @@ GLenum Parameter::paramName() const {
 ParamData Parameter::params() const {
 	return _params;
 }
+
+#endif

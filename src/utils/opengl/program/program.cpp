@@ -1,6 +1,9 @@
 
 
 #include "program.hpp"
+
+#ifdef USE_GUI
+
 #include "globals.hpp"
 #include "shader.hpp"
 #include "log.hpp"
@@ -422,3 +425,5 @@ void Program::resetDefaultGlProgramState() {
 	glDisable(GL_POLYGON_STIPPLE);
 	glDisable(GL_LOGIC_OP);
 }
+
+#endif

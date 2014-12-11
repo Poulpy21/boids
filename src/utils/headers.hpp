@@ -1,12 +1,17 @@
 #ifndef _CUSTOM_HEADERS_H
 #define _CUSTOM_HEADERS_H
 
-#include <mpi.h>
+#include "defines.hpp"
 
+#ifdef GUI_ENABLED
 #include <GL/glew.h> //1st gl include (mandatory)
 #include <GL/glut.h>
+#endif
+
+#include <mpi.h>
 
 // QT
+#ifdef GUI_ENABLED
 #include <QApplication>
 #include <QtGui>
 #include <QThread>
@@ -50,24 +55,33 @@
 #include <QMap>
 #include <QGenericMatrix>
 
-#include <X11/Xlib.h>
-#include <X11/Xutil.h>
-#include <GL/glx.h>
-
-#include <cuda.h>
-#include <cuda_runtime.h>
-#include <cuda_gl_interop.h>
-
 #include <QGLViewer/qglviewer.h>
 #include <QGLViewer/camera.h>
 #include <QGLViewer/quaternion.h>
+
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#include <GL/glx.h>
+#endif
+
+#ifdef CUDA_ENABLED
+#include <cuda.h>
+#include <cuda_runtime.h>
+#include <cuda_gl_interop.h>
+#endif
 
 #include "defines.hpp"
 #include "log.hpp"
 
 #include "utils.hpp"
+
+#ifdef GUI_ENABLED
 #include "glUtils.hpp"
+#endif
+
+#ifdef CUDA_ENABLED
 #include "cudaUtils.hpp"
+#endif
 
 #include "vec.hpp"
 #include "matrix.hpp"

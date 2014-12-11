@@ -1,6 +1,8 @@
 
 #include "headers.hpp"
 
+#ifdef USE_GUI
+
 #include "cubeMap.hpp"
 #include "log.hpp"
 #include "globals.hpp"
@@ -70,3 +72,4 @@ void CubeMap::bindAndApplyParameters(unsigned int location) {
     locationsHitMap[location]++;
 }
 
+#endif

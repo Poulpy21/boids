@@ -1,5 +1,6 @@
 
 #include "cudaUtils.hpp"
+#ifdef USE_CUDA
 
 namespace utils {
     void printCudaDevices(std::ostream &outputStream) {
@@ -122,3 +123,4 @@ void checkKernelExecution() {
     }
 }
 
+#endif

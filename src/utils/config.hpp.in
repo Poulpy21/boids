@@ -1,0 +1,33 @@
+
+#ifndef CONFIG_H
+#define CONFIG_H
+
+#ifndef CONSOLE_LOG_LEVEL
+#define CONSOLE_LOG_LEVEL @CONSOLE_LOG_LEVEL@
+#endif
+
+#ifndef FILE_LOG_LEVEL
+#define FILE_LOG_LEVEL @FILE_LOG_LEVEL@
+#endif
+
+#ifndef COUT_LOG_LEVEL 
+#define COUT_LOG_LEVEL @COUT_LOG_LEVEL@
+#endif
+
+#ifndef COMPUTE_CAPABILITY
+#define COMPUTE_CAPABILITY @COMPUTE_CAPABILITY@
+#endif
+
+#ifndef CUDA_ENABLED
+#if COMPUTE_CAPABILITY > @MIN_COMPUTE_CAPABILITY@
+#define CUDA_ENABLED
+#endif
+#endif
+
+#ifndef GUI_ENABLED
+#if @ENABLE_GUI@
+#define GUI_ENABLED
+#endif
+#endif
+
+#endif /* end of include guard: CONFIG.H_H */
