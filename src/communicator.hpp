@@ -11,6 +11,12 @@ class Communicator {
 
     public:
 
+        /*
+         * comm : Current communicator
+         * agents : Container to which to append received agents
+         * agentsForRanks : Maps Containers of boids to send to ranks
+         * sourceRanks : ranks from which to receive boids (typically the keys of agentsForRanks)
+         */
         inline void exchangeAgents(MPI_Comm comm, Container &agents, 
                                    std::map<int, Container> &agentsForRanks, 
                                    std::vector<int> sourceRanks) 
