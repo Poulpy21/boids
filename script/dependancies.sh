@@ -83,13 +83,13 @@ install "${DOWNLOAD_DIR}" "${GMP_URL}" "${GMP}" "${PREFIX}" "${ARGS}" "${SUCCESS
 #GUILE_URL="ftp://ftp.gnu.org/gnu/guile/$GUILE"
 #install "${DOWNLOAD_DIR}" "${GUILE_URL}" "${GUILE}" "${PREFIX}" "${ARGS_WITH_LIBGMP_PREFIX}" "${SUCCESS}"
 
-FLEX="flex-2.5.39.tar.gz"
-FLEX_URL="http://sourceforge.net/projects/flex/files/$FLEX/download"
-install "${DOWNLOAD_DIR}" "${FLEX_URL}" "${FLEX}" "${PREFIX}" "${ARGS}" "${SUCCESS}"
+#FLEX="flex-2.5.39.tar.gz"
+#FLEX_URL="http://sourceforge.net/projects/flex/files/$FLEX/download"
+#install "${DOWNLOAD_DIR}" "${FLEX_URL}" "${FLEX}" "${PREFIX}" "${ARGS}" "${SUCCESS}"
 
-BISON="bison-2.7.91.tar.gz"
-BISON_URL="ftp://alpha.gnu.org/gnu/bison/$BISON"
-install "${DOWNLOAD_DIR}" "${BISON_URL}" "${BISON}" "${PREFIX}" "${ARGS}" "${SUCCESS}"
+#BISON="bison-2.7.91.tar.gz"
+#BISON_URL="ftp://alpha.gnu.org/gnu/bison/$BISON"
+#install "${DOWNLOAD_DIR}" "${BISON_URL}" "${BISON}" "${PREFIX}" "${ARGS}" "${SUCCESS}"
 
 M4="m4-latest.tar.gz"
 M4_URL="http://ftp.gnu.org/gnu/m4/$M4"
