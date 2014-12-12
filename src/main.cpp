@@ -13,6 +13,8 @@
 #include "workspace.hpp"
 #include "messenger.hpp"
 
+#include "BSPTree.hpp"
+
 // Main class for running the parallel flocking sim
 int main(int argc, char **argv) {
 

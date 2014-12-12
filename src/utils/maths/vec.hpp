@@ -4,274 +4,293 @@
 
 #include "headers.hpp"
 #include <iostream>
+#include <type_traits>
+#include <cstring>
 
-enum Axe {
-    AXE_X=0,
-    AXE_Y,
-    AXE_Z
-};
+/*
+* ND vector structure of arithmetic type T
+* T should be an arithmetic type, T& = T and T(int) should be defined.
+* Operators == and != are safe for integer types and floating point types as well (see utils.hpp for the definition of areEqual<T>).
+* Vec2 and Vec3 extends this class for more convenience (see vec2.hpp and vec3.hpp)
+* The behaviour of the output stream operator << is specialized in the case N=1 to avoid unnecessary brackets (scalar case).
+*/
 
-//3D vector structure
-template <typename T>
+template <unsigned int N, typename T>
 struct Vec {
-    T x;
-    T y;
-    T z;
+    static_assert(std::is_arithmetic<T>(),         "Vectors can only contain arithmetic types !");
+    static_assert(std::is_assignable<T&, T>(),     "T should be assignable !");
+    static_assert(std::is_constructible<T, int>(), "T should be constructible from int !");
 
-    Vec<T>();
-    Vec<T>(const Vec<T> &v);
-    Vec<T>(T x, T y, T z);
-    ~Vec<T>();
+    Vec();
+    explicit Vec(const Vec<N,T> &v);
+    explicit Vec(const T data[]);
+    virtual ~Vec();
 
-    Vec<T>& operator= (const Vec<T> &v);
-    void setValue(T x, T y, T z);
+    Vec<N,T>& operator= (const Vec<N,T> &v);
 
-    Vec<T> & operator+= (const Vec<T> &a);
-    Vec<T> & operator-= (const Vec<T> &a);
-    Vec<T> & operator*= (const Vec<T> &a);
-    Vec<T> & operator/= (const Vec<T> &a);
-    Vec<T> & operator^= (const Vec<T> &a);
+    T& operator[](unsigned int k);
+    T  operator[](unsigned int k) const;
 
-    Vec<T> & operator+= (T k);
-    Vec<T> & operator-= (T k);
-    Vec<T> & operator*= (T k);
-    Vec<T> & operator/= (T k);
+    Vec<N,T> & operator+= (const Vec<N,T> &a);
+    Vec<N,T> & operator-= (const Vec<N,T> &a);
+    Vec<N,T> & operator*= (const Vec<N,T> &a);
+    Vec<N,T> & operator/= (const Vec<N,T> &a);
+    Vec<N,T> & operator^= (const Vec<N,T> &a);
 
-    T normalize ();
+    Vec<N,T> & operator+= (T k);
+    Vec<N,T> & operator-= (T k);
+    Vec<N,T> & operator*= (T k);
+    Vec<N,T> & operator/= (T k);
 
-    T norm () const;
-    T squaredNorm () const;
+    T normalize();
 
-    Vec<T> unit () const;
-    Vec<T> orthogonalVec () const;
+    T norm() const;
+    T squaredNorm() const;
 
-    int compare(const Vec<T> &other, Axe axe) const;
+    Vec<N,T> unit() const;
+    
+protected: 
+    T data[N];
 };
 
-template <typename T>
-Vec<T>::Vec() : x(0), y(0), z(0) {}
 
-template <typename T>
-Vec<T>::Vec(const Vec<T> &v) : x(v.x), y(v.y), z(v.z) {}
+template <unsigned int N, typename T>
+Vec<N,T>::Vec() {
+    for (unsigned int i = 0; i < N; i++) {
+        this->data[i] = T(0);
+    }
+}
 
-template <typename T>
-Vec<T>::Vec(T x, T y, T z) : x(x), y(y), z(z) {}
+template <unsigned int N, typename T>
+Vec<N,T>::Vec(const Vec<N,T> &v) {
+    memcpy(this->data, v.data, N*sizeof(T));
+}
 
-template <typename T>
-Vec<T>::~Vec() {}
+template <unsigned int N, typename T>
+Vec<N,T>::Vec(const T data[]) {
+    memcpy(this->data, data, N*sizeof(T));
+}
 
-template <typename T>
-Vec<T>& Vec<T>::operator= (const Vec<T> &v) {
-    this->x = v.x;
-    this->y = v.y;
-    this->z = v.z;
+template <unsigned int N, typename T>
+Vec<N,T>::~Vec() {}
+
+template <unsigned int N, typename T>
+Vec<N,T>& Vec<N,T>::operator= (const Vec<N,T> &v) {
+    memcpy(this->data, data, N*sizeof(T));
+    return *this;
+}
+    
+template <unsigned int N, typename T>
+T& Vec<N,T>::operator[](unsigned int k) {
+    return this->data[k];
+}
+
+template <unsigned int N, typename T>
+T  Vec<N,T>::operator[](unsigned int k) const {
+    return this->data[k];
+}
+
+template <unsigned int N, typename T>
+Vec<N,T> & Vec<N,T>::operator+= (const Vec<N,T> &a) {
+    for (unsigned int i = 0; i < N; i++) {
+        this->data[i] += a.data[i];
+    }
     return *this;
 }
 
-template <typename T>
-void Vec<T>::setValue(T x, T y, T z) {
-    this->x = x;
-    this->y = y;
-    this->z = z;
-}
-
-template <typename T>
-Vec<T> & Vec<T>::operator+= (const Vec<T> &a) {
-    x += a.x;
-    y += a.y;
-    z += a.z;
+template <unsigned int N, typename T>
+Vec<N,T> & Vec<N,T>::operator-= (const Vec<N,T> &a) {
+    for (unsigned int i = 0; i < N; i++) {
+        this->data[i] -= a.data[i];
+    }
     return *this;
 }
 
-template <typename T>
-Vec<T> & Vec<T>::operator-= (const Vec<T> &a) {
-    x -= a.x;
-    y -= a.y;
-    z -= a.z;
+template <unsigned int N, typename T>
+Vec<N,T> & Vec<N,T>::operator*= (const Vec<N,T> &a) {
+    for (unsigned int i = 0; i < N; i++) {
+        this->data[i] *= a.data[i];
+    }
     return *this;
 }
 
-template <typename T>
-Vec<T> & Vec<T>::operator*= (const Vec<T> &a) {
-    x *= a.x;
-    y *= a.y;
-    z *= a.z;
+template <unsigned int N, typename T>
+Vec<N,T> & Vec<N,T>::operator/= (const Vec<N,T> &a) {
+    for (unsigned int i = 0; i < N; i++) {
+        this->data[i] /= a.data[i];
+    }
     return *this;
 }
 
-template <typename T>
-Vec<T> & Vec<T>::operator/= (const Vec<T> &a) {
-    x /= a.x;
-    y /= a.y;
-    z /= a.z;
+template <unsigned int N, typename T>
+Vec<N,T> & Vec<N,T>::operator+= (T k) {
+    for (unsigned int i = 0; i < N; i++) {
+        this->data[i] += k; 
+    }
     return *this;
 }
 
-template <typename T>
-Vec<T> & Vec<T>::operator^= (const Vec<T> &a) {
-    Vec<T> b(*this);
-    x = b.y*a.z - b.z*a.y;
-    y = b.z*a.x - b.x*a.z;
-    z = b.x*a.y - b.y*a.x;
+template <unsigned int N, typename T>
+Vec<N,T> & Vec<N,T>::operator-= (T k) {
+    for (unsigned int i = 0; i < N; i++) {
+        this->data[i] -= k; 
+    }
     return *this;
 }
 
-template <typename T>
-Vec<T> & Vec<T>::operator+= (T k) {
-    x += k;
-    y += k;
-    z += k;
+template <unsigned int N, typename T>
+Vec<N,T> & Vec<N,T>::operator*= (T k) {
+    for (unsigned int i = 0; i < N; i++) {
+        this->data[i] *= k; 
+    }
     return *this;
 }
 
-template <typename T>
-Vec<T> & Vec<T>::operator-= (T k) {
-    x -= k;
-    y -= k;
-    z -= k;
+template <unsigned int N, typename T>
+Vec<N,T> & Vec<N,T>::operator/= (T k) {
+    for (unsigned int i = 0; i < N; i++) {
+        this->data[i] /= k; 
+    }
     return *this;
 }
 
-template <typename T>
-Vec<T> & Vec<T>::operator*= (T k) {
-    x *= k;
-    y *= k;
-    z *= k;
-    return *this;
+template <unsigned int N, typename T>
+Vec<N,T> operator+ (const Vec<N,T> &a, const Vec<N,T> &b) {
+    T buffer[N];
+    for (unsigned int i = 0; i < N; i++) {
+        buffer[i] = a[i] + b[i];
+    }
+    return Vec<N,T>(buffer);
 }
 
-template <typename T>
-Vec<T> & Vec<T>::operator/= (T k) {
-    x /= k;
-    y /= k;
-    z /= k;
-    return *this;
+template <unsigned int N, typename T>
+Vec<N,T> operator- (const Vec<N,T> &a, const Vec<N,T> &b) {
+    T buffer[N];
+    for (unsigned int i = 0; i < N; i++) {
+        buffer[i] = a[i] - b[i];
+    }
+    return Vec<N,T>(buffer);
 }
 
-template <typename T>
-Vec<T> operator+ (const Vec<T> &a, const Vec<T> &b) {
-    return Vec<T>(a.x+b.x, a.y+b.y, a.z+b.z);
+template <unsigned int N, typename T>
+Vec<N,T> operator* (const Vec<N,T> &a, const Vec<N,T> &b) {
+    T buffer[N];
+    for (unsigned int i = 0; i < N; i++) {
+        buffer[i] = a[i] * b[i];
+    }
+    return Vec<N,T>(buffer);
 }
 
-template <typename T>
-Vec<T> operator- (const Vec<T> &a, const Vec<T> &b) {
-    return Vec<T>(a.x-b.x, a.y-b.y, a.z-b.z);
-}
-
-template <typename T>
-Vec<T> operator* (const Vec<T> &a, const Vec<T> &b) {
-    return Vec<T>(a.x*b.x, a.y*b.y, a.z*b.z);
-}
-
-template <typename T>
-Vec<T> operator/ (const Vec<T> &a, const Vec<T> &b) {
-    return Vec<T>(a.x/b.x, a.y/b.y, a.z/b.z);
-}
-
-template <typename T>
-Vec<T> operator^ (const Vec<T> &a, const Vec<T> &b) {
-    return Vec<T>(
-            a.y*b.z - a.z*b.y,
-            a.z*b.x - a.x*b.z,
-            a.x*b.y - a.y*b.x
-            );
-}
-
-template <typename T>
-T operator| (const Vec<T> &a, const Vec<T> &b) {
-    return a.x*b.x + a.y*b.y + a.z*b.z;
-}
-
-template <typename T>
-Vec<T> operator* (const Vec<T> &a, T k) {
-    return Vec<T>(a.x * k, a.y * k, a.z * k);
-}
-
-template <typename T>
-Vec<T> operator/ (const Vec<T> &a, T k) {
-    return Vec<T>(a.x / k, a.y / k, a.z / k);
-}
-
-template <typename T>
-Vec<T> operator* (T k, const Vec<T> &b) {
-    return Vec<T>(b.x * k, b.y * k, b.z * k);
-}
-
-template <typename T>
-Vec<T> operator/ (T k, const Vec<T> &b) {
-    return Vec<T>(b.x / k, b.y / k, b.z / k);
+template <unsigned int N, typename T>
+Vec<N,T> operator/ (const Vec<N,T> &a, const Vec<N,T> &b) {
+    T buffer[N];
+    for (unsigned int i = 0; i < N; i++) {
+        buffer[i] = a[i] / b[i];
+    }
+    return Vec<N,T>(buffer);
 }
 
 
-template <typename T>
-bool operator!= (const Vec<T> &a, const Vec<T> &b) {
+template <unsigned int N, typename T>
+T operator| (const Vec<N,T> &a, const Vec<N,T> &b) {
+    T scalarProduct(0);
+    for (unsigned int i = 0; i < N; i++) {
+        scalarProduct += a[i] * b[i];
+    }
+    return scalarProduct;
+}
+
+template <unsigned int N, typename T>
+Vec<N,T> operator* (const Vec<N,T> &a, T k) {
+    T buffer[N];
+    for (unsigned int i = 0; i < N; i++) {
+        buffer[i] = a[i] * k;
+    }
+    return Vec<N,T>(buffer);
+}
+
+template <unsigned int N, typename T>
+Vec<N,T> operator/ (const Vec<N,T> &a, T k) {
+    T buffer[N];
+    for (unsigned int i = 0; i < N; i++) {
+        buffer[i] = a[i] / k;
+    }
+    return Vec<N,T>(buffer);
+}
+
+template <unsigned int N, typename T>
+Vec<N,T> operator* (T k, const Vec<N,T> &b) {
+    T buffer[N];
+    for (unsigned int i = 0; i < N; i++) {
+        buffer[i] = k * b[i];
+    }
+    return Vec<N,T>(buffer);
+}
+
+template <unsigned int N, typename T>
+Vec<N,T> operator/ (T k, const Vec<N,T> &b) {
+    T buffer[N];
+    for (unsigned int i = 0; i < N; i++) {
+        buffer[i] = k / b[i];
+    }
+    return Vec<N,T>(buffer);
+}
+
+
+template <unsigned int N, typename T>
+bool operator!= (const Vec<N,T> &a, const Vec<N,T> &b) {
     return !(a == b);
 }
 
-template <typename T>
-bool operator== (const Vec<T> &a, const Vec<T> &b) {
+template <unsigned int N, typename T>
+bool operator== (const Vec<N,T> &a, const Vec<N,T> &b) {
     using utils::areEqual;
-    return areEqual<T>(a.x,b.x) && areEqual<T>(a.y,b.y) && areEqual<T>(a.z,b.z);
+    for (unsigned int i = 0; i < N; i++) {
+        if (!areEqual<T>(a[i],b[i]))
+            return false;
+    }
+    return true;
 }
 
-template <typename T>
-T Vec<T>::normalize () {
+template <unsigned int N, typename T>
+T Vec<N,T>::normalize () {
     T norm = this->norm();
-    x /= norm;
-    y /= norm;
-    z /= norm;
+    for (unsigned int i = 0; i < N; i++) {
+        data[i] /= norm;
+    }
     return norm;
 }
 
-template <typename T>
-int Vec<T>::compare(const Vec<T> &other, Axe axe) const {
-    T v1, v2;
-
-    switch(axe) {
-        case(AXE_X):
-            v1 = x;
-            v2 = other.x;
-            break;
-        case(AXE_Y):
-            v1 = y;
-            v2 = other.y;
-            break;
-        case(AXE_Z):
-            v1 = z;
-            v2 = other.z;
-            break;
-    }
-
-    return (v1 == v2 ? 0 : (v1 > v2 ? 1 : -1));
-}
-
-template <typename T>
-Vec<T> Vec<T>::orthogonalVec () const {
-    return Vec<T>(z,z,-x-y);
-}
-
-template <typename T>
-Vec<T> Vec<T>::unit () const {
-    Vec<T> v(*this);
+template <unsigned int N, typename T>
+Vec<N,T> Vec<N,T>::unit () const {
+    Vec<N,T> v(*this);
     v.normalize();
     return v;
 }
 
-template <typename T>
-T Vec<T>::squaredNorm () const {
-    return x*x + y*y + z*z;
+template <unsigned int N, typename T>
+T Vec<N,T>::squaredNorm () const {
+    T norm2(0);
+    for (unsigned int i = 0; i < N; i++) {
+        norm2 += data[i] * data[i];
+    }
+    return norm2;
 }
 
-template <typename T>
-T Vec<T>::norm () const {
-    return sqrt(x*x + y*y + z*z);
+template <unsigned int N, typename T>
+T Vec<N,T>::norm () const {
+    return sqrt(this->squaredNorm());
 }
 
-template <typename T>
-std::ostream & operator << (std::ostream &os, Vec<T> &v) {
-    os << "(" << v.x << "," << v.y << "," << v.z << ")";
+template <unsigned int N, typename T>
+std::ostream & operator << (std::ostream &os, const Vec<N,T> &v) {
+    os << "(";
+    for (unsigned int i = 0; i < N-1; i++) {
+        os << v[i] << ",";
+    }
+    os << v[N-1] << ")";
+    
     return os;
 }
     
-
 #endif /* end of include guard: VEC_H */

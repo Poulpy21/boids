@@ -48,8 +48,8 @@ class Globals {
         static unsigned int projectionViewUniformBlock;
 
         static float dt;
-        static Vec<double> pos;
-        static Vec<double> offset;
+        static Vec3<double> pos;
+        static Vec3<double> offset;
 
 };
 

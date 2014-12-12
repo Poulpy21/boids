@@ -34,7 +34,7 @@ namespace Matrix {
         M[10]*=gamma;
     }
 
-    void scaleMat4f(float* M, Vec<float> &v) {
+    void scaleMat4f(float* M, Vec3<float> &v) {
         M[0]*=v.x;
         M[5]*=v.y;
         M[10]*=v.z;
@@ -45,7 +45,7 @@ namespace Matrix {
         M[7]+=y;
         M[11]+=z;
     }
-    void translateMat4f(float* M, Vec<float> &v) {
+    void translateMat4f(float* M, Vec3<float> &v) {
         M[3]+=v.x;
         M[7]+=v.y;
         M[11]+=v.z;
@@ -57,7 +57,7 @@ namespace Matrix {
         M[11]=z;
     }
 
-    void setOffsetMat4f(float *M, Vec<float> &v) {
+    void setOffsetMat4f(float *M, Vec3<float> &v) {
         M[3]=v.x;
         M[7]=v.y;
         M[11]=v.z;

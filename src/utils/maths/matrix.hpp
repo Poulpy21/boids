@@ -12,13 +12,13 @@ namespace Matrix {
 	
 		void scaleMat4f(float *M, float alpha);
 		void scaleMat4f(float *M, float alpha, float beta, float gamma);
-		void scaleMat4f(float *M, Vec<float> &v);
+		void scaleMat4f(float *M, Vec3<float> &v);
 		
 		void translateMat4f(float *M, float x, float y, float z);
-		void translateMat4f(float *M, Vec<float> &v);
+		void translateMat4f(float *M, Vec3<float> &v);
 
 		void setOffsetMat4f(float *M, float x, float y, float z);
-		void setOffsetMat4f(float *M, Vec<float> &v);
+		void setOffsetMat4f(float *M, Vec3<float> &v);
 
 		void setRotationMat4f(float *M, qglviewer::Quaternion rot, float scale = 1.0f);
 

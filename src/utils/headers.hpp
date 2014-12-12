@@ -84,6 +84,8 @@
 #endif
 
 #include "vec.hpp"
+#include "vec2.hpp"
+#include "vec3.hpp"
 #include "matrix.hpp"
 #include "types.hpp"
 

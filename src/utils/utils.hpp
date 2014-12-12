@@ -9,9 +9,32 @@
 #include <vector>
 #include <algorithm>
 #include <limits>
+#include <type_traits>
 
 namespace utils {
+    
+    // power of two
+    template <typename T>
+    constexpr bool is_power_of_two(T x)
+    {
+        static_assert(std::is_integral<T>::value,"Only integrals types should call a power of two check !");
+        return x && ((x & (x-1)) == 0);
+    }
 
+    template <typename T>
+    constexpr T get_power_of_two(T x)
+    {
+        static_assert(utils::is_power_of_two<T>(x), "x is not a power of two !");
+        T xx(x);
+        T p(0);
+        while(xx > 1) {
+            xx >> 1;
+            p++;
+        }
+        return p;
+    }
+
+    // map inversion
 	template<typename A, typename B>
 		std::pair<B,A> flip_pair(const std::pair<A,B> &p)
 		{
@@ -39,11 +62,17 @@ namespace utils {
 
 			return dst;
 		}
+   
     
-    template <typename F>
-    bool areEqual(const F a, const F b) {
-        static_assert(std::is_floating_point<F>::value, "F must be floating point !");
-        return (std::abs(a - b) <= 10*std::numeric_limits<F>::epsilon() * std::max(std::abs(a), std::abs(b)));
+    //integral and floating point equality
+    template <typename I, typename std::enable_if<std::is_integral<I>::value>::type* = nullptr>
+    inline bool areEqual(const I a, const I b) {
+        return a == b;
+    }
+
+    template <typename F, typename std::enable_if<std::is_floating_point<F>::value>::type* = nullptr>
+    inline bool areEqual(const F a, const F b) {
+        return (std::abs(a - b) <= std::numeric_limits<F>::epsilon() * std::max(std::abs(a), std::abs(b)));
     }
 
 	const std::string toStringMemory(unsigned long bytes);

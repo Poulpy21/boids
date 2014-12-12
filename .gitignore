@@ -13,8 +13,9 @@ program.log
 *.xyz
 *.out
 *.old
+*.hpp.out
+*~
 :
 :w
 <
-*~
 onlineHosts
