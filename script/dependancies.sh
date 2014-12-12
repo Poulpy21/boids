@@ -1,6 +1,19 @@
 #!/bin/bash
 
-set -e
+PREFIX="${HOME}/local"
+TMP_DIR="/tmp/keckj"
+
+DOWNLOAD_DIR="${TMP_DIR}/download"
+LOG="${TMP_DIR}/build.log"
+SUCCESS="${TMP_DIR}/success.log"
+
+THREADS=8
+
+##########################################################################
+ARGS=""
+ARGS_WITH_GMP="$ARGS --with-gmp=${PREFIX}"
+ARGS_WITH_GMP_PREFIX="$ARGS --with-gmp-prefix=${PREFIX}"
+ARGS_WITH_LIBGMP_PREFIX="$ARGS --with-libgmp-prefix=${PREFIX}"
 
 if [ $# -ne 1 ]; then
     RESET=0
@@ -8,20 +21,7 @@ else
     RESET="$1"
 fi
 
-PREFIX="${HOME}/local"
-TMP_DIR="/tmp/keckj"
-
-DOWNLOAD_DIR="${TMP_DIR}/download"
-LOG="${TMP_DIR}/log_build.log"
-SUCCESS="${TMP_DIR}/success.log"
-
-ARGS=""
-ARGS_WITH_GMP="$ARGS --with-gmp=${PREFIX}"
-ARGS_WITH_GMP_PREFIX="$ARGS --with-gmp-prefix=${PREFIX}"
-ARGS_WITH_LIBGMP_PREFIX="$ARGS --with-libgmp-prefix=${PREFIX}"
-
-THREADS=8
-
+set -e
 source "$(pwd)/utils.sh"
 trap failed ERR EXIT HUP INT QUIT
 

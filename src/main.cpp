@@ -1,62 +1,98 @@
+#include <mpi.h>
 
 // Agent (particle model)
 #include <cstdio>
+#include <iostream>
+#include <cmath>
 
-#include "headers.hpp"
+#include "utils/headers.hpp"
 #include "agent.hpp"
 #include "types.hpp"
 #include "parser.hpp"
+#include "options.hpp"
 #include "workspace.hpp"
+#include "messenger.hpp"
 
 // Main class for running the parallel flocking sim
 int main(int argc, char **argv) {
 
-    //using log4cpp::log_console;
-    //log4cpp::initLogs();
+    using log4cpp::log_console;
+    log4cpp::initLogs();
 
-    //static const char* MPI_levels[4] = {"MPI_THREAD_SINGLE", "MPI_THREAD_FUNNELED", "MPI_THREAD_SERIALIZED", "MPI_THREAD_MULTIPLE"}; 
+    MPI_Init(&argc,&argv); 
     
-    //int claimed = MPI_THREAD_MULTIPLE;
-    //int provided = -1;
-    //MPI_Init_thread(&argc, &argv, claimed, &provided);
+    int rank, size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    MPI_Comm comm;
+    int dimensions[3] = {0,0,0};
+    MPI_Dims_create(size, 3, dimensions);
+    if (rank == 0) {
+        log_console->infoStream() << "[MPI] Cartesian grid dimensions : " << dimensions[0] << "/" << dimensions[1] << "/" << dimensions[2]; 
+    }
+    int wrap[3] = {1,1,1};
+    int reorder = 1;
+    MPI_Cart_create(MPI_COMM_WORLD, 3, dimensions, wrap, reorder, &comm);
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
+
+    // Get the name of this processor (usually the hostname).  We call                                                      
+    // memset to ensure the string is null-terminated.  Not all MPI                                                        
+    // implementations null-terminate the processor name since the MPI                                                     
+    // standard specifies that the name is *not* supposed to be returned                                                   
+    // null-terminated.                                                                                                    
+    char name[MPI_MAX_PROCESSOR_NAME];
+    int len;
+    memset(name,0,MPI_MAX_PROCESSOR_NAME);
+    MPI_Get_processor_name(name, &len);
+    memset(name+len,0,MPI_MAX_PROCESSOR_NAME-len);
+
+    int coords[3];
+    MPI_Cart_coords(comm, rank, 3, coords);
+
+    std::cout << "Number of tasks=" << size << " My rank=" << rank << " My name="<< name 
+              << " My coords=" << coords[0] << "/" << coords[1] << "/" << coords[2] << "." << std::endl;
     
-    //int myid, numprocs;
+    Options opt;
+    if (rank == 0) {
 
-    //MPI_Init(&argc,&argv);
-    //MPI_Comm_size(MPI_COMM_WORLD,&numprocs);
-    //MPI_Comm_rank(MPI_COMM_WORLD,&myid);
+        // Create parser
+        ArgumentParser parser;
 
-    /* print out my rank and this run's PE size*/
-    //printf("Hello from %d\n",myid);
-    //printf("Numprocs is %d\n",numprocs);
+        // Add options to parser
+        parser.addOption("agents", 640);
+        parser.addOption("steps", 500);
+        parser.addOption("wc", 12);
+        parser.addOption("wa", 15);
+        parser.addOption("ws", 35);
 
-    //MPI_Finalize();
+        parser.addOption("rc", 0.11);
+        parser.addOption("ra", 0.15);
+        parser.addOption("rs", 0.01);
 
-    //return EXIT_SUCCESS;
+        // Parse command line arguments
+        parser.setOptions(argc, argv);
 
-    // Create parser
-    ArgumentParser parser;
+        opt = Options(parser);
+    }
+   
+    Messenger mess;
+    mess.broadcastOptions(comm, &opt, 0);
+    std::cout << "Options for rank " << rank << " : " << opt << std::endl; 
 
-    // Add options to parser
-    parser.addOption("agents", 640);
-    parser.addOption("steps", 500);
-    parser.addOption("wc", 12);
-    parser.addOption("wa", 15);
-    parser.addOption("ws", 35);
+    //Workspace workspace(opt, ....)
 
-    parser.addOption("rc", 0.11);
-    parser.addOption("ra", 0.15);
-    parser.addOption("rs", 0.01);
-
-    // Parse command line arguments
-    parser.setOptions(argc, argv);
-
+    /*
     // Create workspace
     Workspace workspace(parser);
 
     // Launch simulation
     int nSteps = parser("steps").asInt();
     workspace.simulate(nSteps);
+    */
 
-    return 0;
+    MPI_Finalize();
+
+    return EXIT_SUCCESS;
 }

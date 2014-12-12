@@ -37,6 +37,13 @@ find_package(OpenMP)
 find_package(CUDA 6.5)
 if(${CUDA_FOUND})
     include(CUDA_compute_capability)
+else()
+    set(CUDA_TOOLKIT_ROOT_DIR "")
+    set(CUDA_NVCC_EXECUTABLE "")
+    set(CUDA_INCLUDE_DIRS "")
+    set(CUDA_CUDART_LIBRARY "")
+    set(CUDA_LIBRARIES "")
+    set(CUDA_LIBRARY_DIRS "")
 endif()
 
 #Compiler options
@@ -172,3 +179,8 @@ target_link_libraries(
     ${GLUT_glut_LIBRARY} #Glut
 )
 
+add_custom_target(run
+    COMMAND mpirun -np 1 ${EXECUTABLE_OUTPUT_PATH}/main -agents 20 && ${EXECUTABLE_OUTPUT_PATH}/script/visu.sh 20
+    DEPENDS main
+    WORKING_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}
+)

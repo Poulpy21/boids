@@ -14,40 +14,40 @@ class Viewer;
  */
 class Renderable
 {
-	public:
-		/// Virtual destructor (mandatory!)
-		virtual ~Renderable() {};
-		
-		/** 
-		 * Initializes a Renderable objet before it is draw.
-		 * Default behavior: nothing is done.
-		 */
-		virtual void init(Viewer&) {};
-	
-		/** 
-		 * Draw a Renderable object.
-		 * This pure virtual method must be overriden if child classes.
-		 */
-		virtual void draw() = 0;
+    public:
+        /// Virtual destructor (mandatory!)
+        virtual ~Renderable() {};
+
+        /** 
+         * Initializes a Renderable objet before it is draw.
+         * Default behavior: nothing is done.
+         */
+        virtual void init(Viewer&) {};
+
+        /** 
+         * Draw a Renderable object.
+         * This pure virtual method must be overriden if child classes.
+         */
+        virtual void draw() = 0;
 
 
-		/** 
-		 * Animate an object. This method is invoked before each call of draw().
-		 * Default behavior: nothing is done.
-		 */
-		virtual void animate() {};
+        /** 
+         * Animate an object. This method is invoked before each call of draw().
+         * Default behavior: nothing is done.
+         */
+        virtual void animate() {};
 
-                /** 
-		 * Objects can respond to key events.
-		 * Default behavior: nothing is done.
-		 */
-		virtual void keyPressEvent(QKeyEvent*, Viewer&) {};
+        /** 
+         * Objects can respond to key events.
+         * Default behavior: nothing is done.
+         */
+        virtual void keyPressEvent(QKeyEvent*, Viewer&) {};
 
-                /** 
-		 * Objects can respond to mouse events.
-		 * Default behavior: nothing is done.
-		 */
-		virtual void mouseMoveEvent(QMouseEvent*, Viewer&) {};
+        /** 
+         * Objects can respond to mouse events.
+         * Default behavior: nothing is done.
+         */
+        virtual void mouseMoveEvent(QMouseEvent*, Viewer&) {};
 };
 
 #endif
