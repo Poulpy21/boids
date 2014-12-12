@@ -1,29 +1,56 @@
-#ifndef COMMUNICATOR_HPP
-#define COMMUNICATOR_HPP
+#ifndef MESSENGER_HPP
+#define MESSENGER_HPP
 
 #include <mpi.h>
 #include <vector>
+#include "options.hpp"
 #include "boid/agent.hpp"
 #include "utils/types.hpp"
 
 
-class Communicator {
+class Messenger {
 
     public:
 
         /*
          * comm : Current communicator
-         * agents : Container to which to append received agents
+         * opt : Options to broadcast
+         * root : process that is the source of the broacast
+         */
+        inline void broadcastOptions(MPI_Comm comm, Options *opt, int root) {
+            MPI_Bcast(opt, sizeof(Options)/sizeof(double), MPI_DOUBLE, 0, comm);
+        }
+
+
+        /*
+         * comm : Current communicator
+         * agents : Container to which to append received boids
          * agentsForRanks : Maps Containers of boids to send to ranks
          * sourceRanks : ranks from which to receive boids (typically the keys of agentsForRanks)
          */
         inline void exchangeAgents(MPI_Comm comm, Container &agents, 
                                    std::map<int, Container> &agentsForRanks, 
-                                   std::vector<int> sourceRanks) 
+                                   std::vector<int> &sourceRanks) 
         {
             sendAgents(comm, agentsForRanks);
             receiveAgents(comm, agents, sourceRanks);
-            waitForSendAgentsCompletion();
+            waitForSendCompletion();
+            MPI_Barrier(comm);
+        }
+        
+        /*
+         * comm : Current communicator
+         * receivedMeanBoids : Container that will contain received boids
+         * meanBoidToSend : Mean boid to send
+         * sourceRanks : ranks with which to exchange mean boids
+         */
+        inline void exchangeMeanBoids(MPI_Comm comm, Container &receivedMeanBoids, 
+                                 Agent &meanBoidToSend, 
+                                 std::vector<int> &sourceRanks) 
+        {
+            sendMeanBoid(comm, meanBoidToSend, sourceRanks);
+            receiveMeanBoids(comm, receivedMeanBoids, sourceRanks);
+            waitForSendCompletion();
             MPI_Barrier(comm);
         }
 
@@ -36,15 +63,25 @@ class Communicator {
             for (auto it : agentsForRanks) {
                 int targetRank = it.first;
                 Container agents = it.second;
-                int tag = 0; //TODO
+                int tag = 0;
 
                 MPI_Isend(&agents[0], agents.size()*realsPerAgent, MPI_DOUBLE, targetRank, tag, comm, &req);
                 pendingRequests.push_back(req);
             }
         }
+           
+        inline void sendMeanBoid(MPI_Comm comm, Agent &meanBoidToSend, std::vector<int> &sourceRanks) {
+            MPI_Request req;
+            int tag = 0;
+                
+            for (int rank : sourceRanks) {
+                MPI_Isend(&meanBoidToSend, realsPerAgent, MPI_DOUBLE, rank, tag, comm, &req);
+                pendingRequests.push_back(req);
+            }
+        }
 
         // Note: this method appends the received agents to the container
-        inline void receiveAgents(MPI_Comm comm, Container &agents, std::vector<int> sourceRanks) {
+        inline void receiveAgents(MPI_Comm comm, Container &agents, std::vector<int> &sourceRanks) {
             MPI_Status stat;
             int nAgents = 0;
             int sizes[sourceRanks.size()];
@@ -70,12 +107,22 @@ class Communicator {
                 i++;
             }
         }
+            
+        inline void receiveMeanBoids(MPI_Comm comm, Container &receivedMeanBoids, std::vector<int> &sourceRanks) {
+            // Clear and reserve space in the container
+            receivedMeanBoids.clear();
+            receivedMeanBoids.reserve(sourceRanks.size());
+            
+            int pos = 0;
+            for (int sourceRank : sourceRanks) {
+                MPI_Recv(&receivedMeanBoids[pos], realsPerAgent, MPI_DOUBLE, sourceRank, MPI_ANY_TAG, comm, MPI_STATUS_IGNORE);
+                pos++;
+            }
+        }
 
-        inline void waitForSendAgentsCompletion() {
-            MPI_Status stat;
-
+        inline void waitForSendCompletion() {
             for (MPI_Request req : pendingRequests) {    
-                MPI_Wait(&req, &stat);
+                MPI_Wait(&req, MPI_STATUS_IGNORE);
             }
             pendingRequests.clear();
         }

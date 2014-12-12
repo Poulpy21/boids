@@ -9,44 +9,9 @@
 #include "agent.hpp"
 #include "types.hpp"
 #include "parser.hpp"
+#include "options.hpp"
 #include "workspace.hpp"
-#include "communicator.hpp"
-
-struct Options {
-    unsigned long int nAgents;
-    unsigned long int nSteps;
-    double wCohesion;
-    double wAlignment;
-    double wSeparation;
-    double rCohesion;
-    double rAlignment;
-    double rSeparation;
-
-    Options() {};
-
-    Options(ArgumentParser &parser) {
-        nAgents     = static_cast<unsigned long int>(parser("agents").asInt());
-        nSteps      = static_cast<unsigned long int>(parser("steps").asInt());
-        wCohesion   = parser("wc").asDouble();
-        wAlignment  = parser("wa").asDouble();
-        wSeparation = parser("ws").asDouble();
-        rCohesion   = parser("rc").asDouble();
-        rAlignment  = parser("ra").asDouble();
-        rSeparation = parser("rs").asDouble();
-    }
-
-    friend std::ostream& operator<<(std::ostream &stream, Options &opt) {
-        return stream << opt.nAgents << " "
-                      << opt.nSteps << " "
-                      << opt.wCohesion << " "
-                      << opt.wAlignment << " "
-                      << opt.wSeparation << " "
-                      << opt.rCohesion << " "
-                      << opt.rAlignment << " "
-                      << opt.rSeparation;
-    }
-};
-
+#include "messenger.hpp"
 
 // Main class for running the parallel flocking sim
 int main(int argc, char **argv) {
@@ -111,9 +76,10 @@ int main(int argc, char **argv) {
 
         opt = Options(parser);
     }
-    
-    MPI_Bcast(&opt, sizeof(Options)/sizeof(double), MPI_DOUBLE, 0, comm);
-    //std::cout << "Options for rank " << rank << " : " << opt << std::endl; 
+   
+    Messenger mess;
+    mess.broadcastOptions(comm, &opt, 0);
+    std::cout << "Options for rank " << rank << " : " << opt << std::endl; 
 
     //Workspace workspace(opt, ....)
 
