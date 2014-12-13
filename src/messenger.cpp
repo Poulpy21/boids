@@ -15,12 +15,12 @@ void Messenger::sendAgents(MPI_Comm comm, std::map<int, Container> &agentsForRan
     }
 }
 
-void Messenger::sendMeanBoid(MPI_Comm comm, Agent &meanBoidToSend, std::vector<int> &sourceRanks) {
+void Messenger::sendMeanAgent(MPI_Comm comm, Agent &meanAgentToSend, std::vector<int> &sourceRanks) {
     MPI_Request req;
     int tag = 0;
 
     for (int rank : sourceRanks) {
-        MPI_Isend(&meanBoidToSend, realsPerAgent, MPI_DOUBLE, rank, tag, comm, &req);
+        MPI_Isend(&meanAgentToSend, realsPerAgent, MPI_DOUBLE, rank, tag, comm, &req);
         pendingRequests.push_back(req);
     }
 }
@@ -39,27 +39,29 @@ void Messenger::receiveAgents(MPI_Comm comm, Container &agents, std::vector<int>
         i++;
     }
 
+    // Save previous number of Agents
+    int pos = agents.size();
+
     // Make room for copying
     agents.resize(agents.size() + nAgents);
 
     // Concatenate the Containers
-    int pos = agents.size();
     i = 0;
     for (int sourceRank : sourceRanks) {
-        MPI_Recv(&agents[pos], sizes[i], MPI_DOUBLE, sourceRank, MPI_ANY_TAG, comm, &stat);
+        MPI_Recv(&agents[pos], sizes[i], MPI_DOUBLE, sourceRank, MPI_ANY_TAG, comm, MPI_STATUS_IGNORE);
         pos += sizes[i] / realsPerAgent;
         i++;
     }
 }
 
-void Messenger::receiveMeanBoids(MPI_Comm comm, Container &receivedMeanBoids, std::vector<int> &sourceRanks) {
+void Messenger::receiveMeanAgents(MPI_Comm comm, Container &receivedMeanAgents, std::vector<int> &sourceRanks) {
     // Clear and reserve space in the container
-    receivedMeanBoids.clear();
-    receivedMeanBoids.resize(sourceRanks.size());
+    receivedMeanAgents.clear();
+    receivedMeanAgents.resize(sourceRanks.size());
 
     int pos = 0;
     for (int sourceRank : sourceRanks) {
-        MPI_Recv(&receivedMeanBoids[pos], realsPerAgent, MPI_DOUBLE, sourceRank, MPI_ANY_TAG, comm, MPI_STATUS_IGNORE);
+        MPI_Recv(&receivedMeanAgents[pos], realsPerAgent, MPI_DOUBLE, sourceRank, MPI_ANY_TAG, comm, MPI_STATUS_IGNORE);
         pos++;
     }
 }

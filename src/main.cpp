@@ -89,21 +89,32 @@ int main(int argc, char **argv) {
     std::cout << "Options for rank " << rank << " : " << opt << std::endl; 
 
     //test
-    Container receivedBoids;
-    Agent boid(Vector(rank,0,0), Vector(), Vector());
+    Container localBoids, receivedBoids;
+    Agent meanBoid(Vector(rank+1,0,0), Vector(), Vector());
+    Agent boid(Vector(0,rank+1,0), Vector(), Vector());
+    Container tmpContainer = {boid};
     std::vector<int> otherRanks;
+    std::map<int, Container> boidsToSend;
     if (rank == 0) {
         otherRanks.push_back(1);
-        mess.exchangeMeanBoids(comm, receivedBoids, boid, otherRanks);
+        boidsToSend.emplace(1, tmpContainer);
     }
-    if (rank == 1) {
+    if (rank == 1) { 
         otherRanks.push_back(0);
-        mess.exchangeMeanBoids(comm, receivedBoids, boid, otherRanks);
+        boidsToSend.emplace(0, tmpContainer);
     }
-    std::cout << "RANK: " << rank  << " BOIDS: " << receivedBoids.size(); 
-    for (Agent boid : receivedBoids)
-        std::cout << " POS: " << boid.position;
-    std::cout << std::endl;
+    if (rank < 2) {
+        mess.exchangeMeanAgents(comm, receivedBoids, meanBoid, otherRanks);
+        std::cout << "RANK: " << rank  << " MEANBOIDS: " << receivedBoids.size() << " pos="; 
+        for (Agent boid : receivedBoids)
+            std::cout << boid.position << "/";
+        mess.exchangeAgents(comm, localBoids, boidsToSend, otherRanks);
+        std::cout << "\tRECEIVEDBOIDS :" << localBoids.size() << " pos=";
+        for (Agent boid : localBoids) {
+            std::cout << boid.position << "/";
+        }
+        std::cout << std::endl;
+    }
 
     //Workspace workspace(opt, ....)
 

@@ -39,16 +39,16 @@ class Messenger {
 
         /*
          * comm : Current communicator
-         * receivedMeanBoids : Container that will contain received boids
-         * meanBoidToSend : Mean boid to send
+         * receivedMeanAgents : Container that will contain received boids
+         * meanAgentToSend : Mean boid to send
          * sourceRanks : ranks with which to exchange mean boids
          */
-        inline void exchangeMeanBoids(MPI_Comm comm, Container &receivedMeanBoids, 
-                Agent &meanBoidToSend, 
+        inline void exchangeMeanAgents(MPI_Comm comm, Container &receivedMeanAgents, 
+                Agent &meanAgentToSend, 
                 std::vector<int> &sourceRanks) 
         {
-            sendMeanBoid(comm, meanBoidToSend, sourceRanks);
-            receiveMeanBoids(comm, receivedMeanBoids, sourceRanks);
+            sendMeanAgent(comm, meanAgentToSend, sourceRanks);
+            receiveMeanAgents(comm, receivedMeanAgents, sourceRanks);
             waitForSendCompletion();
             MPI_Barrier(comm);
         }
@@ -56,10 +56,10 @@ class Messenger {
     private:
 
         void sendAgents(MPI_Comm comm, std::map<int, Container> &agentsForRanks);
-        void sendMeanBoid(MPI_Comm comm, Agent &meanBoidToSend, std::vector<int> &sourceRanks); 
+        void sendMeanAgent(MPI_Comm comm, Agent &meanAgentToSend, std::vector<int> &sourceRanks); 
         // Note: this method appends the received agents to the container
         void receiveAgents(MPI_Comm comm, Container &agents, std::vector<int> &sourceRanks); 
-        void receiveMeanBoids(MPI_Comm comm, Container &receivedMeanBoids, std::vector<int> &sourceRanks); 
+        void receiveMeanAgents(MPI_Comm comm, Container &receivedMeanAgents, std::vector<int> &sourceRanks); 
         void waitForSendCompletion();
 
         std::vector<MPI_Request> pendingRequests;
