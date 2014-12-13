@@ -14,6 +14,9 @@
 #include "messenger.hpp"
 
 #include "BSPTree.hpp"
+#include "container.hpp"
+#include "vecBool.hpp"
+#include "boundingBox.hpp"
 
 // Main class for running the parallel flocking sim
 int main(int argc, char **argv) {

@@ -10,8 +10,8 @@
 /*
 * ND vector structure of arithmetic type T
 * T should be an arithmetic type, T& = T and T(int) should be defined.
-* Operators == and != are safe for integer types and floating point types as well (see utils.hpp for the definition of areEqual<T>).
-* Vec2 and Vec3 extends this class for more convenience (see vec2.hpp and vec3.hpp)
+* Operators %, %=, == and != are safe for integer types and floating point types as well (see utils.hpp for the definition of areEqual<T> and modulo<T>).
+* VecBool, Vec2 and Vec3 extends this class for more convenience (see vecBool.hpp, vec2.hpp and vec3.hpp)
 * The behaviour of the output stream operator << is specialized in the case N=1 to avoid unnecessary brackets (scalar case).
 */
 
@@ -21,25 +21,30 @@ struct Vec {
     static_assert(std::is_assignable<T&, T>(),     "T should be assignable !");
     static_assert(std::is_constructible<T, int>(), "T should be constructible from int !");
 
-    Vec();
-    explicit Vec(const Vec<N,T> &v);
-    explicit Vec(const T data[]);
+    Vec<N,T>();
+    Vec(const Vec<N,T> &v);
+    explicit Vec(T data[]);
     virtual ~Vec();
+
+    template <typename S>
+    explicit Vec(const Vec<N,S> &v);
 
     Vec<N,T>& operator= (const Vec<N,T> &v);
 
     T& operator[](unsigned int k);
     T  operator[](unsigned int k) const;
-
+    
     Vec<N,T> & operator+= (const Vec<N,T> &a);
     Vec<N,T> & operator-= (const Vec<N,T> &a);
     Vec<N,T> & operator*= (const Vec<N,T> &a);
+    Vec<N,T> & operator%= (const Vec<N,T> &a);
     Vec<N,T> & operator/= (const Vec<N,T> &a);
     Vec<N,T> & operator^= (const Vec<N,T> &a);
 
     Vec<N,T> & operator+= (T k);
     Vec<N,T> & operator-= (T k);
     Vec<N,T> & operator*= (T k);
+    Vec<N,T> & operator%= (T k);
     Vec<N,T> & operator/= (T k);
 
     T normalize();
@@ -52,7 +57,6 @@ struct Vec {
 protected: 
     T data[N];
 };
-
 
 template <unsigned int N, typename T>
 Vec<N,T>::Vec() {
@@ -67,12 +71,21 @@ Vec<N,T>::Vec(const Vec<N,T> &v) {
 }
 
 template <unsigned int N, typename T>
-Vec<N,T>::Vec(const T data[]) {
+Vec<N,T>::Vec(T data[]) {
     memcpy(this->data, data, N*sizeof(T));
 }
 
 template <unsigned int N, typename T>
 Vec<N,T>::~Vec() {}
+    
+template <unsigned int N, typename T>
+template <typename S>
+Vec<N,T>::Vec(const Vec<N,S> &v) {
+    for (unsigned int i = 0; i < N; i++) {
+        this->data[i] = static_cast<T>(v[i]);
+    }
+}
+
 
 template <unsigned int N, typename T>
 Vec<N,T>& Vec<N,T>::operator= (const Vec<N,T> &v) {
@@ -115,6 +128,14 @@ Vec<N,T> & Vec<N,T>::operator*= (const Vec<N,T> &a) {
 }
 
 template <unsigned int N, typename T>
+Vec<N,T> & Vec<N,T>::operator%= (const Vec<N,T> &a) {
+    for (unsigned int i = 0; i < N; i++) {
+        this->data[i] = utils::modulo(this->data[i], a.data[i]);
+    }
+    return *this;
+}
+
+template <unsigned int N, typename T>
 Vec<N,T> & Vec<N,T>::operator/= (const Vec<N,T> &a) {
     for (unsigned int i = 0; i < N; i++) {
         this->data[i] /= a.data[i];
@@ -142,6 +163,14 @@ template <unsigned int N, typename T>
 Vec<N,T> & Vec<N,T>::operator*= (T k) {
     for (unsigned int i = 0; i < N; i++) {
         this->data[i] *= k; 
+    }
+    return *this;
+}
+
+template <unsigned int N, typename T>
+Vec<N,T> & Vec<N,T>::operator%= (T k) {
+    for (unsigned int i = 0; i < N; i++) {
+        this->data[i] = utils::modulo(this->data[i] , k); 
     }
     return *this;
 }
@@ -182,6 +211,15 @@ Vec<N,T> operator* (const Vec<N,T> &a, const Vec<N,T> &b) {
 }
 
 template <unsigned int N, typename T>
+Vec<N,T> operator% (const Vec<N,T> &a, const Vec<N,T> &b) {
+    T buffer[N];
+    for (unsigned int i = 0; i < N; i++) {
+        buffer[i] = utils::modulo(a[i], b[i]);
+    }
+    return Vec<N,T>(buffer);
+}
+
+template <unsigned int N, typename T>
 Vec<N,T> operator/ (const Vec<N,T> &a, const Vec<N,T> &b) {
     T buffer[N];
     for (unsigned int i = 0; i < N; i++) {
@@ -210,6 +248,51 @@ Vec<N,T> operator* (const Vec<N,T> &a, T k) {
 }
 
 template <unsigned int N, typename T>
+Vec<N,T> operator% (const Vec<N,T> &a, T k) {
+    T buffer[N];
+    for (unsigned int i = 0; i < N; i++) {
+        buffer[i] = utils::modulo(a[i], k);
+    }
+    return Vec<N,T>(buffer);
+}
+
+template <unsigned int N, typename T>
+Vec<N,T> operator+ (const Vec<N,T> &a, T k) {
+    T buffer[N];
+    for (unsigned int i = 0; i < N; i++) {
+        buffer[i] = a[i] + k;
+    }
+    return Vec<N,T>(buffer);
+}
+
+template <unsigned int N, typename T>
+Vec<N,T> operator+ (T k, const Vec<N,T> &b) {
+    T buffer[N];
+    for (unsigned int i = 0; i < N; i++) {
+        buffer[i] = k + b[i];
+    }
+    return Vec<N,T>(buffer);
+}
+
+template <unsigned int N, typename T>
+Vec<N,T> operator- (const Vec<N,T> &a, T k) {
+    T buffer[N];
+    for (unsigned int i = 0; i < N; i++) {
+        buffer[i] = a[i] - k;
+    }
+    return Vec<N,T>(buffer);
+}
+
+template <unsigned int N, typename T>
+Vec<N,T> operator- (T k, const Vec<N,T> &b) {
+    T buffer[N];
+    for (unsigned int i = 0; i < N; i++) {
+        buffer[i] = k - b[i];
+    }
+    return Vec<N,T>(buffer);
+}
+
+template <unsigned int N, typename T>
 Vec<N,T> operator/ (const Vec<N,T> &a, T k) {
     T buffer[N];
     for (unsigned int i = 0; i < N; i++) {
@@ -223,6 +306,15 @@ Vec<N,T> operator* (T k, const Vec<N,T> &b) {
     T buffer[N];
     for (unsigned int i = 0; i < N; i++) {
         buffer[i] = k * b[i];
+    }
+    return Vec<N,T>(buffer);
+}
+
+template <unsigned int N, typename T>
+Vec<N,T> operator% (T k, const Vec<N,T> &b) {
+    T buffer[N];
+    for (unsigned int i = 0; i < N; i++) {
+        buffer[i] = utils::modulo(k, b[i]);
     }
     return Vec<N,T>(buffer);
 }
@@ -250,6 +342,62 @@ bool operator== (const Vec<N,T> &a, const Vec<N,T> &b) {
             return false;
     }
     return true;
+}
+
+template <unsigned int N, typename T>
+bool operator<= (const Vec<N,T> &a, const Vec<N,T> &b) {
+    using utils::areEqual;
+    for (unsigned int i = 0; i < N; i++) {
+        if(areEqual<T>(a[i], b[i]))
+            continue;
+        else if (a[i] < b[i])
+            return true;
+        else
+            return false;
+    }
+    return true;
+}
+
+template <unsigned int N, typename T>
+bool operator>= (const Vec<N,T> &a, const Vec<N,T> &b) {
+    using utils::areEqual;
+    for (unsigned int i = 0; i < N; i++) {
+        if(areEqual<T>(a[i], b[i]))
+            continue;
+        else if (a[i] > b[i])
+            return true;
+        else
+            return false;
+    }
+    return true;
+}
+
+template <unsigned int N, typename T>
+bool operator< (const Vec<N,T> &a, const Vec<N,T> &b) {
+    using utils::areEqual;
+    for (unsigned int i = 0; i < N; i++) {
+        if(areEqual<T>(a[i], b[i]))
+            continue;
+        else if (a[i] < b[i])
+            return true;
+        else
+            return false;
+    }
+    return false;
+}
+
+template <unsigned int N, typename T>
+bool operator> (const Vec<N,T> &a, const Vec<N,T> &b) {
+    using utils::areEqual;
+    for (unsigned int i = 0; i < N; i++) {
+        if(areEqual<T>(a[i], b[i]))
+            continue;
+        else if (a[i] > b[i])
+            return true;
+        else
+            return false;
+    }
+    return false;
 }
 
 template <unsigned int N, typename T>

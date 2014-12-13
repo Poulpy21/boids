@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <limits>
 #include <type_traits>
+#include <cmath>
 
 namespace utils {
     
@@ -64,15 +65,25 @@ namespace utils {
 		}
    
     
-    //integral and floating point equality
+    //integral and floating point equality (SFINAE)
     template <typename I, typename std::enable_if<std::is_integral<I>::value>::type* = nullptr>
-    inline bool areEqual(const I a, const I b) {
+    inline bool areEqual(I a, I b) {
         return a == b;
     }
 
     template <typename F, typename std::enable_if<std::is_floating_point<F>::value>::type* = nullptr>
-    inline bool areEqual(const F a, const F b) {
+    inline bool areEqual(F a, F b) {
         return (std::abs(a - b) <= std::numeric_limits<F>::epsilon() * std::max(std::abs(a), std::abs(b)));
+    }
+    
+    template <typename I, typename std::enable_if<std::is_integral<I>::value>::type* = nullptr>
+    inline I modulo(I a, I b) {
+        return a % b;
+    }
+
+    template <typename F, typename std::enable_if<std::is_floating_point<F>::value>::type* = nullptr>
+    inline F modulo(const F a, const F b) {
+        return F(fmod(a, b));
     }
 
 	const std::string toStringMemory(unsigned long bytes);

@@ -173,7 +173,7 @@ namespace utils {
 				vi->visual, 
 				CWBorderPixel|CWColormap|CWEventMask, &swa );
 		if (!(*win)) {
-			log_console->infoStream() <<  "Failed to create (*win)dow !";
+			log_console->infoStream() <<  "Failed to create window !";
 			exit(EXIT_FAILURE);
 		}
 

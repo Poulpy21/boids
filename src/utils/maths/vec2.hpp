@@ -15,7 +15,7 @@ struct Vec2 final : public Vec<2u,T> {
     T& y = this->data[1];
 
     Vec2();
-    explicit Vec2(T x, T y);
+    Vec2(T x, T y);
     explicit Vec2(const Vec2<T> &v);
     explicit Vec2(const T data[]);
     ~Vec2();
