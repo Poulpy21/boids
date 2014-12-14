@@ -13,8 +13,10 @@
 #include "workspace.hpp"
 #include "messenger.hpp"
 
-#include "BSPTree.hpp"
-#include "container.hpp"
+#include "rootNode.hpp"
+#include "treeNode.hpp"
+#include "leafNode.hpp"
+#include "abtractContainer.hpp"
 #include "vecBool.hpp"
 #include "boundingBox.hpp"
 

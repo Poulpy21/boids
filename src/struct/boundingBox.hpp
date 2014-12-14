@@ -20,11 +20,11 @@ struct BoundingBox {
     BoundingBox();
     BoundingBox(const BoundingBox<N,T> &other);
     explicit BoundingBox(const Vec<N,T> &min, const Vec<N,T> &max);
-    BoundingBox<N,T>& operator= (const BoundingBox<N,T> &v);
+    template <typename S> 
+    explicit BoundingBox(const BoundingBox<N,S> &v);
     virtual ~BoundingBox();
-
-    template <typename S>
-        explicit BoundingBox(const BoundingBox<N,S> &v);
+    
+    BoundingBox<N,T>& operator= (const BoundingBox<N,T> &v);
 
     Vec<N,T> center() const;
     Vec<N,T> corner(unsigned long id) const;
