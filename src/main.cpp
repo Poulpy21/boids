@@ -72,7 +72,9 @@ int main(int argc, char **argv) {
 
     std::cout << "Number of tasks=" << size << " My rank=" << rank << " My name="<< name 
               << " My coords=" << coords[0] << "/" << coords[1] << "/" << coords[2] << "." << std::endl;
-    
+   
+    MPI_Barrier(comm);
+
     Options opt;
     if (rank == 0) {
 
@@ -99,6 +101,34 @@ int main(int argc, char **argv) {
     Messenger mess;
     mess.broadcastOptions(comm, &opt, 0);
     std::cout << "Options for rank " << rank << " : " << opt << std::endl; 
+
+    //test
+    Container localBoids, receivedBoids;
+    Agent meanBoid(Vector(rank+1,0,0), Vector(), Vector());
+    Agent boid(Vector(0,rank+1,0), Vector(), Vector());
+    Container tmpContainer = {boid};
+    std::vector<int> otherRanks;
+    std::map<int, Container> boidsToSend;
+    if (rank == 0) {
+        otherRanks.push_back(1);
+        boidsToSend.emplace(1, tmpContainer);
+    }
+    if (rank == 1) { 
+        otherRanks.push_back(0);
+        boidsToSend.emplace(0, tmpContainer);
+    }
+    if (rank < 2) {
+        mess.exchangeMeanAgents(comm, receivedBoids, meanBoid, otherRanks);
+        std::cout << "RANK: " << rank  << " MEANBOIDS: " << receivedBoids.size() << " pos="; 
+        for (Agent boid : receivedBoids)
+            std::cout << boid.position << "/";
+        mess.exchangeAgents(comm, localBoids, boidsToSend, otherRanks);
+        std::cout << "\tRECEIVEDBOIDS :" << localBoids.size() << " pos=";
+        for (Agent boid : localBoids) {
+            std::cout << boid.position << "/";
+        }
+        std::cout << std::endl;
+    }
 
     //Workspace workspace(opt, ....)
 
