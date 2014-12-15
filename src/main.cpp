@@ -16,15 +16,27 @@
 #include "rootNode.hpp"
 #include "treeNode.hpp"
 #include "leafNode.hpp"
-#include "abtractContainer.hpp"
+#include "hypercubeTree.hpp"
+#include "abstractContainer.hpp"
+#include "abstractContainerFactory.hpp"
+#include "simpleContainerFactory.hpp"
 #include "vecBool.hpp"
 #include "boundingBox.hpp"
+#include "hypercube.hpp"
 
 // Main class for running the parallel flocking sim
 int main(int argc, char **argv) {
 
     using log4cpp::log_console;
     log4cpp::initLogs();
+    
+    Vec3<float> v0(0.0f,0.0f,0.0f);
+    Vec3<float> v1(1.0f,1.0f,1.0f);
+    HyperCube<3u,float> cube(v0,v1);
+
+    std::cout << cube << std::endl;
+
+    return EXIT_SUCCESS;
 
     MPI_Init(&argc,&argv); 
     

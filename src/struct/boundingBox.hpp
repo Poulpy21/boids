@@ -3,81 +3,108 @@
 #define BOUNDINGBOX_H
 
 /* 
- * N-D Bounding box 
- * N is the dimension of the box
- * T is the vectorial position type
+ * D-d Bounding box 
+ * D is the Dimension of the box
+ * A is the Arithmetic position type
  */ 
 
 #include "headers.hpp"
 #include <bitset>
 
-template <unsigned int N, typename T>
+template <unsigned int D, typename A>
 struct BoundingBox {
-    static_assert(std::is_arithmetic<T>(),         "Positions can only contain arithmetic types !");
-    static_assert(std::is_assignable<T&, T>(),     "T should be assignable !");
-    static_assert(std::is_constructible<T, int>(), "T should be constructible from int !");
+    static_assert(D != 0u,                         "Dimension can't be zero !");
+    static_assert(std::is_arithmetic<A>(),         "Positions can only contain arithmetic types !");
+    static_assert(std::is_assignable<A&, A>(),     "A should be assignable !");
+    static_assert(std::is_constructible<A, int>(), "A should be constructible from int !");
 
     BoundingBox();
-    BoundingBox(const BoundingBox<N,T> &other);
-    explicit BoundingBox(const Vec<N,T> &min, const Vec<N,T> &max);
+    BoundingBox(const BoundingBox<D,A> &other);
+    explicit BoundingBox(const Vec<D,A> &min, const Vec<D,A> &max);
     template <typename S> 
-    explicit BoundingBox(const BoundingBox<N,S> &v);
+    explicit BoundingBox(const BoundingBox<D,S> &v);
     virtual ~BoundingBox();
     
-    BoundingBox<N,T>& operator= (const BoundingBox<N,T> &v);
+    BoundingBox<D,A>& operator= (const BoundingBox<D,A> &v);
 
-    Vec<N,T> center() const;
-    Vec<N,T> corner(unsigned long id) const;
-    Vec<N,T> corner(const std::bitset<N> &bitset) const;
+    Vec<D,A> center() const;
+    Vec<D,A> corner(unsigned long id) const;
+    Vec<D,A> corner(const std::bitset<D> &bitset) const;
 
-    Vec<N,T> min;
-    Vec<N,T> max;
+    Vec<D,A> min;
+    Vec<D,A> max;
+
+    virtual std::string toString() const;
 };
 
-template <unsigned int N, typename T>
-BoundingBox<N,T>::BoundingBox() : min(), max() {}
+template <unsigned int D, typename A>
+BoundingBox<D,A>::BoundingBox() : min(), max() {}
 
-template <unsigned int N, typename T>
-BoundingBox<N,T>::BoundingBox(const BoundingBox<N,T> &other) :
+template <unsigned int D, typename A>
+BoundingBox<D,A>::BoundingBox(const BoundingBox<D,A> &other) :
     min(other.min), max(other.max) {
     }
 
-template <unsigned int N, typename T>
-BoundingBox<N,T>::BoundingBox(const Vec<N,T> &min, const Vec<N,T> &max) :
+template <unsigned int D, typename A>
+BoundingBox<D,A>::BoundingBox(const Vec<D,A> &min, const Vec<D,A> &max) :
     min(min), max(max) {
+        for (unsigned int i = 0; i < D; i++) {
+            if(min[i] > max[i])
+                throw std::runtime_error("Trying to construct an hypercube with something that is not a cube !");
+        }
     }
 
-template <unsigned int N, typename T>
-BoundingBox<N,T>& BoundingBox<N,T>::operator= (const BoundingBox<N,T> &v) {
+template <unsigned int D, typename A>
+BoundingBox<D,A>& BoundingBox<D,A>::operator= (const BoundingBox<D,A> &v) {
     this->min = v.min;
     this->max = v.max;
 }
 
-template <unsigned int N, typename T>
-BoundingBox<N,T>::~BoundingBox() {}
+template <unsigned int D, typename A>
+BoundingBox<D,A>::~BoundingBox() {}
 
-template <unsigned int N, typename T>
+template <unsigned int D, typename A>
 template <typename S>
-BoundingBox<N,T>::BoundingBox(const BoundingBox<N,S> &v) {
-    this->min = Vec<N,T>(v.min);
-    this->max = Vec<N,T>(v.max);
+BoundingBox<D,A>::BoundingBox(const BoundingBox<D,S> &v) {
+    this->min = Vec<D,A>(v.min);
+    this->max = Vec<D,A>(v.max);
 }
 
-template <unsigned int N, typename T>
-Vec<N,T> BoundingBox<N,T>::center() const {
-    return (max+min)/T(2);
+template <unsigned int D, typename A>
+Vec<D,A> BoundingBox<D,A>::center() const {
+    return (max+min)/A(2);
 }
 
-template <unsigned int N, typename T>
-Vec<N,T> BoundingBox<N,T>::corner(unsigned long id) const {
-    VecBool<N> dir(id);
-    return (Vec<N,T>(dir)*max + Vec<N,T>(~dir)*min)/T(2);
+template <unsigned int D, typename A>
+Vec<D,A> BoundingBox<D,A>::corner(unsigned long id) const {
+    VecBool<D> dir(id);
+    return (Vec<D,A>(dir)*max + Vec<D,A>(~dir)*min)/A(2);
 }
 
-template <unsigned int N, typename T>
-Vec<N,T> BoundingBox<N,T>::corner(const std::bitset<N> &bitset) const {
-    VecBool<N> dir(bitset);
-    return (Vec<N,T>(dir)*max + Vec<N,T>(~dir)*min)/T(2);
+template <unsigned int D, typename A>
+Vec<D,A> BoundingBox<D,A>::corner(const std::bitset<D> &bitset) const {
+    VecBool<D> dir(bitset);
+    return (Vec<D,A>(dir)*max + Vec<D,A>(~dir)*min)/A(2);
 }
+    
+template <unsigned int D, typename A>
+std::string BoundingBox<D,A>::toString() const {
+    std::stringstream ss;
+    ss << "BoundingBox<" << D << ",";
+    utils::templatePrettyPrint<A>(ss);
+    ss << ">" << std::endl;
+    ss << "\tMin: " << min << std::endl;
+    ss << "\tMax: " << max << std::endl;
+    return ss.str();
+}
+
+template <unsigned int D, typename A>
+    std::ostream & operator <<(std::ostream &os, const BoundingBox<D,A> &bbox) {
+        os << bbox.toString();
+        return os;
+}
+
+
 
 #endif /* end of include guard: BOUNDINGBOX_H */
+

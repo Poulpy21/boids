@@ -25,15 +25,17 @@
  * E : default constructible, copy constructible, inherit Localized<N,D> 
  */
 
-namespace Tree {
+namespace BoxTree {
 
     template <unsigned int D, unsigned int N, typename A, typename T>
         class TreeNode {
 
             public:
                 TreeNode();
-                virtual ~TreeNode();
+                explicit TreeNode(const BoundingBox<D,A> &domain);
+                explicit TreeNode(const TreeNode<D,N,A,T> &father, unsigned int childNum);
                 explicit TreeNode(const TreeNode<D,N,A,T> &other);
+                virtual ~TreeNode();
 
                 //parent-child handling
                 unsigned int getParentId() const;
@@ -54,8 +56,9 @@ namespace Tree {
 
                 //helper funcs
                 unsigned int level() const;
+
                 virtual bool isRoot() const;
-                bool isLeaf() const;
+                virtual bool isLeaf() const;
 
             protected:
                 unsigned long _id;
@@ -84,6 +87,29 @@ namespace Tree {
     TreeNode<D,N,A,T>::~TreeNode() {
         delete [] _childs;
     }
+                
+    template <unsigned int D, unsigned int N, typename A, typename T>
+    TreeNode<D,N,A,T>::TreeNode(const BoundingBox<D,A> &domain) :
+        _id(0ul), _nChilds(0u), _nSubchilds(0u),
+        _bbox(),  _nodeData(), 
+        _father(nullptr) {
+            for (unsigned int i = 0; i < N; i++) {
+                _childs[i] = nullptr;
+            }
+    }
+    
+    template <unsigned int D, unsigned int N, typename A, typename T>
+    TreeNode<D,N,A,T>::TreeNode(const TreeNode<D,N,A,T> &father, unsigned int childNum) :
+        _id(0ul), _nChilds(0u), _nSubchilds(0u),
+        _bbox(),  _nodeData(), 
+        _father(&father)
+    {
+            for (unsigned int i = 0; i < N; i++) {
+                _childs[i] = nullptr;
+            }
+           
+            _id = father.id()*N + childNum;
+    }
     
     template <unsigned int D, unsigned int N, typename A, typename T>
     TreeNode<D,N,A,T>::TreeNode(const TreeNode<D,N,A,T> &other) :
@@ -99,17 +125,17 @@ namespace Tree {
     //parent-child handling
     template <unsigned int D, unsigned int N, typename A, typename T>
     unsigned int TreeNode<D,N,A,T>::getParentId() const {
-        return _id >> D;
+        return _id/N;
     }
     
     template <unsigned int D, unsigned int N, typename A, typename T>
     unsigned int TreeNode<D,N,A,T>::getFirstChildId() const {
-        return _id << D;
+        return _id*N;
     }
     
     template <unsigned int D, unsigned int N, typename A, typename T>
     unsigned int TreeNode<D,N,A,T>::getChildId(unsigned int childNum) const {
-        return (_id << D) + childNum;
+        return _id*N + childNum;
     }
 
     template <unsigned int D, unsigned int N, typename A, typename T>

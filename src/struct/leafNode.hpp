@@ -4,8 +4,9 @@
 
 #include "headers.hpp"
 #include "treeNode.hpp"
+#include <stdexcept>
 
-namespace Tree {
+namespace BoxTree {
 
     template <unsigned int D, unsigned int N, typename A, typename T, typename L, typename E>
         class LeafNode final : public TreeNode<D,N,A,T> {
@@ -15,19 +16,25 @@ namespace Tree {
                 ~LeafNode();
                 explicit LeafNode(const LeafNode<D,N,A,T,L,E> &other);
 
-                bool isLeaf() final const;
+                bool isLeaf() const final;
+
+                unsigned int elements() const;
+                void insert(const E &e);
+
+                void setData()
 
             private:
-                L _leafData;
+                std::shared_ptr<L> _leafData;
         };
 
 
 
     template <unsigned int D, unsigned int N, typename A, typename T, typename L, typename E>
-        LeafNode<D,N,A,T,L,E>::LeafNode() : TreeNode<D,N,A,T>(), _leafData() {}
+        LeafNode<D,N,A,T,L,E>::LeafNode() : TreeNode<D,N,A,T>(), _leafData(nullptr) {}
 
     template <unsigned int D, unsigned int N, typename A, typename T, typename L, typename E>
         LeafNode<D,N,A,T,L,E>::~LeafNode() {
+            delete _leafData;
         }
 
     template <unsigned int D, unsigned int N, typename A, typename T, typename L, typename E>
@@ -35,10 +42,25 @@ namespace Tree {
         }
 
     template <unsigned int D, unsigned int N, typename A, typename T>
-        bool TreeLeaf<D,N,A,T,L,E>::isLeaf() const {
+        bool LeafNode<D,N,A,T,L,E>::isLeaf() const {
             return true;
         }
-}
-
+                
+    template <unsigned int D, unsigned int N, typename A, typename T>
+        unsigned int LeafNode<D,N,A,T,L,E>::elements() const {
+            if(_leafData == nullptr)
+                return 0u;
+            else
+                return _leafData->elements();
+        }
+                
+    template <unsigned int D, unsigned int N, typename A, typename T>
+        void insert(const E &e) {
+            if(_leafData == nullptr)
+                throw new std::runtime_error("Trying to insert in leaf but leafData is not initialized !");
+            else
+                _leafData->insert(e);
+        }
+    }
 
 #endif /* end of include guard: LEAFNODE_H */

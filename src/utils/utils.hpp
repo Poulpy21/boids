@@ -3,6 +3,7 @@
 #define UTILS_H
 
 #include "headers.hpp"
+#include <cxxabi.h>
 
 #include <string>
 #include <map>
@@ -25,14 +26,15 @@ namespace utils {
     template <typename T>
     constexpr T get_power_of_two(T x)
     {
-        static_assert(utils::is_power_of_two<T>(x), "x is not a power of two !");
+        static_assert(x != T(0), "x is zero !");
+
         T xx(x);
         T p(0);
-        while(xx > 1) {
+        while(xx) {
             xx >> 1;
             p++;
         }
-        return p;
+        return p-1;
     }
 
     // map inversion
@@ -87,6 +89,38 @@ namespace utils {
     }
 
 	const std::string toStringMemory(unsigned long bytes);
+  
+    template <typename T>
+        void templatePrettyPrint(std::ostream &os) {
+            int status;
+            char * demangled = abi::__cxa_demangle(typeid(T).name(),0,0,&status);
+            if(status == 0)
+                os << demangled;
+            else
+                os << typeid(T).name();
+            free(demangled);
+        }
+    
+    //termination function
+    template <typename T>
+    void genericTemplatePrettyPrint(std::ostream &os) {
+            templatePrettyPrint<T>(os);
+    }
+
+    template <typename T1, typename T2, typename... Args>
+        void genericTemplatePrettyPrint(std::ostream &os) {      
+            templatePrettyPrint<T1>(os);
+            os << ",";
+            genericTemplatePrettyPrint<T2, Args...>(os);
+        }
+    
+    template <typename T1, typename T2, typename... Args>
+        void templatePrettyPrint(std::ostream &os) {
+            os << "<";
+            genericTemplatePrettyPrint<T1,T2,Args...>(os);
+            os << " >";
+        }
+    
 }
 
 

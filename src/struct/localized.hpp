@@ -4,12 +4,12 @@
 
 #include "headers.hpp"
 
-template <unsigned int N, typename T>
+template <unsigned int D, typename A>
 class Localized {
     Localized() {};
     virtual ~Localized() {};
 
-    virtual Vec<N,T> getPosition() const = 0;
+    virtual Vec<D,A> getPosition() const = 0;
 };
 
 
