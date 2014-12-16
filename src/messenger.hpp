@@ -17,7 +17,9 @@ class Messenger {
          * opt : Options to broadcast
          * root : process that is the source of the broacast
          */
-        inline void broadcastOptions(MPI_Comm comm, Options *opt, int root); 
+        inline void broadcastOptions(MPI_Comm comm, Options *opt, int root) {
+            MPI_Bcast(opt, sizeof(Options)/sizeof(double), MPI_DOUBLE, 0, comm);
+        }
 
         /*
          * comm : Current communicator
@@ -27,7 +29,13 @@ class Messenger {
          */
         inline void exchangeAgents(MPI_Comm comm, Container &agents, 
                 std::map<int, Container> &agentsForRanks, 
-                std::vector<int> &sourceRanks);
+                std::vector<int> &sourceRanks) 
+        {
+            sendAgents(comm, agentsForRanks);
+            receiveAgents(comm, agents, sourceRanks);
+            waitForSendCompletion();
+            MPI_Barrier(comm);
+        }
 
         /*
          * comm : Current communicator
@@ -37,8 +45,15 @@ class Messenger {
          */
         inline void exchangeMeanAgents(MPI_Comm comm, Container &receivedMeanAgents, 
                 Agent &meanAgentToSend, 
-                std::vector<int> &sourceRanks);
-        
+                std::vector<int> &sourceRanks) 
+        {
+            sendMeanAgent(comm, meanAgentToSend, sourceRanks);
+            receiveMeanAgents(comm, receivedMeanAgents, sourceRanks);
+            waitForSendCompletion();
+            MPI_Barrier(comm);
+        }
+
+
     private:
 
         void sendAgents(MPI_Comm comm, std::map<int, Container> &agentsForRanks);

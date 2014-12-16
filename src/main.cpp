@@ -11,6 +11,7 @@
 #include "parser.hpp"
 #include "options.hpp"
 #include "workspace.hpp"
+#include "distWorkspace.hpp"
 #include "messenger.hpp"
 
 #include "rootNode.hpp"
@@ -91,6 +92,8 @@ int main(int argc, char **argv) {
         parser.addOption("rc", 0.11);
         parser.addOption("ra", 0.15);
         parser.addOption("rs", 0.01);
+        parser.addOption("dt", 0.05);
+        parser.addOption("mv", 2.0);
 
         // Parse command line arguments
         parser.setOptions(argc, argv);

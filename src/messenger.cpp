@@ -1,30 +1,5 @@
 #include "messenger.hpp"
 
-inline void Messenger::broadcastOptions(MPI_Comm comm, Options *opt, int root) {
-    MPI_Bcast(opt, sizeof(Options)/sizeof(double), MPI_DOUBLE, 0, comm);
-}
-
-inline void Messenger::exchangeAgents(MPI_Comm comm, Container &agents, 
-        std::map<int, Container> &agentsForRanks, 
-        std::vector<int> &sourceRanks) 
-{
-    sendAgents(comm, agentsForRanks);
-    receiveAgents(comm, agents, sourceRanks);
-    waitForSendCompletion();
-    MPI_Barrier(comm);
-}
-
-inline void Messenger::exchangeMeanAgents(MPI_Comm comm, Container &receivedMeanAgents, 
-        Agent &meanAgentToSend, 
-        std::vector<int> &sourceRanks) 
-{
-    sendMeanAgent(comm, meanAgentToSend, sourceRanks);
-    receiveMeanAgents(comm, receivedMeanAgents, sourceRanks);
-    waitForSendCompletion();
-    MPI_Barrier(comm);
-}
-
-
 void Messenger::sendAgents(MPI_Comm comm, std::map<int, Container> &agentsForRanks) {
     MPI_Request req;
 

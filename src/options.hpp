@@ -13,10 +13,13 @@ struct Options {
     double rCohesion;
     double rAlignment;
     double rSeparation;
+    double dt;
+    double maxVel;
 
     Options() : nAgents(0l), nSteps(0l), 
         wCohesion(0.0), wAlignment(0.0), wSeparation(0.0),
-        rCohesion(0.0), rAlignment(0.0), rSeparation(0.0) {};
+        rCohesion(0.0), rAlignment(0.0), rSeparation(0.0),
+        dt(0.0), maxVel(0.0) {};
 
     Options(ArgumentParser &parser) {
         nAgents     = static_cast<unsigned long int>(parser("agents").asInt());
@@ -27,6 +30,8 @@ struct Options {
         rCohesion   = parser("rc").asDouble();
         rAlignment  = parser("ra").asDouble();
         rSeparation = parser("rs").asDouble();
+        dt          = parser("dt").asDouble();
+        maxVel      = parser("mv").asDouble();
     }
 
     friend std::ostream& operator<<(std::ostream &stream, const Options &opt) {
@@ -37,7 +42,9 @@ struct Options {
                       << opt.wSeparation << " "
                       << opt.rCohesion << " "
                       << opt.rAlignment << " "
-                      << opt.rSeparation;
+                      << opt.rSeparation << " "
+                      << opt.dt << " "
+                      << opt.maxVel;
     }
 };
 
