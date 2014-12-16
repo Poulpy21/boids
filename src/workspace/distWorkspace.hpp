@@ -23,6 +23,7 @@ class DistWorkspace {
         Messenger mess;
         int rootID, myID;
         // TODO: affectation domaine hypercube
+        // TODO: structure pour stockage voisinage
 
 };
 
