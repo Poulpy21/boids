@@ -1,6 +1,6 @@
 #include "messenger.hpp"
 
-void Messenger::sendAgents(MPI_Comm comm, std::map<int, Container> &agentsForRanks) {
+void Messenger::sendAgents(std::map<int, Container> &agentsForRanks) {
     MPI_Request req;
 
     // Send everything immediately to prevent deadlocks 
@@ -14,7 +14,7 @@ void Messenger::sendAgents(MPI_Comm comm, std::map<int, Container> &agentsForRan
     }
 }
 
-void Messenger::sendMeanAgent(MPI_Comm comm, Agent &meanAgentToSend, std::vector<int> &sourceRanks) {
+void Messenger::sendMeanAgent(Agent &meanAgentToSend, std::vector<int> &sourceRanks) {
     MPI_Request req;
     int tag = 0;
 
@@ -24,7 +24,7 @@ void Messenger::sendMeanAgent(MPI_Comm comm, Agent &meanAgentToSend, std::vector
     }
 }
 
-void Messenger::receiveAgents(MPI_Comm comm, Container &agents, std::vector<int> &sourceRanks) {
+void Messenger::receiveAgents(Container &agents, std::vector<int> &sourceRanks) {
     MPI_Status stat;
     int nAgents = 0;
     int sizes[sourceRanks.size()];
@@ -53,7 +53,7 @@ void Messenger::receiveAgents(MPI_Comm comm, Container &agents, std::vector<int>
     }
 }
 
-void Messenger::receiveMeanAgents(MPI_Comm comm, Container &receivedMeanAgents, std::vector<int> &sourceRanks) {
+void Messenger::receiveMeanAgents(Container &receivedMeanAgents, std::vector<int> &sourceRanks) {
     // Clear and reserve space in the container
     receivedMeanAgents.clear();
     receivedMeanAgents.resize(sourceRanks.size());
@@ -72,7 +72,7 @@ void Messenger::waitForSendCompletion() {
     pendingRequests.clear();
 }
 
-/*static void exchangeAgents(MPI_Comm comm, Container &agentsToSend, Container &agentsToReceive, int targetRank) {
+/*static void exchangeAgents(Container &agentsToSend, Container &agentsToReceive, int targetRank) {
   MPI_Request req;
   MPI_Status statSend, statRecv;
   int tagSend = 0, tagReceive = 0;
@@ -86,7 +86,7 @@ void Messenger::waitForSendCompletion() {
   MPI_Wait(&req, &statSend);
   }
 
-  static int getRankFromDirection(MPI_Comm comm, int localRank, int direction[3]) {
+  static int getRankFromDirection(int localRank, int direction[3]) {
   int currentRank = localRank;
 
 // Since MPI_Cart_shift can only shift in 1 direction, we're doing one shift per direction

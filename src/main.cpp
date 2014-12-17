@@ -106,8 +106,8 @@ int main(int argc, char **argv) {
         opt = Options(parser);
     }
    
-    Messenger mess;
-    mess.broadcastOptions(comm, &opt, 0);
+    Messenger mess(comm);
+    mess.broadcastOptions(&opt, 0);
     std::cout << "Options for rank " << rank << " : " << opt << std::endl; 
 
     // exchangeAgents() and exchangeMeanAgents()
@@ -126,11 +126,11 @@ int main(int argc, char **argv) {
         boidsToSend.emplace(0, tmpContainer);
     }
     if (rank < 2) {
-        mess.exchangeMeanAgents(comm, receivedBoids, meanBoid, otherRanks);
+        mess.exchangeMeanAgents(receivedBoids, meanBoid, otherRanks);
         std::cout << "RANK: " << rank  << " MEANBOIDS: " << receivedBoids.size() << " pos="; 
         for (Agent boid : receivedBoids)
             std::cout << boid.position << "/";
-        mess.exchangeAgents(comm, localBoids, boidsToSend, otherRanks);
+        mess.exchangeAgents(localBoids, boidsToSend, otherRanks);
         std::cout << "\tRECEIVEDBOIDS :" << localBoids.size() << " pos=";
         for (Agent boid : localBoids) {
             std::cout << boid.position << "/";
@@ -141,7 +141,7 @@ int main(int argc, char **argv) {
     std::vector<int> loads(size);
     if (rank == 1)
         localBoids.push_back(Agent(Vector(1337,1337,1337), Vector(), Vector()));
-    mess.gatherAgentLoads(comm, 0, localBoids.size(), loads);
+    mess.gatherAgentLoads(0, localBoids.size(), loads);
     if (rank == 0) {
         std::cout << std::endl << "LOADS: ";
         for (int load : loads)

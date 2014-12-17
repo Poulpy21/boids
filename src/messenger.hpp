@@ -12,69 +12,68 @@ class Messenger {
 
     public:
 
+        Messenger(MPI_Comm c) : comm(c) {};
+
         /*
-         * comm : Current communicator
          * opt : Options to broadcast
          * root : process that is the source of the broacast
          */
-        inline void broadcastOptions(MPI_Comm comm, Options *opt, int root) {
+        inline void broadcastOptions(Options *opt, int root) {
             MPI_Bcast(opt, sizeof(Options)/sizeof(double), MPI_DOUBLE, 0, comm);
         }
 
         /*
-         * comm : Current communicator
          * agents : Container to which to append received boids
          * agentsForRanks : Maps Containers of boids to send to ranks
          * sourceRanks : ranks from which to receive boids (typically the keys of agentsForRanks)
          */
-        inline void exchangeAgents(MPI_Comm comm, Container &agents, 
+        inline void exchangeAgents(Container &agents, 
                 std::map<int, Container> &agentsForRanks, 
                 std::vector<int> &sourceRanks) 
         {
-            sendAgents(comm, agentsForRanks);
-            receiveAgents(comm, agents, sourceRanks);
+            sendAgents(agentsForRanks);
+            receiveAgents(agents, sourceRanks);
             waitForSendCompletion();
             MPI_Barrier(comm);
         }
 
         /*
-         * comm : Current communicator
          * receivedMeanAgents : Container that will contain received boids
          * meanAgentToSend : Mean boid to send
          * sourceRanks : ranks with which to exchange mean boids
          */
-        inline void exchangeMeanAgents(MPI_Comm comm, Container &receivedMeanAgents, 
+        inline void exchangeMeanAgents(Container &receivedMeanAgents, 
                 Agent &meanAgentToSend, 
                 std::vector<int> &sourceRanks) 
         {
-            sendMeanAgent(comm, meanAgentToSend, sourceRanks);
-            receiveMeanAgents(comm, receivedMeanAgents, sourceRanks);
+            sendMeanAgent(meanAgentToSend, sourceRanks);
+            receiveMeanAgents(receivedMeanAgents, sourceRanks);
             waitForSendCompletion();
             MPI_Barrier(comm);
         }
 
         /*
-         * comm : Current communicator
          * root : Rank that gathers everything
          * localLoad : Local load value
          * loads : Resulting array of all loads, gathered on root and ordered by rank number (root included)
          */
-        inline void gatherAgentLoads(MPI_Comm comm, int root, int localLoad, std::vector<int> &loads) {
+        inline void gatherAgentLoads(int root, int localLoad, std::vector<int> &loads) {
             MPI_Gather(&localLoad, 1, MPI_INT, &loads[0], 1, MPI_INT, root, comm);
         }
 
 
     private:
 
-        void sendAgents(MPI_Comm comm, std::map<int, Container> &agentsForRanks);
-        void sendMeanAgent(MPI_Comm comm, Agent &meanAgentToSend, std::vector<int> &sourceRanks); 
+        void sendAgents(std::map<int, Container> &agentsForRanks);
+        void sendMeanAgent(Agent &meanAgentToSend, std::vector<int> &sourceRanks); 
         // Note: this method appends the received agents to the container
-        void receiveAgents(MPI_Comm comm, Container &agents, std::vector<int> &sourceRanks); 
-        void receiveMeanAgents(MPI_Comm comm, Container &receivedMeanAgents, std::vector<int> &sourceRanks); 
+        void receiveAgents(Container &agents, std::vector<int> &sourceRanks); 
+        void receiveMeanAgents(Container &receivedMeanAgents, std::vector<int> &sourceRanks); 
         void waitForSendCompletion();
 
         std::vector<MPI_Request> pendingRequests;
         static const int realsPerAgent = sizeof(Agent)/sizeof(Real);
+        MPI_Comm comm;
 };
 
 #endif

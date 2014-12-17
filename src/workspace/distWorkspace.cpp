@@ -6,14 +6,14 @@
 #include "messenger.hpp"
 
 DistWorkspace::DistWorkspace(MPI_Comm comm, int root) : 
-    agents(), comm(comm), rootID(root)
+    agents(), comm(comm), mess(comm), rootID(root)
 {
     MPI_Comm_rank(comm, &myID);
     init();
 }
 
 void DistWorkspace::init() {
-    mess.broadcastOptions(comm, &opt, rootID);
+    mess.broadcastOptions(&opt, rootID);
 
     // Upload options to device
     // TODO
@@ -38,7 +38,7 @@ void DistWorkspace::update() {
 
     // Get mean boids from the neighborhood and send ours (approximation)
     // TODO
-    // mess.exchangeMeanAgents(comm, receivedMeanAgents, meanAgent, neighbors);
+    // mess.exchangeMeanAgents(receivedMeanAgents, meanAgent, neighbors);
 
     // Compute and apply forces to local boids
     // TODO
@@ -47,7 +47,7 @@ void DistWorkspace::update() {
     
     // Exchange boids that cross domain boundaries
     // TODO
-    // mess.exchangeAgents(comm, agents, agentsForNeighborsMap, neighbors);
+    // mess.exchangeAgents(agents, agentsForNeighborsMap, neighbors);
 
     // Note: if practically there is too many agents to send, we should compute and send agents by batches
 }
