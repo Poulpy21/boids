@@ -48,6 +48,8 @@ void DistWorkspace::update() {
     // Exchange boids that cross domain boundaries
     // TODO
     // mess.exchangeAgents(comm, agents, agentsForNeighborsMap, neighbors);
+
+    // Note: if practically there is too many agents to send, we should compute and send agents by batches
 }
 
 void DistWorkspace::save(int stepId) {

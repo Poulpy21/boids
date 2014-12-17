@@ -53,6 +53,16 @@ class Messenger {
             MPI_Barrier(comm);
         }
 
+        /*
+         * comm : Current communicator
+         * root : Rank that gathers everything
+         * localLoad : Local load value
+         * loads : Resulting array of all loads, gathered on root and ordered by rank number (root included)
+         */
+        inline void gatherAgentLoads(MPI_Comm comm, int root, int localLoad, std::vector<int> &loads) {
+            MPI_Gather(&localLoad, 1, MPI_INT, &loads[0], 1, MPI_INT, root, comm);
+        }
+
 
     private:
 

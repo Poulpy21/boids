@@ -37,7 +37,12 @@ int main(int argc, char **argv) {
 
     std::cout << cube << std::endl;
 
-    return EXIT_SUCCESS;
+    //return EXIT_SUCCESS;
+
+    /*
+     * TODO: Use MPI_Dist_Graph ?
+     */
+
 
     MPI_Init(&argc,&argv); 
     
@@ -105,7 +110,7 @@ int main(int argc, char **argv) {
     mess.broadcastOptions(comm, &opt, 0);
     std::cout << "Options for rank " << rank << " : " << opt << std::endl; 
 
-    //test
+    // exchangeAgents() and exchangeMeanAgents()
     Container localBoids, receivedBoids;
     Agent meanBoid(Vector(rank+1,0,0), Vector(), Vector());
     Agent boid(Vector(0,rank+1,0), Vector(), Vector());
@@ -130,6 +135,17 @@ int main(int argc, char **argv) {
         for (Agent boid : localBoids) {
             std::cout << boid.position << "/";
         }
+        std::cout << std::endl;
+    }
+    // gatherAgentLoads()
+    std::vector<int> loads(size);
+    if (rank == 1)
+        localBoids.push_back(Agent(Vector(1337,1337,1337), Vector(), Vector()));
+    mess.gatherAgentLoads(comm, 0, localBoids.size(), loads);
+    if (rank == 0) {
+        std::cout << std::endl << "LOADS: ";
+        for (int load : loads)
+            std::cout  << load << "//";  
         std::cout << std::endl;
     }
 
