@@ -1,14 +1,15 @@
 #include "utils/headers.hpp"
-#include "utils/logs/log.hpp"
-#include "utils/opengl/program/program.hpp"
-#include "utils/globals.hpp"
-#include "utils/opengl/texture/texture.hpp"
-#include "rendering/renderable/renderRoot.hpp"
-#include "utils/random/rand.h"
 
 #include <qapplication.h>
 #include <QWidget>
 #include <ctime>
+
+#include "utils/logs/log.hpp"
+#include "utils/globals.hpp"
+#include "utils/opengl/texture/texture.hpp"
+#include "rendering/renderable/renderRoot.hpp"
+#include "utils/random/rand.h"
+#include "rendering/renderable/boids/boids.hpp"
 
 using namespace std;
 using namespace log4cpp;
@@ -55,7 +56,16 @@ int main(int argc, char** argv) {
 
         log_console->infoStream() << "Running with OpenGL " << Globals::glVersion << " and glsl version " << Globals::glShadingLanguageVersion << " !";
         //FIN INIT//
-        //
+        
+        //render root
         RenderRoot *root = new RenderRoot(); 
+        
+        //Configure viewer
+        viewer->addRenderable(root);
+
+        //Run main loop.
+        application.exec();
+
+        return EXIT_SUCCESS;
 #endif
 }
