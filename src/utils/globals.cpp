@@ -1,6 +1,6 @@
 
 #include "headers.hpp"
-#ifdef USE_GUI
+#ifdef GUI_ENABLED
 
 #include "globals.hpp"
 #include "utils.hpp"
@@ -28,8 +28,8 @@ Viewer *Globals::viewer = 0;
 unsigned int Globals::projectionViewUniformBlock = 0;
 
 float Globals::dt = 0.1;
-Vec<double> Globals::pos = Vec<double>(0, 0, 0);
-Vec<double> Globals::offset = Vec<double>(0, 0, 0);
+Vec3<double> Globals::pos = Vec3<double>(0, 0, 0);
+Vec3<double> Globals::offset = Vec3<double>(0, 0, 0);
 
 void Globals::init() {
 

@@ -1,6 +1,6 @@
 
 #include "headers.hpp"
-#ifdef USE_GUI
+#ifdef GUI_ENABLED
 
 #include "viewer.hpp"
 #include "renderable.hpp"

@@ -1,6 +1,6 @@
 
 #include "headers.hpp"
-#ifdef USE_GUI
+#ifdef GUI_ENABLED
 
 #include "texture3D.hpp"
 #include "log.hpp"

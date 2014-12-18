@@ -1,6 +1,6 @@
 
 #include "renderRoot.hpp"
-#ifdef USE_GUI
+#ifdef GUI_ENABLED
 
 #include "globals.hpp"
 

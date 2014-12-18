@@ -1,7 +1,7 @@
 
 #include "shader.hpp"
 
-#ifdef USE_GUI
+#ifdef GUI_ENABLED
 
 #include <iostream>
 #include <sstream>

@@ -2,7 +2,7 @@
 #define _RENDERABLE_
 
 #include "headers.hpp"
-#ifdef USE_GUI
+#ifdef GUI_ENABLED
 
 class Viewer;
 

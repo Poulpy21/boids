@@ -1,6 +1,6 @@
 
 #include "skybox.hpp"
-#ifdef USE_GUI
+#ifdef GUI_ENABLED
 
 #include "globals.hpp"
 

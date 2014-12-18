@@ -1,7 +1,7 @@
 
 #include "glUtils.hpp"
 
-#ifdef USE_GUI
+#ifdef GUI_ENABLED
 
 namespace utils {
 

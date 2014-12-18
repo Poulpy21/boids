@@ -128,13 +128,13 @@ include_directories(SYSTEM
     ${CUDA_INCLUDE_DIRS} 
     ${LOG4CPP_INCLUDE_DIRS} 
     ${MPI_INCLUDE_PATH}  
-)
+    )
 
 #Library directories
 link_directories(
     ${CUDA_LIBRARY_DIRS}
     ${LOG4CPP_LIBRARY_DIRS}
-)
+    )
 
 #Precompiled CUDA kernels
 if(${CUDA_FOUND} AND NOT "${kernel_files}" STREQUAL "")
@@ -143,26 +143,34 @@ if(${CUDA_FOUND} AND NOT "${kernel_files}" STREQUAL "")
     cuda_add_library(${CUDA_KERNELS} ${header_files} ${kernel_files})
 endif()
 
+# Remove executable sources so that mains don't conflict
+SET(source_files_no_main ${source_files})
+LIST(REMOVE_ITEM source_files_no_main ${CMAKE_SOURCE_DIR}/src/main.cpp)
+LIST(REMOVE_ITEM source_files_no_main ${CMAKE_SOURCE_DIR}/src/display.cpp)
+
 #Executables
-add_executable(main ${header_files} ${source_files} ${template_files} ${configure_files})
+add_executable(main ${header_files} ${source_files_no_main} "src/main.cpp" ${template_files} ${configure_files})
+if(${ENABLE_GUI})
+    add_executable(display ${header_files} ${source_files_no_main} "src/display.cpp" ${template_files} ${configure_files})
+endif()
 
 #Compile QT as SYSTEM
 set_property(TARGET Qt4::QtCore APPEND PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES 
     ${QT_INCLUDE_DIR}
     ${QT_QTCORE_INCLUDE_DIR}
     ${QT_MKSPECS_DIR}/default
-)
+    )
 set_property(TARGET Qt4::QtGui APPEND PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES 
     ${QT_QTGUI_INCLUDE_DIR}
-)
+    )
 set_property(TARGET Qt4::QtXml APPEND PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES 
     ${QT_QTXML_INCLUDE_DIR}
-)
+    )
 set_property(TARGET Qt4::QtOpenGL APPEND PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES 
     ${QT_QTOPENGL_INCLUDE_DIR}
-)
+    )
 
-#Link executable
+#Link executables
 target_link_libraries(
     main 
     Qt4::QtGui           #QtGui
@@ -177,10 +185,27 @@ target_link_libraries(
     ${OPENGL_LIBRARIES}  #OpenGl
     ${GLEW_LIBRARIES}    #Glew
     ${GLUT_glut_LIBRARY} #Glut
-)
+    )
+if(${ENABLE_GUI})
+    target_link_libraries(
+        display 
+        Qt4::QtGui           #QtGui
+        Qt4::QtCore          #QtCore
+        Qt4::QtXml           #QtXml
+        Qt4::QtOpenGL        #QtOpenGL
+        ${QGLVIEWER_LIBRARY} #QGlViewer
+        ${LOG4CPP_LIBRARIES} #Log4cpp
+        ${MPI_CXX_LIBRARIES} #MPI
+        ${CUDA_LIBRARIES}    #Cuda
+        ${CUDA_KERNELS}      #Cuda Kernels
+        ${OPENGL_LIBRARIES}  #OpenGl
+        ${GLEW_LIBRARIES}    #Glew
+        ${GLUT_glut_LIBRARY} #Glut
+        )
+endif()
 
-add_custom_target(run
-    COMMAND mpirun -np 1 ${EXECUTABLE_OUTPUT_PATH}/main -agents 20 && ${EXECUTABLE_OUTPUT_PATH}/script/visu.sh 20
-    DEPENDS main
-    WORKING_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}
-)
+#add_custom_target(run
+#    COMMAND mpirun -np 1 ${EXECUTABLE_OUTPUT_PATH}/main -agents 20 && ${EXECUTABLE_OUTPUT_PATH}/script/visu.sh 20
+#    DEPENDS main
+#    WORKING_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}
+#)

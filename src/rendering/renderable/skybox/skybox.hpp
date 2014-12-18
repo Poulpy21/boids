@@ -2,7 +2,7 @@
 #define __SKYBOX_H__
 
 #include "headers.hpp"
-#ifdef USE_GUI
+#ifdef GUI_ENABLED
 
 #include "renderTree.hpp"
 #include "cubeMap.hpp"

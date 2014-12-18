@@ -3,7 +3,7 @@
 #define RENDERTREE_H
 
 #include "headers.hpp"
-#ifdef USE_GUI
+#ifdef GUI_ENABLED
 
 #include "renderable.hpp"
 
@@ -37,25 +37,25 @@ class RenderTree : public Renderable {
         void activateChild(std::string childName);
 
         void move(float x, float y, float z);
-        void move(Vec<float> v);
+        void move(Vec3<float> v);
         void orientate(qglviewer::Quaternion rot, float scale);
 
         void translate(float x, float y, float z);
-        void translate(Vec<float> v);
+        void translate(Vec3<float> v);
         void scale(float alpha);
         void scale(float alpha, float beta, float gamma);
-        void scale(Vec<float> v);
+        void scale(Vec3<float> v);
         void rotate(qglviewer::Quaternion rot);
         void pushMatrix(const float *matrix); //matrice 4x4
 
         void moveChild(std::string childName, float x, float y, float z);
-        void moveChild(std::string childName, Vec<float> v);
+        void moveChild(std::string childName, Vec3<float> v);
         void orientateChild(std::string childName, qglviewer::Quaternion rot, float scale);
         void translateChild(std::string childName, float x, float y, float z);
-        void translateChild(std::string childName, Vec<float> v);
+        void translateChild(std::string childName, Vec3<float> v);
         void scaleChild(std::string childName, float alpha);
         void scaleChild(std::string childName, float alpha, float beta, float gamma);
-        void scaleChild(std::string childName, Vec<float> v);
+        void scaleChild(std::string childName, Vec3<float> v);
         void rotateChild(std::string childName, qglviewer::Quaternion rot);
         void pushMatrixToChild(std::string childName, const float *matrix); //matrice 4x4
 

@@ -1,7 +1,7 @@
 
 #include "parameter.hpp"
 
-#ifdef USE_GUI
+#ifdef GUI_ENABLED
 
 Parameter::Parameter(GLenum paramName_, int param_) :
 	_type(ParamType::I), _paramName(paramName_)

@@ -1,6 +1,6 @@
 
 #include "renderTree.hpp"
-#ifdef USE_GUI
+#ifdef GUI_ENABLED
 
 #include <cassert>
 #include <string>
@@ -124,7 +124,7 @@ void RenderTree::mouseMoveEvent(QMouseEvent* event, Viewer& v) {
 void RenderTree::move(float x, float y, float z) {
     Matrix::setOffsetMat4f(relativeModelMatrix,x,y,z);
 }
-void RenderTree::move(Vec<float> v) {
+void RenderTree::move(Vec3<float> v) {
     Matrix::setOffsetMat4f(relativeModelMatrix,v);
 }
 void RenderTree::orientate(qglviewer::Quaternion rot, float scale) {
@@ -133,7 +133,7 @@ void RenderTree::orientate(qglviewer::Quaternion rot, float scale) {
 void RenderTree::translate(float x, float y, float z) {
     Matrix::translateMat4f(relativeModelMatrix,x,y,z);
 }
-void RenderTree::translate(Vec<float> v) {
+void RenderTree::translate(Vec3<float> v) {
     Matrix::translateMat4f(relativeModelMatrix,v);
 }
 void RenderTree::scale(float alpha) {
@@ -142,7 +142,7 @@ void RenderTree::scale(float alpha) {
 void RenderTree::scale(float alpha, float beta, float gamma) {
     Matrix::scaleMat4f(relativeModelMatrix,alpha,beta,gamma);
 }
-void RenderTree::scale(Vec<float> v) {
+void RenderTree::scale(Vec3<float> v) {
     Matrix::scaleMat4f(relativeModelMatrix,v);
 }
 void RenderTree::rotate(qglviewer::Quaternion rot) {
@@ -158,7 +158,7 @@ void RenderTree::pushMatrix(const float *matrix) {
 void RenderTree::moveChild(std::string childName, float x, float y, float z) {
     Matrix::setOffsetMat4f(children[childName]->relativeModelMatrix,x,y,z);
 }
-void RenderTree::moveChild(std::string childName, Vec<float> v) {
+void RenderTree::moveChild(std::string childName, Vec3<float> v) {
     Matrix::setOffsetMat4f(children[childName]->relativeModelMatrix,v);
 }
 void RenderTree::orientateChild(std::string childName, qglviewer::Quaternion rot, float scale) {
@@ -167,7 +167,7 @@ void RenderTree::orientateChild(std::string childName, qglviewer::Quaternion rot
 void RenderTree::translateChild(std::string childName, float x, float y, float z) {
     Matrix::translateMat4f(children[childName]->relativeModelMatrix,x,y,z);
 }
-void RenderTree::translateChild(std::string childName, Vec<float> v) {
+void RenderTree::translateChild(std::string childName, Vec3<float> v) {
     Matrix::translateMat4f(children[childName]->relativeModelMatrix,v);
 }
 void RenderTree::scaleChild(std::string childName, float alpha) {
@@ -176,7 +176,7 @@ void RenderTree::scaleChild(std::string childName, float alpha) {
 void RenderTree::scaleChild(std::string childName, float alpha, float beta, float gamma) {
     Matrix::scaleMat4f(children[childName]->relativeModelMatrix,alpha,beta,gamma);
 }
-void RenderTree::scaleChild(std::string childName, Vec<float> v) {
+void RenderTree::scaleChild(std::string childName, Vec3<float> v) {
     Matrix::scaleMat4f(children[childName]->relativeModelMatrix,v);
 }
 void RenderTree::rotateChild(std::string childName, qglviewer::Quaternion rot) {
