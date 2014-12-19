@@ -3,13 +3,13 @@
 Agent::Agent() : position(), velocity(), direction()
 {}
 
-Agent::Agent(const Vector &pos, const Vector &vel, const Vector &dir) : 
+Agent::Agent(const Vec3<Real> &pos, const Vec3<Real> &vel, const Vec3<Real> &dir) : 
     position(pos), velocity(vel), direction(dir)
 {}
 
 
-Vector Agent::separation(Container &agent_list, size_t index, double rad) {
-    Vector force = Zeros();
+Vec3<Real> Agent::separation(Container &agent_list, size_t index, double rad) {
+    Vec3<Real> force;
     int count = 0;
     for(size_t i = 0; i < agent_list.size(); i++) {
         double dist = (this->position - agent_list[i].position).norm();
@@ -21,8 +21,8 @@ Vector Agent::separation(Container &agent_list, size_t index, double rad) {
     return ( count>0 ? force/count : force);
 }
 
-Vector Agent::cohesion(Container &agent_list, size_t index, double rad) {
-    Vector force = Zeros();
+Vec3<Real> Agent::cohesion(Container &agent_list, size_t index, double rad) {
+    Vec<3u,Real> force;
 
     int count = 0;
     for(size_t i = 0; i < agent_list.size(); i++) {
@@ -35,8 +35,8 @@ Vector Agent::cohesion(Container &agent_list, size_t index, double rad) {
     return ( count>0 ? force/count : force);
 }
 
-Vector Agent::alignment(Container&agent_list, size_t index, double rad) {
-    Vector force = Zeros();
+Vec3<Real> Agent::alignment(Container&agent_list, size_t index, double rad) {
+    Vec<3u,Real> force;
 
     int count = 0;
     for(size_t i = 0; i < agent_list.size(); i++) {

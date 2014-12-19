@@ -19,6 +19,7 @@ class Boids : public RenderTree {
 
     private:
         void makeProgram();
+        void readFile(std::string fileName);
 
         Program *_program;
         std::map<std::string, int> _uniformLocations;

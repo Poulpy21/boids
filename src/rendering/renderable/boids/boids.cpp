@@ -3,7 +3,11 @@
 
 #ifdef GUI_ENABLED
 
+#include <fstream>
+#include <string>
+#include <sstream>
 #include "utils/globals.hpp"
+#include "utils/types.hpp"
 
 Boids::Boids(/*boids*/) {
     makeProgram();
@@ -78,6 +82,16 @@ void Boids::makeProgram() {
 
     _program->bindTextures(&_boidTextures, "normalBoid predatorBoid preyBoid wallBoid", true);
     */
+}
+
+void Boids::readFile(std::string fileName) {
+    /*std::ifstream file;
+    int nAgents;
+    Real value; 
+
+    file.open(fileName);
+   
+    file.close();  */
 }
 
 #endif
