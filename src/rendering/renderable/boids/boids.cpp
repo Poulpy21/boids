@@ -14,7 +14,7 @@ Boids::~Boids () {
 		delete _boidTextures[i];
 	}
 
-	delete[] textures;
+	delete[] _boidTextures;
 
     delete _program;
 }
@@ -22,13 +22,13 @@ Boids::~Boids () {
 void Boids::drawDownwards(const float *currentTransformationMatrix) {
     static float *proj = new float[16], *view = new float[16];
 
-	program->use();
+	_program->use();
 
 	glGetFloatv(GL_MODELVIEW_MATRIX, view);
 	glGetFloatv(GL_PROJECTION_MATRIX, proj);
-	glUniformMatrix4fv(uniformLocs["projectionMatrix"], 1, GL_FALSE, proj);
-	glUniformMatrix4fv(uniformLocs["viewMatrix"], 1, GL_FALSE, view);
-	glUniformMatrix4fv(uniformLocs["modelMatrix"], 1, GL_TRUE, currentTransformationMatrix);
+	glUniformMatrix4fv(_uniformLocations["projectionMatrix"], 1, GL_FALSE, proj);
+	glUniformMatrix4fv(_uniformLocations["viewMatrix"], 1, GL_FALSE, view);
+	glUniformMatrix4fv(_uniformLocations["modelMatrix"], 1, GL_TRUE, currentTransformationMatrix);
 	
 	/*glBindVertexArray(VAO);
 		glDrawArrays(GL_POINTS, 0, nBoids);

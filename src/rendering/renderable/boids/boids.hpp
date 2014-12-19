@@ -14,7 +14,7 @@ class Boids : public RenderTree {
         Boids(/*boids*/);
         ~Boids();
         
-        void upateBoids(/*boids*/);
+        void updateBoids(/*boids*/);
         void drawDownwards(const float *currentTransformationMatrix = consts::identity4);
 
     private:
