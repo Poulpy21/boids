@@ -18,8 +18,8 @@ struct Vec3 : public Vec<3u,T> {
 
     Vec3();
     Vec3(const Vec<3u,T> &v);
-    explicit Vec3(T x, T y, T z);
     explicit Vec3(const T data[]);
+    explicit Vec3(T x, T y, T z);
     ~Vec3();
 
     void setValue(T x, T y, T z);

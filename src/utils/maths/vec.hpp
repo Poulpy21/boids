@@ -47,14 +47,6 @@ struct Vec {
     Vec<N,T> & operator%= (T k);
     Vec<N,T> & operator/= (T k);
 
-    //friend Vec<N,T> operator+(const Vec<N,T>& a, const Vec<N,T>& b) {
-        //T buffer[N];
-        //for (unsigned int i = 0; i < N; i++) {
-            //buffer[i] = a[i] + b[i];
-        //}
-        //return Vec<N,T>(buffer);
-    //}
-
     T normalize();
 
     T norm() const;
