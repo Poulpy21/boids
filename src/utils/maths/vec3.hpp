@@ -17,13 +17,15 @@ struct Vec3 : public Vec<3u,T> {
     T& z = this->data[2];
 
     Vec3();
-    Vec3(const Vec3<T> &v);
+    Vec3(const Vec<3u,T> &v);
     explicit Vec3(T x, T y, T z);
     explicit Vec3(const T data[]);
     ~Vec3();
 
     void setValue(T x, T y, T z);
     
+    Vec3<T> & operator= (const Vec3<T> &other);
+
     Vec3<T> & operator^= (const Vec3<T> &a);
     
     Vec3<T> orthogonalVec() const;
@@ -41,10 +43,7 @@ Vec3<T>::Vec3(T x, T y, T z) : Vec<3u,T>() {
 }
 
 template <typename T>
-Vec3<T>::Vec3(const Vec3<T> &v) : Vec<3u,T>() {
-    this->x = v.x;
-    this->y = v.y;
-    this->z = v.z;
+Vec3<T>::Vec3(const Vec<3u,T> &v) : Vec<3u,T>(v) {
 }
 
 template <typename T>
@@ -58,6 +57,14 @@ void Vec3<T>::setValue(T x, T y, T z) {
     this->x = x;
     this->y = y;
     this->z = z;
+}
+    
+template <typename T>
+Vec3<T> & Vec3<T>::operator= (const Vec3<T> &other) {
+    for (unsigned int i = 0; i < 3u; i++) {
+        this->data[i] = other.data[i];
+    }
+    return *this;
 }
 
 template <typename T>

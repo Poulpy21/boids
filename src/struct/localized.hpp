@@ -5,7 +5,7 @@
 #include "headers.hpp"
 
 template <unsigned int D, typename A>
-class Localized {
+struct Localized {
     Localized() {};
     virtual ~Localized() {};
 
