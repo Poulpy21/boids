@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
     Vec3<float> v0(0.0f,0.0f,0.0f);
     Vec3<float> v1(1.0f,1.0f,1.0f);
     HyperCube<3u,float> hypercube(v0,v1);
-    BoxTree::HyperCubeTree<3u,float,Foo,Bar,Boid>(hypercube, 10000u);
+    //BoxTree::HyperCubeTree<3u,float,Foo,Bar,Boid>(hypercube, 10000u);
 
     return EXIT_SUCCESS;
 

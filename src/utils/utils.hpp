@@ -36,6 +36,12 @@ namespace utils {
         }
         return p-1;
     }
+    
+    template <typename T>
+    constexpr T compute_power_of_two(T x)
+    {
+        return T(1) << x;
+    }
 
     // map inversion
 	template<typename A, typename B>

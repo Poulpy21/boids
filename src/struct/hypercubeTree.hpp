@@ -8,13 +8,13 @@
 
 namespace BoxTree {
 
-#define _N_ utils::get_power_of_two(D)
+#define _N_ utils::compute_power_of_two(D)
 
     template <unsigned int D, typename A, typename T, typename L, typename E>
-        class HyperCubeTree : public BoxTree<D,utils::get_power_of_two<unsigned int>(D), A, T, L, E> {
+        class HyperCubeTree : public BoxTree<D,utils::compute_power_of_two<unsigned int>(D), A, T, L, E> {
 
             public:
-                static constexpr unsigned int N = utils::get_power_of_two<unsigned int>(D);
+                static constexpr unsigned int N = utils::compute_power_of_two<unsigned int>(D);
 
                 HyperCubeTree();
                 HyperCubeTree(unsigned int maxElementsPerLeaf, float fillThreshHold, const HyperCube<D,A> &cube);
