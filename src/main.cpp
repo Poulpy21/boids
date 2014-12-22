@@ -26,20 +26,17 @@
 #include "hypercube.hpp"
 #include "localized.hpp"
 #include "hypercubeTree.hpp"
+#include "arrayContainer.hpp"
 
-struct Foo {
+struct Trunk {
     unsigned int foo;
     double bar;
-};
-struct Bar {
-    unsigned long foo;
-    float bar;
 };
 
 struct Boid : public Localized<3u,float> {
     Boid() {}
     ~Boid() {}
-    Vec<3u,float> getPosition() const override {
+    Vec<3u,float> position() const override {
         return static_cast<Vec<3u,float>>(Vec3<float>(0.0f,0.0f,0.0f));
     }
 };
@@ -53,7 +50,7 @@ int main(int argc, char **argv) {
     Vec3<float> v0(0.0f,0.0f,0.0f);
     Vec3<float> v1(1.0f,1.0f,1.0f);
     HyperCube<3u,float> hypercube(v0,v1);
-    //BoxTree::HyperCubeTree<3u,float,Foo,Bar,Boid>(hypercube, 10000u);
+    Tree::HyperCubeTree<3u,float,Trunk,ArrayContainer<Boid>,Boid>(hypercube, 10000u, 0.8f);
 
     return EXIT_SUCCESS;
 

@@ -15,6 +15,9 @@
 * The behaviour of the output stream operator << is specialized in the case N=1 to avoid unnecessary brackets (scalar case).
 */
 
+template <unsigned int N>
+struct VecBool;
+
 template <unsigned int N, typename T>
 struct Vec {
     static_assert(std::is_arithmetic<T>(),         "Vectors can only contain arithmetic types !");
@@ -23,7 +26,7 @@ struct Vec {
 
     Vec<N,T>();
     Vec(const Vec<N,T> &v);
-    explicit Vec(T data[]);
+    explicit Vec(const T data[]);
     virtual ~Vec();
 
     template <typename S>
@@ -71,7 +74,7 @@ Vec<N,T>::Vec(const Vec<N,T> &v) {
 }
 
 template <unsigned int N, typename T>
-Vec<N,T>::Vec(T data[]) {
+Vec<N,T>::Vec(const T data[]) {
     memcpy(this->data, data, N*sizeof(T));
 }
 
@@ -85,7 +88,6 @@ Vec<N,T>::Vec(const Vec<N,S> &v) {
         this->data[i] = static_cast<T>(v[i]);
     }
 }
-
 
 template <unsigned int N, typename T>
 Vec<N,T>& Vec<N,T>::operator= (const Vec<N,T> &v) {
@@ -331,7 +333,12 @@ Vec<N,T> operator/ (T k, const Vec<N,T> &b) {
 
 template <unsigned int N, typename T>
 bool operator!= (const Vec<N,T> &a, const Vec<N,T> &b) {
-    return !(a == b);
+    using utils::areEqual;
+    for (unsigned int i = 0; i < N; i++) {
+        if (areEqual<T>(a[i],b[i]))
+            return false;
+    }
+    return true;
 }
 
 template <unsigned int N, typename T>
@@ -345,60 +352,45 @@ bool operator== (const Vec<N,T> &a, const Vec<N,T> &b) {
 }
 
 template <unsigned int N, typename T>
-bool operator<= (const Vec<N,T> &a, const Vec<N,T> &b) {
+VecBool<N> operator<= (const Vec<N,T> &a, const Vec<N,T> &b) {
     using utils::areEqual;
+    bool buffer[N];
     for (unsigned int i = 0; i < N; i++) {
-        if(areEqual<T>(a[i], b[i]))
-            continue;
-        else if (a[i] < b[i])
-            return true;
-        else
-            return false;
+       buffer[i] = areEqual<T>(a[i],b[i]) || (a[i] < b[i]);
     }
-    return true;
+    return VecBool<N>(buffer);
 }
 
 template <unsigned int N, typename T>
-bool operator>= (const Vec<N,T> &a, const Vec<N,T> &b) {
+VecBool<N> operator>= (const Vec<N,T> &a, const Vec<N,T> &b) {
     using utils::areEqual;
+    bool buffer[N];
     for (unsigned int i = 0; i < N; i++) {
-        if(areEqual<T>(a[i], b[i]))
-            continue;
-        else if (a[i] > b[i])
-            return true;
-        else
-            return false;
+       buffer[i] = areEqual<T>(a[i],b[i]) || (a[i] > b[i]);
     }
-    return true;
+    return VecBool<N>(buffer);
 }
 
 template <unsigned int N, typename T>
-bool operator< (const Vec<N,T> &a, const Vec<N,T> &b) {
+VecBool<N> operator< (const Vec<N,T> &a, const Vec<N,T> &b) {
     using utils::areEqual;
+    bool buffer[N];
     for (unsigned int i = 0; i < N; i++) {
-        if(areEqual<T>(a[i], b[i]))
-            continue;
-        else if (a[i] < b[i])
-            return true;
-        else
-            return false;
+       buffer[i] = (a < b) && (!areEqual<T>(a[i],b[i]));
     }
-    return false;
+    return VecBool<N>(buffer);
 }
 
 template <unsigned int N, typename T>
-bool operator> (const Vec<N,T> &a, const Vec<N,T> &b) {
+VecBool<N> operator> (const Vec<N,T> &a, const Vec<N,T> &b) {
     using utils::areEqual;
+    bool buffer[N];
     for (unsigned int i = 0; i < N; i++) {
-        if(areEqual<T>(a[i], b[i]))
-            continue;
-        else if (a[i] > b[i])
-            return true;
-        else
-            return false;
+       buffer[i] = (a[i] > b[i]) && (!areEqual<T>(a[i],b[i]));
     }
-    return false;
+    return VecBool<N>(buffer);
 }
+
 
 template <unsigned int N, typename T>
 T Vec<N,T>::normalize () {

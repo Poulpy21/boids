@@ -28,7 +28,12 @@ struct VecBool final : public Vec<N,bool> {
     void setValue(unsigned long value);
     void setValue(const std::bitset<N> &bitset);
 
+    unsigned int to_uint() const;
     unsigned long to_ulong() const;
+
+    bool any() const;
+    bool none() const;
+    bool all() const;
 
     VecBool<N> & complement();
     VecBool<N> & operator ^=  (const VecBool<N> &other);
@@ -131,6 +136,42 @@ unsigned long VecBool<N>::to_ulong() const {
         val += (this->data[i] << i);
     }
     return val;
+}
+
+template <unsigned int N>
+unsigned int VecBool<N>::to_uint() const {
+    unsigned int val = 0;
+    for (unsigned int i = 0; i < N; i++) {
+        val += (this->data[i] << i);
+    }
+    return val;
+}
+    
+template <unsigned int N>
+bool VecBool<N>::any() const {
+    for (unsigned int i = 0; i < N; i++) {
+        if (this->data[i])
+            return true;
+    }
+    return false;
+}
+
+template <unsigned int N>
+bool VecBool<N>::none() const {
+    for (unsigned int i = 0; i < N; i++) {
+        if (this->data[i])
+            return false;
+    }
+    return true;
+}
+
+template <unsigned int N>
+bool VecBool<N>::all() const {
+    for (unsigned int i = 0; i < N; i++) {
+        if (!this->data[i])
+            return false;
+    }
+    return true;
 }
 
 template <unsigned int N>

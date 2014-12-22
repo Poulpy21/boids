@@ -9,7 +9,7 @@ class AbstractContainer {
 
     public:
         AbstractContainer() : _elements(0u), _size(0u), _data(0) {}
-        explicit AbstractContainer(const AbstractContainer<E> &other) : 
+        AbstractContainer(const AbstractContainer<E> &other) : 
             _elements(other._elements), _size(other._size), _data(other._data) {}
         virtual ~AbstractContainer() {}
         
@@ -25,7 +25,7 @@ class AbstractContainer {
         inline E pop_back() { _elements--; return _data[elements]; }
 
         virtual void allocate(unsigned int minData)   = 0;
-        virtual void reallocate(unsigned int minData) = 0;
+        //virtual void reallocate(unsigned int minData) = 0;
    
     private:
         unsigned int _elements;

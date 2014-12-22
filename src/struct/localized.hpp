@@ -9,7 +9,7 @@ struct Localized {
     Localized() {};
     virtual ~Localized() {};
 
-    virtual Vec<D,A> getPosition() const = 0;
+    virtual Vec<D,A> position() const = 0;
 };
 
 

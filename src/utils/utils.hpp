@@ -97,34 +97,38 @@ namespace utils {
 	const std::string toStringMemory(unsigned long bytes);
   
     template <typename T>
-        void templatePrettyPrint(std::ostream &os) {
+        std::string templatePrettyPrint(std::string &str = std::string("")) {
             int status;
             char * demangled = abi::__cxa_demangle(typeid(T).name(),0,0,&status);
             if(status == 0)
-                os << demangled;
+                str += demangled;
             else
-                os << typeid(T).name();
+                str += typeid(T).name();
             free(demangled);
+            return str;
         }
     
     //termination function
     template <typename T>
-    void genericTemplatePrettyPrint(std::ostream &os) {
-            templatePrettyPrint<T>(os);
+    std::string genericTemplatePrettyPrint(std::string &str = std::string("")) {
+            templatePrettyPrint<T>(str);
+            return str;
     }
 
     template <typename T1, typename T2, typename... Args>
-        void genericTemplatePrettyPrint(std::ostream &os) {      
-            templatePrettyPrint<T1>(os);
-            os << ",";
-            genericTemplatePrettyPrint<T2, Args...>(os);
+        std::string genericTemplatePrettyPrint(std::string &str = std::string("")) {      
+            templatePrettyPrint<T1>(str);
+            str += ",";
+            genericTemplatePrettyPrint<T2, Args...>(str);
+            return str;
         }
     
     template <typename T1, typename T2, typename... Args>
-        void templatePrettyPrint(std::ostream &os) {
-            os << "<";
-            genericTemplatePrettyPrint<T1,T2,Args...>(os);
-            os << " >";
+        std::string templatePrettyPrint(std::string &str = std::string("")) {
+            str += "<";
+            genericTemplatePrettyPrint<T1,T2,Args...>(str);
+            str += " >";
+            return str;
         }
     
 }
