@@ -19,7 +19,7 @@ namespace BoxTree {
     using BoxTree = RootNode<D,N,A,T,L,E>;
 
     template <unsigned int D, unsigned int N, typename A, typename T, typename L, typename E>
-        class RootNode final : public TreeNode<D,N,A,T> {
+        class RootNode : public TreeNode<D,N,A,T> {
 
             public:
                 explicit RootNode(const BoundingBox<D,A> &domain, unsigned int maxElementsPerLeaf);
