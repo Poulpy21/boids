@@ -17,55 +17,59 @@ using namespace log4cpp;
 int main(int argc, char** argv) {
 
 #ifdef GUI_ENABLED
-        //random
-        srand(time(NULL));
+    //random
+    srand(time(NULL));
 
-        //logs
-        log4cpp::initLogs();
+    //logs
+    log4cpp::initLogs();
 
-        //cuda
-        //CudaUtils::logCudaDevices(log_console);
+    //cuda
+    //CudaUtils::logCudaDevices(log_console);
 
-        log_console->infoStream() << "[Rand Init] ";
-        log_console->infoStream() << "[Logs Init] ";
+    log_console->infoStream() << "[Rand Init] ";
+    log_console->infoStream() << "[Logs Init] ";
 
-        // glut initialisation (mandatory) 
-        glutInit(&argc, argv);
-        log_console->infoStream() << "[Glut Init] ";
+    // glut initialisation (mandatory) 
+    glutInit(&argc, argv);
+    log_console->infoStream() << "[Glut Init] ";
 
-        // Read command lines arguments.
-        QApplication application(argc,argv);
-        log_console->infoStream() << "[Qt Init] ";
+    // Read command lines arguments.
+    QApplication application(argc,argv);
+    log_console->infoStream() << "[Qt Init] ";
 
-        // Instantiate the viewer (mandatory)
-        Viewer *viewer = new Viewer();
-        viewer->setWindowTitle("Flocking boids");
-        viewer->show();
-        Globals::viewer = viewer;
+    // Instantiate the viewer (mandatory)
+    Viewer *viewer = new Viewer();
+    viewer->setWindowTitle("Flocking boids");
+    viewer->show();
+    Globals::viewer = viewer;
 
-        //glew initialisation (mandatory)
-        log_console->infoStream() << "[Glew Init] " << glewGetErrorString(glewInit());
+    //glew initialisation (mandatory)
+    log_console->infoStream() << "[Glew Init] " << glewGetErrorString(glewInit());
 
-        //global vars
-        Globals::init();
-        Globals::print(std::cout);
-        Globals::check();
+    //global vars
+    Globals::init();
+    Globals::print(std::cout);
+    Globals::check();
 
-        //texture manager
-        Texture::init();
+    //texture manager
+    Texture::init();
 
-        log_console->infoStream() << "Running with OpenGL " << Globals::glVersion << " and glsl version " << Globals::glShadingLanguageVersion << " !";
-        //FIN INIT//
-        
-        //render root
-        RenderRoot *root = new RenderRoot(); 
-        
-        //Configure viewer
-        viewer->addRenderable(root);
+    log_console->infoStream() << "Running with OpenGL " << Globals::glVersion << " and glsl version " << Globals::glShadingLanguageVersion << " !";
+    //FIN INIT//
 
-        //Run main loop.
-        application.exec();
+    //render root
+    RenderRoot *root = new RenderRoot(); 
 
-        return EXIT_SUCCESS;
+    //boids
+    Boids *b = new Boids();
+    root->addChild("boids", b);
+
+    //Configure viewer
+    viewer->addRenderable(root);
+
+    //Run main loop.
+    application.exec();
+
+    return EXIT_SUCCESS;
 #endif
 }

@@ -1,13 +1,13 @@
-#include <mpi.h>
+#include "headers.hpp"
 
 // Agent (particle model)
 #include <cstdio>
 #include <iostream>
 #include <cmath>
 
-#include "headers.hpp"
 #include "agent.hpp"
 #include "types.hpp"
+#include "vec3.hpp"
 #include "parser.hpp"
 #include "options.hpp"
 #include "workspace.hpp"
@@ -93,8 +93,8 @@ int main(int argc, char **argv) {
 
     // exchangeAgents() and exchangeMeanAgents()
     Container localBoids, receivedBoids;
-    Agent meanBoid(Vector(rank+1,0,0), Vector(), Vector());
-    Agent boid(Vector(0,rank+1,0), Vector(), Vector());
+    Agent meanBoid(Vec3<Real>(rank+1,0,0), Vec3<Real>(), Vec3<Real>());
+    Agent boid(Vec3<Real>(0,rank+1,0), Vec3<Real>(), Vec3<Real>());
     Container tmpContainer = {boid};
     std::vector<int> otherRanks;
     std::map<int, Container> boidsToSend;
@@ -121,7 +121,7 @@ int main(int argc, char **argv) {
     // gatherAgentLoads()
     std::vector<int> loads(size);
     if (rank == 1)
-        localBoids.push_back(Agent(Vector(1337,1337,1337), Vector(), Vector()));
+        localBoids.push_back(Agent(Vec3<Real>(1337,1337,1337), Vec3<Real>(), Vec3<Real>()));
     mess.gatherAgentLoads(0, localBoids.size(), loads);
     if (rank == 0) {
         std::cout << std::endl << "LOADS: ";

@@ -15,7 +15,7 @@ set(BOIDS_VERSION ${BOIDS_MAJOR_VERSION}.${BOIDS_MINOR_VERSION}.${BOIDS_PATCH_VE
 # TODO # TODO # TODO # TODO # TODO # TODO ###
 set(MIN_COMPUTE_CAPABILITY "12")          #T#
 set(COMPUTE_CAPABILITY "12")              #O#
-set(ENABLE_GUI "0")                       ###
+set(ENABLE_GUI "1")                       ###
 set(CONSOLE_LOG_LEVEL "INFO")             #D#
 set(FILE_LOG_LEVEL "DEBUG")               #O#
 set(COUT_LOG_LEVEL "5")                   ###
@@ -178,7 +178,7 @@ if(${CUDA_FOUND} AND NOT "${kernel_files}" STREQUAL "")
     cuda_add_library(${CUDA_KERNELS} ${header_files} ${kernel_files})
 endif()
 
-# Create static library (all code exluding mains and Cuda precompiled code)
+# Create static library (all code excluding mains and Cuda precompiled code)
 set(CORE_LIB "Core")
 add_library(
     "${CORE_LIB}" 

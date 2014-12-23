@@ -18,7 +18,7 @@ Vec3<Real> Agent::separation(Container &agent_list, size_t index, double rad) {
             ++count;
         }
     }
-    return ( count>0 ? force/count : force);
+    return ( count>0 ? force/static_cast<Real>(count) : force);
 }
 
 Vec3<Real> Agent::cohesion(Container &agent_list, size_t index, double rad) {
@@ -32,7 +32,7 @@ Vec3<Real> Agent::cohesion(Container &agent_list, size_t index, double rad) {
             ++count;
         }
     }
-    return ( count>0 ? force/count : force);
+    return ( count>0 ? force/static_cast<Real>(count) : force);
 }
 
 Vec3<Real> Agent::alignment(Container&agent_list, size_t index, double rad) {
@@ -46,7 +46,7 @@ Vec3<Real> Agent::alignment(Container&agent_list, size_t index, double rad) {
             ++count;
         }
     }
-    return ( count>0 ? force/count : force);
+    return ( count>0 ? force/static_cast<Real>(count) : force);
 }
 
 size_t Agent::find_closest(Container &agent_list, size_t index) {
