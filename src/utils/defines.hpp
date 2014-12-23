@@ -13,5 +13,11 @@
 #else
 #error "Please provide a definition for ALIGN macro for your host compiler (in utils/defines.hpp) !"
 #endif
+    
+#ifdef GUI_ENABLED
+#define RENDETREE ,public RenderTree
+#define RENDETREE_ONLY : public RenderTree
+#endif
+
 
 #endif /* end of include guard: DEFINES_H */

@@ -20,17 +20,14 @@ namespace Tree {
                 explicit HyperCubeTree(const HyperCube<D,A> &cube, unsigned int maxElementsPerLeaf, float fillThreshHold);
                 virtual ~HyperCubeTree();
                 
-                unsigned int targetChild(const TreeNode<D,_N_,A,T> &node, const E &e) const override;
-                TreeNode<D,_N_,A,T>& splitLeaf(std::shared_ptr<LeafNode<D,_N_,A,T,L,E>> leaf) override;
-                LeafNode<D,_N_,A,T,L,E>&  mergeChilds(std::shared_ptr<TreeNode<D,_N_,A,T>> father) override;
-
-                std::shared_ptr<TreeNode<D,N,A,T>> root;
+                unsigned int targetChild(const TreeNode<D,_N_,A,T> *node, const E &e) const override;
+                TreeNode<D,_N_,A,T>* splitLeaf(LeafNode<D,_N_,A,T,L,E>* &leaf) override;
+                LeafNode<D,_N_,A,T,L,E>* mergeChilds(TreeNode<D,_N_,A,T>* &father) override;
         };
                 
     template <unsigned int D, typename A, typename T, typename L, typename E>
     HyperCubeTree<D,A,T,L,E>::HyperCubeTree(const HyperCubeTree<D,A,T,L,E> &other) : 
         BoxTree<D,_N_,A,T,L,E>(other) {
-            root.reset(this);
         }
 
     template <unsigned int D, typename A, typename T, typename L, typename E>
@@ -38,9 +35,6 @@ namespace Tree {
             unsigned int maxElementsPerLeaf, float fillThreshHold) :
         BoxTree<D,_N_,A,T,L,E>(cube, maxElementsPerLeaf, fillThreshHold) {
             
-            root.reset(this);
-            std::cout << "Created root " << root.get() << std::endl;
-           
             //create first leafs
             const Vec<D,A> &xmin = this->bbox().min;
             const Vec<D,A> &xmax = this->bbox().max;
@@ -48,13 +42,7 @@ namespace Tree {
             for (unsigned int i = 0; i < N; i++) {
                 Vec<D,A> v = Vec<D,A>(VecBool<D>(i));
                 BoundingBox<D,A> bbox(xmin+v*dx2, xmin+(A(1)+v)*dx2);
-                auto child = this->weakChild(i).lock();
-                std::cout << child.get() << ", ";
-                this->_childs[i].reset(
-                        new LeafNode<D,N,A,T,L,E>(
-                            bbox, this->_maxElementsPerLeaf, root, i));
-                child = this->weakChild(i).lock();
-                std::cout << child.get() << ", " << std::endl;
+                this->child(i) = new LeafNode<D,N,A,T,L,E>(bbox, this->_maxElementsPerLeaf, this, i);
             }
     }
 
@@ -63,18 +51,21 @@ namespace Tree {
     }
 
     template <unsigned int D, typename A, typename T, typename L, typename E>
-    unsigned int HyperCubeTree<D,A,T,L,E>::targetChild(const TreeNode<D,_N_,A,T> &node, const E &e) const {
-        return (e.position() > node.bbox().center()).to_uint(); 
+    unsigned int HyperCubeTree<D,A,T,L,E>::targetChild(const TreeNode<D,_N_,A,T> *node, const E &e) const {
+        return (e.position() > node->bbox().center()).to_uint(); 
     }
 
     template <unsigned int D, typename A, typename T, typename L, typename E>
-    TreeNode<D,_N_,A,T>& HyperCubeTree<D,A,T,L,E>::splitLeaf(std::shared_ptr<LeafNode<D,_N_,A,T,L,E>> leaf) {
+    TreeNode<D,_N_,A,T>* HyperCubeTree<D,A,T,L,E>::splitLeaf(LeafNode<D,_N_,A,T,L,E>* &leaf) {
+
         assert(leaf->isLeaf()); 
         
         //clone leaf base treenode and get data
-        std::shared_ptr<TreeNode<D,_N_,A,T>> father(new TreeNode<D,N,A,T>(*leaf));
+        TreeNode<D,_N_,A,T>* father = new TreeNode<D,N,A,T>(*leaf);
         L data(leaf->data());
-        leaf.reset();
+        
+        delete leaf;
+        leaf = dynamic_cast<LeafNode<D,N,A,T,L,E>*>(father);
 
         //create new leafs
         const Vec<D,A> &xmin = father->bbox().min;
@@ -83,18 +74,18 @@ namespace Tree {
         for (unsigned int i = 0; i < N; i++) {
             Vec<D,A> v = Vec<D,A>(VecBool<D>(i));
             BoundingBox<D,A> bbox(xmin+v*dx2, xmin+(A(1)+v)*dx2);
-            father->child(i).reset(new LeafNode<D,N,A,T,L,E>(bbox, this->_maxElementsPerLeaf, father, i));
+            father->child(i) = new LeafNode<D,N,A,T,L,E>(bbox, this->_maxElementsPerLeaf, father, i);
         }
     
         //put back data in the tree
         this->insert(data);
 
-        return *father;
+        return father;
     }
 
     template <unsigned int D, typename A, typename T, typename L, typename E>
-    LeafNode<D,_N_,A,T,L,E>&  HyperCubeTree<D,A,T,L,E>::mergeChilds(std::shared_ptr<TreeNode<D,_N_,A,T>> father) {
-        return dynamic_cast<LeafNode<D,N,A,T,L,E>&>((*father)[0]);
+    LeafNode<D,_N_,A,T,L,E>*  HyperCubeTree<D,A,T,L,E>::mergeChilds(TreeNode<D,_N_,A,T>* &father) {
+        return dynamic_cast<LeafNode<D,N,A,T,L,E>*>(father->child(0));
     }
 
 #undef _N_

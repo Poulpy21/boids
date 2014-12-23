@@ -12,6 +12,7 @@ cmake_install.cmake
 Makefile
 program.log
 lib
+debug
 .exrc
 *.o
 *.xyz
