@@ -1,5 +1,6 @@
 main
 display
+tree
 
 obj
 tags
@@ -10,6 +11,7 @@ CMakeFiles/
 cmake_install.cmake
 Makefile
 program.log
+lib
 .exrc
 *.o
 *.xyz

@@ -11,6 +11,7 @@ set(BOIDS_MINOR_VERSION 1)
 set(BOIDS_PATCH_VERSION 0)
 set(BOIDS_VERSION ${BOIDS_MAJOR_VERSION}.${BOIDS_MINOR_VERSION}.${BOIDS_PATCH_VERSION})
 
+
 # TODO # TODO # TODO # TODO # TODO # TODO ###
 set(MIN_COMPUTE_CAPABILITY "12")          #T#
 set(COMPUTE_CAPABILITY "12")              #O#
@@ -96,12 +97,25 @@ if(${CUDA_FOUND})
     set(CUDA_NVCC_FLAGS_RELEASE "-O3")
 endif()
 
+#Set executable sources
+list(APPEND executable_sources "${CMAKE_SOURCE_DIR}/src/main.cpp")
+list(APPEND executable_sources "${CMAKE_SOURCE_DIR}/src/tree.cpp")
+if(${ENABLE_GUI})
+    list(APPEND executable_sources "${CMAKE_SOURCE_DIR}/src/display.cpp")
+endif()
+
 #Find source files
 file(GLOB_RECURSE header_files src/*.hpp)
 file(GLOB_RECURSE source_files src/*.cpp)
 file(GLOB_RECURSE template_files src/*.tpp)
 file(GLOB_RECURSE kernel_files src/*.cu)
 file(GLOB_RECURSE configure_files src/*.hpp.in)
+
+#Remove executable sources so that mains do not conflict
+set(source_files_no_main ${source_files})
+foreach(main_source ${executable_sources})
+    LIST(REMOVE_ITEM source_files_no_main "${main_source}")
+endforeach()
 
 #Configure headers
 foreach(configIn ${configure_files})
@@ -128,6 +142,11 @@ include_directories(SYSTEM
     ${CUDA_INCLUDE_DIRS} 
     ${LOG4CPP_INCLUDE_DIRS} 
     ${MPI_INCLUDE_PATH}  
+    ${QT_INCLUDE_DIR}
+    ${QT_QTCORE_INCLUDE_DIR}
+    ${QT_QTGUI_INCLUDE_DIR}
+    ${QT_QTXML_INCLUDE_DIR}
+    ${QT_QTOPENGL_INCLUDE_DIR}
     )
 
 #Library directories
@@ -135,24 +154,6 @@ link_directories(
     ${CUDA_LIBRARY_DIRS}
     ${LOG4CPP_LIBRARY_DIRS}
     )
-
-#Precompiled CUDA kernels
-if(${CUDA_FOUND} AND NOT "${kernel_files}" STREQUAL "")
-    set(CUDA_KERNELS "CudaKernels")
-    cuda_include_directories(${include_directories})
-    cuda_add_library(${CUDA_KERNELS} ${header_files} ${kernel_files})
-endif()
-
-# Remove executable sources so that mains don't conflict
-SET(source_files_no_main ${source_files})
-LIST(REMOVE_ITEM source_files_no_main ${CMAKE_SOURCE_DIR}/src/main.cpp)
-LIST(REMOVE_ITEM source_files_no_main ${CMAKE_SOURCE_DIR}/src/display.cpp)
-
-#Executables
-add_executable(main ${header_files} ${source_files_no_main} "src/main.cpp" ${template_files} ${configure_files})
-if(${ENABLE_GUI})
-    add_executable(display ${header_files} ${source_files_no_main} "src/display.cpp" ${template_files} ${configure_files})
-endif()
 
 #Compile QT as SYSTEM
 set_property(TARGET Qt4::QtCore APPEND PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES 
@@ -170,25 +171,31 @@ set_property(TARGET Qt4::QtOpenGL APPEND PROPERTY INTERFACE_SYSTEM_INCLUDE_DIREC
     ${QT_QTOPENGL_INCLUDE_DIR}
     )
 
-#Link executables
-target_link_libraries(
-    main 
-    Qt4::QtGui           #QtGui
-    Qt4::QtCore          #QtCore
-    Qt4::QtXml           #QtXml
-    Qt4::QtOpenGL        #QtOpenGL
-    ${QGLVIEWER_LIBRARY} #QGlViewer
-    ${LOG4CPP_LIBRARIES} #Log4cpp
-    ${MPI_CXX_LIBRARIES} #MPI
-    ${CUDA_LIBRARIES}    #Cuda
-    ${CUDA_KERNELS}      #Cuda Kernels
-    ${OPENGL_LIBRARIES}  #OpenGl
-    ${GLEW_LIBRARIES}    #Glew
-    ${GLUT_glut_LIBRARY} #Glut
-    )
-if(${ENABLE_GUI})
+#Precompiled CUDA kernels (static library)
+if(${CUDA_FOUND} AND NOT "${kernel_files}" STREQUAL "")
+    set(CUDA_KERNELS "CudaKernels")
+    cuda_include_directories(${include_directories})
+    cuda_add_library(${CUDA_KERNELS} ${header_files} ${kernel_files})
+endif()
+
+# Create static library (all code exluding mains and Cuda precompiled code)
+set(CORE_LIB "Core")
+add_library(
+    "${CORE_LIB}" 
+    STATIC 
+    ${source_files_no_main}
+    ${template_files}
+    ${header_files}
+)
+
+#Executables
+foreach(main_source ${executable_sources})
+    get_filename_component(exec_name ${main_source} NAME_WE)
+    add_executable(${exec_name} ${header_files} ${main_source} ${template_files})
     target_link_libraries(
-        display 
+        ${exec_name} 
+        ${CORE_LIB}          #Core
+        ${CUDA_KERNELS}      #Cuda Kernels
         Qt4::QtGui           #QtGui
         Qt4::QtCore          #QtCore
         Qt4::QtXml           #QtXml
@@ -197,15 +204,16 @@ if(${ENABLE_GUI})
         ${LOG4CPP_LIBRARIES} #Log4cpp
         ${MPI_CXX_LIBRARIES} #MPI
         ${CUDA_LIBRARIES}    #Cuda
-        ${CUDA_KERNELS}      #Cuda Kernels
         ${OPENGL_LIBRARIES}  #OpenGl
         ${GLEW_LIBRARIES}    #Glew
         ${GLUT_glut_LIBRARY} #Glut
         )
-endif()
+endforeach()
 
-#add_custom_target(run
-#    COMMAND mpirun -np 1 ${EXECUTABLE_OUTPUT_PATH}/main -agents 20 && ${EXECUTABLE_OUTPUT_PATH}/script/visu.sh 20
-#    DEPENDS main
-#    WORKING_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}
-#)
+#enable_testing()
+
+add_custom_target(run
+    COMMAND mpirun -np 1 ${EXECUTABLE_OUTPUT_PATH}/main -agents 20 && ${EXECUTABLE_OUTPUT_PATH}/script/visu.sh 20
+    DEPENDS main
+    WORKING_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}
+)
