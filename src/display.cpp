@@ -8,7 +8,7 @@
 #include "utils/globals.hpp"
 #include "utils/opengl/texture/texture.hpp"
 #include "rendering/renderable/renderRoot.hpp"
-#include "utils/random/rand.h"
+#include "utils/random/rand.hpp"
 #include "rendering/renderable/boids/boids.hpp"
 
 using namespace std;

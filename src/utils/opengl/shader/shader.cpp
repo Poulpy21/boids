@@ -29,7 +29,7 @@ std::ifstream shaderFile(location);
 		shaderFile.close();
 
 		log_console->debugStream() << "Loading shader from file " << location;
-		log_console->debugStream() << "\n-- SHADER -- \n" << shaderS << "\n-- END --";
+		log_console->debugStream() << "\n-- SHADER -- \n" << shaderS.str() << "\n-- END --";
 	}
 
 	else {
@@ -60,6 +60,9 @@ std::ifstream shaderFile(location);
 		delete [] buffer;
 		exit(1);
 	}
+    else {
+		log_console->debugStream() << "Shader Compilation successful!";         
+    }
 }
 
 unsigned int Shader::getShader() const {

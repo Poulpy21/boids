@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/modules/")
 set(LIBRARY_OUTPUT_PATH "${CMAKE_SOURCE_DIR}/lib/${CMAKE_BUILD_TYPE}")
-set(EXECUTABLE_OUTPUT_PATH "${CMAKE_SOURCE_DIR}")
+#set(EXECUTABLE_OUTPUT_PATH "${CMAKE_SOURCE_DIR}")
 
 project(Boids C CXX)
 set(BOIDS_MAJOR_VERSION 0)
@@ -15,7 +15,7 @@ set(BOIDS_VERSION ${BOIDS_MAJOR_VERSION}.${BOIDS_MINOR_VERSION}.${BOIDS_PATCH_VE
 # TODO # TODO # TODO # TODO # TODO # TODO ###
 set(MIN_COMPUTE_CAPABILITY "12")          #T#
 set(COMPUTE_CAPABILITY "12")              #O#
-set(ENABLE_GUI "0")                       ###
+set(ENABLE_GUI "1")                       ###
 set(CONSOLE_LOG_LEVEL "INFO")             #D#
 set(FILE_LOG_LEVEL "DEBUG")               #O#
 set(COUT_LOG_LEVEL "5")                   ###
