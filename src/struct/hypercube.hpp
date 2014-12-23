@@ -80,7 +80,7 @@ template <unsigned int D, typename A>
 std::string HyperCube<D,A>::toString() const {
     std::stringstream ss;
     ss << "HyperCube<" << D << ",";
-    utils::templatePrettyPrint<A>(os);
+    utils::templatePrettyPrint<A>(ss);
     ss << ">" << std::endl;
     ss << "\tMin: " << this->min << std::endl;
     ss << "\tMax: " << this->max << std::endl;

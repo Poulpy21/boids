@@ -20,14 +20,14 @@ class AbstractContainer {
         unsigned int size()     const { return _size; }
         E* data() { return _data; }
 
-        inline void insert(const E& e)    { _data[elements] = e; _elements++; }
+        inline void insert(const E& e)    { _data[_elements] = e; _elements++; }
         inline void push_back(const E& e) { insert(e); }
-        inline E pop_back() { _elements--; return _data[elements]; }
+        inline E pop_back() { _elements--; return _data[_elements]; }
 
         virtual void allocate(unsigned int minData)   = 0;
         //virtual void reallocate(unsigned int minData) = 0;
    
-    private:
+    protected:
         unsigned int _elements;
         unsigned int _size;
         E* _data;

@@ -26,10 +26,13 @@
  */
 
 namespace Tree {
+    
+    template <unsigned int D, unsigned int N, typename A, typename T, typename L, typename E>
+        class RootNode;
 
     template <unsigned int D, unsigned int N, typename A, typename T>
         class TreeNode {
-
+          
             public:
                 TreeNode();
                 TreeNode(const TreeNode<D,N,A,T> &other);
@@ -41,8 +44,9 @@ namespace Tree {
                 unsigned int getFirstChildId() const;
                 unsigned int getChildId(unsigned int childNum) const;
 
-                std::weak_ptr  <TreeNode<D,N,A,T>> father() const;
-                std::shared_ptr<TreeNode<D,N,A,T>> child(unsigned int childNum) const;
+                std::weak_ptr<TreeNode<D,N,A,T>> father() const;
+                std::weak_ptr<TreeNode<D,N,A,T>> weakChild(unsigned int childNum) const;
+                std::shared_ptr<TreeNode<D,N,A,T>>& child(unsigned int childNum);
 
                 TreeNode<D,N,A,T>& operator[](unsigned int k);
                 TreeNode<D,N,A,T>  operator[](unsigned int k) const;
@@ -102,7 +106,7 @@ namespace Tree {
     {
         _father = other._father;
         for (unsigned int i = 0; i < N; i++) {
-            _childs[i].reset(other.child(i).get());
+            _childs[i] = other.weakChild(i).lock();
         }
     }
 
@@ -122,7 +126,6 @@ namespace Tree {
             return _id*N + childNum;
         }
 
-
     template <unsigned int D, unsigned int N, typename A, typename T>
         TreeNode<D,N,A,T>& TreeNode<D,N,A,T>::operator[](unsigned int k) {
             return *_childs[k].get();
@@ -139,7 +142,12 @@ namespace Tree {
         }
 
     template <unsigned int D, unsigned int N, typename A, typename T>
-        std::shared_ptr<TreeNode<D,N,A,T>> TreeNode<D,N,A,T>::child(unsigned int childNum) const {
+        std::weak_ptr<TreeNode<D,N,A,T>> TreeNode<D,N,A,T>::weakChild(unsigned int childNum) const {
+            return _childs[childNum];
+        }
+                
+    template <unsigned int D, unsigned int N, typename A, typename T>
+    std::shared_ptr<TreeNode<D,N,A,T>>& TreeNode<D,N,A,T>::child(unsigned int childNum) {
             return _childs[childNum];
         }
 

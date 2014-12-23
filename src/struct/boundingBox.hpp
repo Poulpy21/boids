@@ -58,6 +58,7 @@ template <unsigned int D, typename A>
 BoundingBox<D,A>& BoundingBox<D,A>::operator= (const BoundingBox<D,A> &v) {
     this->min = v.min;
     this->max = v.max;
+    return *this;
 }
 
 template <unsigned int D, typename A>

@@ -46,14 +46,19 @@ namespace Tree {
                 RootNode(const RootNode<D,N,A,T,L,E> &other);
                 virtual ~RootNode();
 
-                void insert(const E &e);
-                void insert(const AbstractContainer<E> &container);
+                void insert(E &e);
+                void insert(AbstractContainer<E> &container);
 
                 bool isRoot() const final;
 
                 virtual unsigned int targetChild(const TreeNode<D,N,A,T> &node, const E &e) const = 0;
                 virtual TreeNode<D,N,A,T>& splitLeaf(std::shared_ptr<LeafNode<D,N,A,T,L,E>> leaf) = 0;
                 virtual LeafNode<D,N,A,T,L,E>&  mergeChilds(std::shared_ptr<TreeNode<D,N,A,T>> father) = 0;
+
+                virtual void onPreLeafSplit(LeafNode<D,N,A,T,L,E> &leaf) {}
+                virtual void onPostLeafSplit(TreeNode<D,N,A,T> &father) {}
+                virtual void onPreInsert(const E &e, LeafNode<D,N,A,T,L,E> &leaf) {}
+                virtual void onPostInsert(const E &e, LeafNode<D,N,A,T,L,E> &leaf) {}
 
             protected:
                 explicit RootNode(const BoundingBox<D,A> &domain, unsigned int maxElementsPerLeaf, float fillThreshold);
@@ -87,37 +92,37 @@ namespace Tree {
         }
 
 template <unsigned int D, unsigned int N, typename A, typename T, typename L, typename E>
-        void RootNode<D,N,A,T,L,E>::insert(const E &e) {
+        void RootNode<D,N,A,T,L,E>::insert(E &e) {
+
             TreeNode<D,N,A,T> &buffer = *this;
 
-            while(!buffer.isLeaf())
+            while(!buffer.isLeaf()) {
+                //std::cout << "targetChild is " << targetChild(buffer,e) << std::endl;
                 buffer = buffer[targetChild(buffer, e)];
+            }
 
-            LeafNode<D,N,A,T,L,E> &leaf = dynamic_cast<LeafNode<D,N,A,T,L,E>&>(buffer);
+            std::shared_ptr<LeafNode<D,N,A,T,L,E>> leaf;
+            leaf.reset(dynamic_cast<LeafNode<D,N,A,T,L,E>*>(&buffer));
 
             //leaf container is already full
-            if(leaf.elements() == _maxElementsPerLeaf) {    
-                onPreLeafSplit(leaf);
+            if(leaf->elements() == _maxElementsPerLeaf) {    
+                onPreLeafSplit(*leaf);
                 buffer = splitLeaf(leaf);
-                leaf = dynamic_cast<LeafNode<D,N,A,T,L,E>>(buffer[targetChild(buffer, e)]);
+                leaf.reset(dynamic_cast<LeafNode<D,N,A,T,L,E>*>(&buffer[targetChild(buffer, e)]));
                 onPostLeafSplit(buffer);
             }
 
-            onPreInsert(leaf, e);
-            leaf.insert(e);
-            onPostInsert(leaf, e);
+            onPreInsert(e, *leaf);
+            leaf->insert(e);
+            onPostInsert(e, *leaf);
         }
 
     template <unsigned int D, unsigned int N, typename A, typename T, typename L, typename E>
-        void RootNode<D,N,A,T,L,E>::insert(const AbstractContainer<E> &container) {
+        void RootNode<D,N,A,T,L,E>::insert(AbstractContainer<E> &container) {
             for (unsigned int i = 0; i < container.elements(); i++) {
                 this->insert(container[i]);
             }
         }
-
-    //template <unsigned int D, unsigned int N, typename A, typename T, typename L, typename E>
-    //void RootNode<D,N,A,T,L,E>::balance() {
-    //}
 }
 
 
