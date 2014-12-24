@@ -55,7 +55,7 @@ struct Vec {
     T norm() const;
     T squaredNorm() const;
 
-    Vec<N,T> unit() const;
+    Vec<N,T> normalized() const;
     
 protected: 
     T data[N];
@@ -402,7 +402,7 @@ T Vec<N,T>::normalize () {
 }
 
 template <unsigned int N, typename T>
-Vec<N,T> Vec<N,T>::unit () const {
+Vec<N,T> Vec<N,T>::normalized () const {
     Vec<N,T> v(*this);
     v.normalize();
     return v;

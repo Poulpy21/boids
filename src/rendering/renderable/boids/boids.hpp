@@ -19,10 +19,12 @@ class Boids : public RenderTree {
 
     private:
         void makeProgram();
+        void makeVAO();
+        void readFile(std::string fileName);
 
         Program *_program;
         std::map<std::string, int> _uniformLocations;
-        unsigned int _vertexVBO;
+        GLuint _VAO, _VBO;
         Texture **_boidTextures;
 };
 

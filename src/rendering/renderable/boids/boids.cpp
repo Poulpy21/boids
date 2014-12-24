@@ -3,10 +3,18 @@
 
 #ifdef GUI_ENABLED
 
+#include <fstream>
+#include <string>
+#include <sstream>
 #include "utils/globals.hpp"
+#include "utils/types.hpp"
 
 Boids::Boids(/*boids*/) {
+    glEnable(GL_POINT_SPRITE);
+    glEnable(GL_PROGRAM_POINT_SIZE);
+
     makeProgram();
+    makeVAO();
 }
 
 Boids::~Boids () {
@@ -20,19 +28,17 @@ Boids::~Boids () {
 }
 
 void Boids::drawDownwards(const float *currentTransformationMatrix) {
-    static float *proj = new float[16], *view = new float[16];
-
 	_program->use();
 
-	glGetFloatv(GL_MODELVIEW_MATRIX, view);
-	glGetFloatv(GL_PROJECTION_MATRIX, proj);
-	glUniformMatrix4fv(_uniformLocations["projectionMatrix"], 1, GL_FALSE, proj);
-	glUniformMatrix4fv(_uniformLocations["viewMatrix"], 1, GL_FALSE, view);
-	glUniformMatrix4fv(_uniformLocations["modelMatrix"], 1, GL_TRUE, currentTransformationMatrix);
-	
-	/*glBindVertexArray(VAO);
-		glDrawArrays(GL_POINTS, 0, nBoids);
-	glBindVertexArray(0);*/
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0,  Globals::projectionViewUniformBlock);
+	//glUniformMatrix4fv(_uniformLocations["modelMatrix"], 1, GL_TRUE, currentTransformationMatrix);
+    /*GLint viewport[4];
+    glGetIntegerv(GL_VIEWPORT, viewport);
+    glUniform2i(_uniformLocations["screenSize"], viewport[2], viewport[3]);*/
+
+	glBindVertexArray(_VAO);
+		glDrawArrays(GL_POINTS, 0, 3);
+	glBindVertexArray(0);
 
 	glUseProgram(0);
 }
@@ -52,9 +58,10 @@ void Boids::makeProgram() {
 
     _program->link();
 
-    _uniformLocations = _program->getUniformLocationsMap("modelMatrix", true);
+    //_uniformLocations = _program->getUniformLocationsMap("modelMatrix", true);
+    //_uniformLocations = _program->getUniformLocationsMap("screenSize", false);
     
-    /*
+    
     _boidTextures = new Texture*[4];
 
     _boidTextures[0] = new Texture2D("textures/normalBoid.png","png");
@@ -64,6 +71,7 @@ void Boids::makeProgram() {
     _boidTextures[0]->addParameter(Parameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR));
     _boidTextures[0]->generateMipMap();
 
+    /*
     _boidTextures[1] = new Texture2D("textures/predatorBoid.png", "png");
     _boidTextures[1]->addParameters(_boidTextures[0]->getParameters());
     _boidTextures[1]->generateMipMap();
@@ -75,9 +83,37 @@ void Boids::makeProgram() {
     _boidTextures[3] = new Texture2D("textures/wallBoid.png", "png");
     _boidTextures[3]->addParameters(_boidTextures[0]->getParameters());
     _boidTextures[3]->generateMipMap();
-
-    _program->bindTextures(&_boidTextures, "normalBoid predatorBoid preyBoid wallBoid", true);
     */
+
+    //_program->bindTextures(&_boidTextures, "normalBoid predatorBoid preyBoid wallBoid", true);
+    _program->bindTextures(_boidTextures, "boidTexture0", false);
+}
+
+void Boids::makeVAO() {
+    glGenVertexArrays(1, &_VAO);
+    glBindVertexArray(_VAO);
+
+    glGenBuffers(1, &_VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, _VBO);
+    //test
+    GLfloat array[9] = {0,0,0,0.5,0.5,0.5,0,1.0,0};
+    glBufferData(GL_ARRAY_BUFFER, 9*sizeof(GLfloat), array, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(0);
+    //TODO attrib #1 : boidType
+
+    glBindVertexArray(0);
+}
+
+void Boids::readFile(std::string fileName) {
+    /*std::ifstream file;
+    int nAgents;
+    Real value; 
+
+    file.open(fileName);
+   
+    file.close();  */
 }
 
 #endif

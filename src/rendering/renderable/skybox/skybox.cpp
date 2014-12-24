@@ -110,7 +110,7 @@ void Skybox::drawDownwards(const float *currentTransformationMatrix) {
 
     // Couleur sous l'eau
     float scale = 50.0f-0.01f; // cf main + offset pour z-fighting
-    float offsetH = 1.0f * (Globals::viewer->camera()->position()[1] > 10.0 ? -1.0f : 1.0f); // pour cacher les décalages avec les vagues
+    float offsetH = 1.0f * (Globals::viewer->camera()->position()[1] > 10.0f ? -1.0f : 1.0f); // pour cacher les décalages avec les vagues
     float waterHeight = 10.0f + offsetH;
     glColor3ub(57, 88, 121);
     glDisable(GL_LIGHTING);

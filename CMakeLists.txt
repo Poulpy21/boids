@@ -178,7 +178,7 @@ if(${CUDA_FOUND} AND NOT "${kernel_files}" STREQUAL "")
     cuda_add_library(${CUDA_KERNELS} ${header_files} ${kernel_files})
 endif()
 
-# Create static library (all code exluding mains and Cuda precompiled code)
+# Create static library (all code excluding mains and Cuda precompiled code)
 set(CORE_LIB "Core")
 add_library(
     "${CORE_LIB}" 

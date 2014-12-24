@@ -16,7 +16,6 @@ void RenderRoot::drawDownwards(const float *currentTransformationMatrix) {
     glGetFloatv(GL_MODELVIEW_MATRIX, view);
     glGetFloatv(GL_PROJECTION_MATRIX, proj);
 
-
     GLfloat cameraPos_f[4], cameraDir_f[4], cameraUp_f[4], cameraRight_f[4];
     GLfloat *vectors[] = {cameraPos_f,  cameraDir_f, cameraUp_f, cameraRight_f};
     qglviewer::Vec vec[] = {cameraPos,  cameraDir, cameraUp, cameraRight};

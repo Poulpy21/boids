@@ -39,7 +39,7 @@ void Viewer::init()
 
     this->setAddKeyFrameKeyboardModifiers(Qt::ControlModifier); // Alt ne marchait pas
 
-    this->setSceneRadius(100.0f);
+    this->setSceneRadius(1.0f);
     this->camera()->setZNearCoefficient(0.00001);
     this->camera()->setZClippingCoefficient(1000.0);
 

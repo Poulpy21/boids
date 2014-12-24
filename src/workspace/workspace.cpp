@@ -4,7 +4,7 @@
 #include <ctime>
 
 #include "../boid/agent.hpp"
-#include "vector.hpp"
+#include "vec3.hpp"
 #include "workspace.hpp"
 
 Workspace::Workspace(ArgumentParser &parser) :
@@ -45,16 +45,16 @@ void  Workspace::init() {
     // This loop may be quite expensive due to random number generation
     for(size_t j = 0; j < na; j++){
         // Create random position
-        Vector position(drand48(), drand48(), drand48());
+        Vec3<Real> position(drand48(), drand48(), drand48());
 
         // Create random velocity
-        agents.push_back(Agent(position, Zeros(), Zeros()));
+        agents.push_back(Agent(position, Vec3<Real>(), Vec3<Real>()));
     }
 }
 
 void Workspace::move()
 {
-    Vector s,c,a;
+    Vec3<Real> s,c,a;
 
     for(size_t k = 0; k< na; k++){
         s = agents[k].separation(agents, k, rSeparation);
@@ -96,7 +96,6 @@ void Workspace::simulate(int nsteps) {
 
 void Workspace::save(int stepid) {
     std::ofstream myfile;
-
     myfile.open("boids.xyz", stepid==0 ? std::ios::out : std::ios::app);
 
     myfile << std::endl;
