@@ -33,7 +33,11 @@ namespace Tree {
         class RootNode;
 
     template <unsigned int D, unsigned int N, typename A, typename T>
+#ifdef ENABLE_GUI
         class TreeNode : public RenderTree {
+#else
+        class TreeNode {
+#endif
 
             public:
                 TreeNode();

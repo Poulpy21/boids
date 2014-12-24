@@ -102,7 +102,6 @@ template <unsigned int D, unsigned int N, typename A, typename T, typename L, ty
 
             TreeNode<D,N,A,T> *buffer = this;
 
-            unsigned int level = 0u;
             while(!buffer->isLeaf()) {
                 buffer = buffer->child(targetChild(buffer, e));
             }

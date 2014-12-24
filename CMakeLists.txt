@@ -15,7 +15,7 @@ set(BOIDS_VERSION ${BOIDS_MAJOR_VERSION}.${BOIDS_MINOR_VERSION}.${BOIDS_PATCH_VE
 # TODO # TODO # TODO # TODO # TODO # TODO ###
 set(MIN_COMPUTE_CAPABILITY "12")          #T#
 set(COMPUTE_CAPABILITY "12")              #O#
-set(ENABLE_GUI "1")                       ###
+set(ENABLE_GUI "0")                       ###
 set(CONSOLE_LOG_LEVEL "INFO")             #D#
 set(FILE_LOG_LEVEL "DEBUG")               #O#
 set(COUT_LOG_LEVEL "5")                   ###
