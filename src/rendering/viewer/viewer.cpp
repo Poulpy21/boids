@@ -117,12 +117,12 @@ void Viewer::keyPressEvent(QKeyEvent *e)
         else
             glDisable(GL_LIGHTING);
     } 
-    else if (e->key()==Qt::Key_R) {
+    /*else if (e->key()==Qt::Key_R) {
         toggleRecord = !toggleRecord;
 
         // ... and so on with all events to handle here!
 
-    } else {
+    } */else {
         // if the event is not handled here, process it as default
         QGLViewer::keyPressEvent(e);
     }

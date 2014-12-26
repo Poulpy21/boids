@@ -3,13 +3,13 @@
 
 #ifdef GUI_ENABLED
 
-#include <fstream>
-#include <string>
-#include <sstream>
 #include "utils/globals.hpp"
 #include "utils/types.hpp"
 
-Boids::Boids(/*boids*/) {
+using namespace log4cpp;
+
+Boids::Boids() : boidsUpdated(false), boidsFile(""), boids()
+{
     glEnable(GL_POINT_SPRITE);
     glEnable(GL_PROGRAM_POINT_SIZE);
 
@@ -18,9 +18,12 @@ Boids::Boids(/*boids*/) {
 }
 
 Boids::~Boids () {
-    for (int i = 0; i < 4; i++) {
+    boidsFs.close();
+
+    /*for (int i = 0; i < 4; i++) {
 		delete _boidTextures[i];
-	}
+	}*/
+    delete _boidTextures[0];
 
 	delete[] _boidTextures;
 
@@ -28,6 +31,13 @@ Boids::~Boids () {
 }
 
 void Boids::drawDownwards(const float *currentTransformationMatrix) {
+
+    if (boidsUpdated) {
+        glBindBuffer(GL_ARRAY_BUFFER, _VBO);
+        glBufferData(GL_ARRAY_BUFFER, boids.size()*sizeof(float), boids.data(), GL_DYNAMIC_DRAW);
+    }
+    boidsUpdated = false;
+
 	_program->use();
 
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0,  Globals::projectionViewUniformBlock);
@@ -37,13 +47,22 @@ void Boids::drawDownwards(const float *currentTransformationMatrix) {
     glUniform2i(_uniformLocations["screenSize"], viewport[2], viewport[3]);*/
 
 	glBindVertexArray(_VAO);
-		glDrawArrays(GL_POINTS, 0, 3);
+		glDrawArrays(GL_POINTS, 0, boids.size() / 3);
 	glBindVertexArray(0);
 
 	glUseProgram(0);
 }
 
+void Boids::animateDownwards() {
+    if (boidsFile.compare("") != 0)
+        parseBoidsFile();
+
+}
+
 void Boids::updateBoids(/*boids*/) {
+
+    //TODO
+    //boidsUpdated = true;
 }
 
 void Boids::makeProgram() {
@@ -95,10 +114,10 @@ void Boids::makeVAO() {
 
     glGenBuffers(1, &_VBO);
     glBindBuffer(GL_ARRAY_BUFFER, _VBO);
-    //test
+    /*//test
     GLfloat array[9] = {0,0,0,0.5,0.5,0.5,0,1.0,0};
     glBufferData(GL_ARRAY_BUFFER, 9*sizeof(GLfloat), array, GL_STATIC_DRAW);
-
+    */
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(0);
     //TODO attrib #1 : boidType
@@ -106,14 +125,68 @@ void Boids::makeVAO() {
     glBindVertexArray(0);
 }
 
-void Boids::readFile(std::string fileName) {
-    /*std::ifstream file;
-    int nAgents;
-    Real value; 
+void Boids::readBoidsFromFile(std::string fileName) {
+    boidsFile = fileName;
 
-    file.open(fileName);
-   
-    file.close();  */
+    boidsFs.open(boidsFile, std::ios::in);
+
+    if (! boidsFs.is_open()) {
+        log_console->errorStream() << "Can't open " << fileName << " !";
+        return;
+    }
+    log_console->infoStream() << "Reading boids data file : " << boidsFile;
+
+    parseBoidsFile();
+}
+
+void Boids::parseBoidsFile() {
+    long long int nAgents;
+    Real value;
+    std::string tmp;
+
+    if (! boidsFs.is_open())
+        return;
+
+    if (! (boidsFs >> nAgents)) {
+        //EOF
+        return;
+    }
+    if (nAgents < 0)
+        log_console->errorStream() << "Negative number of boids in file " << boidsFile << " !";
+    boids.clear();
+    boids.reserve(nAgents*3);
+
+    for (int i = 0; i < nAgents; i++) {
+        if (! (boidsFs >> tmp))
+            log_console->errorStream() << "Number of lines in " << boidsFile << " doesn't match number of boids !";
+        if (tmp.compare("B") != 0)
+            log_console->errorStream() << "Bad token in file " << boidsFile << " !";
+        for (int n = 0; n < 3; n++) {
+            if (! (boidsFs >> value))
+                log_console->errorStream() << "Cannot read boid position data in file " << boidsFile << " !";
+            boids.push_back(value);
+        }
+        //TODO boidType
+    }
+
+    boidsUpdated = true;
+}
+
+void Boids::resetFile() {
+    if (! boidsFs.is_open())
+        return;
+
+    boidsFs.clear();   
+    boidsFs.seekg(0, std::ios::beg);
+
+    parseBoidsFile();
+}
+        
+void Boids::keyPressEvent(QKeyEvent* e) {
+    if (e->key() == Qt::Key_R && e->modifiers() == Qt::NoButton) {
+        log_console->infoStream() << "Boids file reset";
+        resetFile();
+    }
 }
 
 #endif

@@ -5,27 +5,38 @@
 #ifdef GUI_ENABLED
 
 #include <string>
+#include <fstream>
 #include "rendering/renderable/renderTree.hpp"
 #include "utils/opengl/program/program.hpp"
 #include "utils/opengl/texture/texture2D.hpp"
 
 class Boids : public RenderTree {
     public:
-        Boids(/*boids*/);
+        Boids();
         ~Boids();
         
         void updateBoids(/*boids*/);
+        void readBoidsFromFile(std::string fileName);
+        void resetFile();
+
         void drawDownwards(const float *currentTransformationMatrix = consts::identity4);
+        void animateDownwards();
+        void keyPressEvent(QKeyEvent* e);
 
     private:
         void makeProgram();
         void makeVAO();
-        void readFile(std::string fileName);
+        void parseBoidsFile();
 
         Program *_program;
         std::map<std::string, int> _uniformLocations;
         GLuint _VAO, _VBO;
         Texture **_boidTextures;
+
+        bool boidsUpdated;
+        std::string boidsFile; 
+        std::ifstream boidsFs;
+        std::vector<float> boids;
 };
 
 #endif

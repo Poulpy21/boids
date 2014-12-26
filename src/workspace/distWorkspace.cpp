@@ -63,7 +63,7 @@ void DistWorkspace::save(int stepId) {
     myfile << agents.size() << std::endl;
     for (Agent a : agents)
         myfile << "B " << a.position;
-
+        //TODO: boidType
     myfile.close();
 
     //TODO zlib?

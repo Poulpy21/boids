@@ -28,7 +28,8 @@ void main(void)
 {
     //fBoidType = boidType;
 
-    float cameraDist = distance(vertexPosition, cameraPos);
+    vec3 centeredPos = vertexPosition - vec3 (.5,.5,.5); // [0,1] -> [-.5,.5]
+    float cameraDist = distance(centeredPos, cameraPos);
     //float pointScale = 1.0 - (cameraDist / maxDistance);
     float pointScale = 1.0/cameraDist;
     //pointScale = max(pointScale, minPointScale);
@@ -37,5 +38,5 @@ void main(void)
     float size = boidSize * pointScale;
     gl_PointSize = max(size, 2.0);
 
-    gl_Position = projectionMatrix * viewMatrix * vec4(vertexPosition, 1.0);
+    gl_Position = projectionMatrix * viewMatrix * vec4(centeredPos, 1.0);
 }
