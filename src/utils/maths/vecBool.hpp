@@ -19,6 +19,7 @@ struct VecBool final : public Vec<N,bool> {
     static_assert(N <= 8*sizeof(unsigned long), "N should be less then 8*sizeof(unsigned long) !");
     
     VecBool();
+    VecBool(const VecBool<N> &v);
     VecBool(const Vec<N,bool> &v);
     explicit VecBool(unsigned long value);
     explicit VecBool(const std::bitset<N> &bitset);
@@ -55,6 +56,9 @@ template <unsigned int N>
 VecBool<N>::VecBool(const std::bitset<N> &bitset) : Vec<N,bool>() {
     this->setValue(bitset);
 }
+
+template <unsigned int N>
+VecBool<N>::VecBool(const VecBool<N> &v) : Vec<N,bool>(v) {}
 
 template <unsigned int N>
 VecBool<N>::VecBool(const Vec<N,bool> &v) : Vec<N,bool>(v) {}

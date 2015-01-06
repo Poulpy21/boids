@@ -15,6 +15,7 @@ struct Vec2 final : public Vec<2u,T> {
     T& y = this->data[1];
 
     Vec2();
+    Vec2(const Vec2<T> &v);
     Vec2(const Vec<2u,T> &v);
     explicit Vec2(const T data[]);
     explicit Vec2(T x, T y);
@@ -33,6 +34,10 @@ template <typename T>
 Vec2<T>::Vec2(T x, T y) : Vec<2u,T>() {
     this->x = x;
     this->y = y;
+}
+    
+template <typename T>
+Vec2<T>::Vec2(const Vec2<T> &v) : Vec<2u,T>(v) {
 }
 
 template <typename T>

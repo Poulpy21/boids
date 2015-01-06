@@ -17,7 +17,8 @@ struct Vec3 : public Vec<3u,T> {
     T& z = this->data[2];
 
     Vec3();
-    Vec3(const Vec<3u,T> &v);
+    Vec3(const Vec3<T> &v);       //mandatory for references buqs
+    Vec3(const Vec<3u,T> &v);     //mandatory for operations on Vec<3u,T>
     explicit Vec3(const T data[]);
     explicit Vec3(T x, T y, T z);
     ~Vec3();
@@ -33,7 +34,8 @@ struct Vec3 : public Vec<3u,T> {
     
 
 template <typename T>
-Vec3<T>::Vec3() : Vec<3u,T>() {}
+Vec3<T>::Vec3() : Vec<3u,T>() {
+}
 
 template <typename T>
 Vec3<T>::Vec3(T x, T y, T z) : Vec<3u,T>() {
@@ -45,9 +47,14 @@ Vec3<T>::Vec3(T x, T y, T z) : Vec<3u,T>() {
 template <typename T>
 Vec3<T>::Vec3(const Vec<3u,T> &v) : Vec<3u,T>(v) {
 }
+    
+template <typename T>
+Vec3<T>::Vec3(const Vec3<T> &v) : Vec<3u,T>(v) {
+}
 
 template <typename T>
-Vec3<T>::Vec3(const T data[]) : Vec<3u,T>(data) {}
+Vec3<T>::Vec3(const T data[]) : Vec<3u,T>(data) {
+}
 
 template <typename T>
 Vec3<T>::~Vec3() {}

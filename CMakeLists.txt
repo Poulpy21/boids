@@ -111,6 +111,7 @@ file(GLOB_RECURSE source_files src/*.cpp)
 file(GLOB_RECURSE template_files src/*.tpp)
 file(GLOB_RECURSE kernel_files src/*.cu)
 file(GLOB_RECURSE configure_files src/*.hpp.in)
+file(GLOB_RECURSE test_sources tests/*.cpp)
 
 #Remove executable sources so that mains do not conflict
 set(source_files_no_main ${source_files})
@@ -191,6 +192,28 @@ add_library(
 
 #Executables
 foreach(main_source ${executable_sources})
+    get_filename_component(exec_name ${main_source} NAME_WE)
+    add_executable(${exec_name} ${header_files} ${main_source} ${template_files})
+    target_link_libraries(
+        ${exec_name} 
+        ${CORE_LIB}          #Core
+        ${CUDA_KERNELS}      #Cuda Kernels
+        Qt4::QtGui           #QtGui
+        Qt4::QtCore          #QtCore
+        Qt4::QtXml           #QtXml
+        Qt4::QtOpenGL        #QtOpenGL
+        ${QGLVIEWER_LIBRARY} #QGlViewer
+        ${LOG4CPP_LIBRARIES} #Log4cpp
+        ${MPI_CXX_LIBRARIES} #MPI
+        ${CUDA_LIBRARIES}    #Cuda
+        ${OPENGL_LIBRARIES}  #OpenGl
+        ${GLEW_LIBRARIES}    #Glew
+        ${GLUT_glut_LIBRARY} #Glut
+        )
+endforeach()
+
+#Tests
+foreach(main_source ${test_sources})
     get_filename_component(exec_name ${main_source} NAME_WE)
     add_executable(${exec_name} ${header_files} ${main_source} ${template_files})
     target_link_libraries(
