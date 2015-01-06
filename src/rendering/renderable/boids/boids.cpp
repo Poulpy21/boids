@@ -54,9 +54,11 @@ void Boids::drawDownwards(const float *currentTransformationMatrix) {
 }
 
 void Boids::animateDownwards() {
+    /*static int i = 0;
+    if (i++%10) return;*/
+
     if (boidsFile.compare("") != 0)
         parseBoidsFile();
-
 }
 
 void Boids::updateBoids(/*boids*/) {

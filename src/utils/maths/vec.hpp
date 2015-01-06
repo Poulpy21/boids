@@ -424,12 +424,17 @@ T Vec<N,T>::norm () const {
 
 template <unsigned int N, typename T>
 std::ostream & operator << (std::ostream &os, const Vec<N,T> &v) {
-    os << "(";
+/*    os << "(";
     for (unsigned int i = 0; i < N-1; i++) {
         os << v[i] << ",";
     }
     os << v[N-1] << ")";
-    
+*/
+    for (unsigned int i = 0; i < N-1; i++) {
+        os << v[i] << " ";
+    }
+    os << v[N-1];
+        
     return os;
 }
     

@@ -1,6 +1,5 @@
 #include "headers.hpp"
 
-// Agent (particle model)
 #include <cstdio>
 #include <iostream>
 #include <cmath>

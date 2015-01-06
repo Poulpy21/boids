@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
 
     //boids
     Boids *b = new Boids();
-    b->readBoidsFromFile("test.xyz");
+    b->readBoidsFromFile("boids.xyz");
     root->addChild("boids", b);
 
     //Configure viewer

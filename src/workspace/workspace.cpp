@@ -101,7 +101,7 @@ void Workspace::save(int stepid) {
     myfile << std::endl;
     myfile << na << std::endl;
     for (size_t p=0; p<na; p++)
-        myfile << "B " << agents[p].position;
+        myfile << "B " << agents[p].position << std::endl;
 
     myfile.close();
 }
