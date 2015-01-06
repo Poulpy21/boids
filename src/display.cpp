@@ -6,15 +6,22 @@
 
 #include "utils/logs/log.hpp"
 #include "utils/globals.hpp"
+#include "parsing/parser.hpp"
 #include "utils/opengl/texture/texture.hpp"
 #include "rendering/renderable/renderRoot.hpp"
-#include "utils/random/rand.hpp"
 #include "rendering/renderable/boids/boids.hpp"
 
 using namespace std;
 using namespace log4cpp;
 
 int main(int argc, char** argv) {
+
+    // Create parser
+    ArgumentParser parser;
+    // Add options to parser
+    parser.addOption("f", "boids.xyz");
+    // Parse command line arguments
+    parser.setOptions(argc, argv);
 
 #ifdef GUI_ENABLED
     //random
@@ -62,7 +69,7 @@ int main(int argc, char** argv) {
 
     //boids
     Boids *b = new Boids();
-    b->readBoidsFromFile("boids.xyz");
+    b->readBoidsFromFile(parser("f").asString());
     root->addChild("boids", b);
 
     //Configure viewer

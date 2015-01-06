@@ -5,6 +5,7 @@
 
 #include "utils/globals.hpp"
 #include "utils/types.hpp"
+#include "utils/maths/vec3.hpp"
 
 using namespace log4cpp;
 
@@ -23,9 +24,8 @@ Boids::~Boids () {
     /*for (int i = 0; i < 4; i++) {
 		delete _boidTextures[i];
 	}*/
-    delete _boidTextures[0];
 
-	delete[] _boidTextures;
+	//delete[] _boidTextures;
 
     delete _program;
 }
@@ -83,7 +83,7 @@ void Boids::makeProgram() {
     //_uniformLocations = _program->getUniformLocationsMap("screenSize", false);
     
     
-    _boidTextures = new Texture*[4];
+    /*_boidTextures = new Texture*[4];
 
     _boidTextures[0] = new Texture2D("textures/normalBoid.png","png");
     _boidTextures[0]->addParameter(Parameter(GL_TEXTURE_WRAP_S, GL_REPEAT));
@@ -92,7 +92,6 @@ void Boids::makeProgram() {
     _boidTextures[0]->addParameter(Parameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR));
     _boidTextures[0]->generateMipMap();
 
-    /*
     _boidTextures[1] = new Texture2D("textures/predatorBoid.png", "png");
     _boidTextures[1]->addParameters(_boidTextures[0]->getParameters());
     _boidTextures[1]->generateMipMap();
@@ -107,7 +106,7 @@ void Boids::makeProgram() {
     */
 
     //_program->bindTextures(&_boidTextures, "normalBoid predatorBoid preyBoid wallBoid", true);
-    _program->bindTextures(_boidTextures, "boidTexture0", false);
+    //_program->bindTextures(_boidTextures, "boidTexture0", false);
 }
 
 void Boids::makeVAO() {

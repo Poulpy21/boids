@@ -6,7 +6,7 @@
 #include "vec.hpp"
 
 /*
-* 2D vector structure of arithmetic type T
+* 3D vector structure of arithmetic type T
 * See vec.hpp for more informations and restrictions on T
 */
 

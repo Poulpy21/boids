@@ -66,7 +66,7 @@ void Workspace::move()
 
     // Integration in time using euler method
     for(size_t k = 0; k< na; k++){
-        agents[k].velocity += dt*agents[k].direction;
+        agents[k].velocity += agents[k].direction;
 
         double speed = agents[k].velocity.norm();
         if (speed > maxU) {
@@ -77,7 +77,7 @@ void Workspace::move()
         agents[k].position.x= fmod(agents[k].position.x,domainsize);
         agents[k].position.y= fmod(agents[k].position.y,domainsize);
         agents[k].position.z= fmod(agents[k].position.z,domainsize);
-
+        std::cout << agents[k].position << " "<<agents[k].position.x << " "<<agents[k].position.y << " "<<agents[k].position.z << std::endl;
     }
 }
 
