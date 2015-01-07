@@ -57,6 +57,8 @@ namespace Tree {
                 
 #ifdef GUI_ENABLED
                 Vec<D,A> dx = domain.max - domain.min;
+                std::cout << "Creating leaf node !";
+                std::cout << domain << std::endl;
                 this->move(domain.center());
                 this->scale(dx[0], dx[1], dx[2]);
 #endif
@@ -87,6 +89,7 @@ namespace Tree {
         void LeafNode<D,N,A,T,L,E>::drawDownwards(const float *currentTransformationMatrix) {
             static_assert(D==3, "Tree display only possible in dimension 3 !");
 	
+            std::cout << "Leaf Node draw" << std::endl;
             glUniformMatrix4fv(this->_drawBoxUniformLocs["modelMatrix"], 1, GL_TRUE, currentTransformationMatrix);
             glDrawArrays(GL_TRIANGLES, 0, this->_nTriangles*3);
         }

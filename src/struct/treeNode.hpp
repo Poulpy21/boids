@@ -33,7 +33,7 @@ namespace Tree {
         class RootNode;
 
     template <unsigned int D, unsigned int N, typename A, typename T>
-#ifdef ENABLE_GUI
+#ifdef GUI_ENABLED
         class TreeNode : public RenderTree {
 #else
         class TreeNode {
@@ -117,7 +117,7 @@ namespace Tree {
     template <unsigned int D, unsigned int N, typename A, typename T>
         TreeNode<D,N,A,T>::TreeNode(const BoundingBox<D,A> &domain) :
             _id(0ul), _nChilds(0u), _nSubchilds(0u),
-            _bbox(),  _nodeData() {
+            _bbox(domain),  _nodeData() {
                 _father = nullptr;
                 for (unsigned int i = 0; i < N; i++) {
                     _childs[i] = nullptr;
@@ -226,6 +226,7 @@ namespace Tree {
     template <unsigned int D, unsigned int N, typename A, typename T>
         void TreeNode<D,N,A,T>::drawDownwards(const float *currentTransformationMatrix) {
             for (unsigned int i = 0; i < N; i++) {
+                std::cout << "Tree Node draw " << i << "/" << N << std::endl;
                 this->_childs[i]->drawDownwards(currentTransformationMatrix);
             }
         }
@@ -246,8 +247,8 @@ namespace Tree {
                 _drawBoxProgram->bindFragDataLocation(0, "out_colour");
                 _drawBoxProgram->bindUniformBufferLocations("0", "projectionView");
 
-                _drawBoxProgram->attachShader(Shader("../shaders/box/box_vs.glsl", GL_VERTEX_SHADER));
-                _drawBoxProgram->attachShader(Shader("../shaders/box/box_fs.glsl", GL_FRAGMENT_SHADER));
+                _drawBoxProgram->attachShader(Shader(Globals::shaderFolder + "/box/box_vs.glsl", GL_VERTEX_SHADER));
+                _drawBoxProgram->attachShader(Shader(Globals::shaderFolder + "/box/box_fs.glsl", GL_FRAGMENT_SHADER));
 
                 _drawBoxProgram->link();
                 _drawBoxUniformLocs = _drawBoxProgram->getUniformLocationsMap("modelMatrix", true);

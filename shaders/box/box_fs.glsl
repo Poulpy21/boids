@@ -1,4 +1,4 @@
-#version 130 
+#version 330 
 
 in VS_FS_VERTEX {
 	vec3 pos;

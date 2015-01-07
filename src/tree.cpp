@@ -87,6 +87,7 @@ int main(int argc, char **argv) {
 
 #ifdef GUI_ENABLED
     RenderRoot *root = new RenderRoot(); 
+    root->addChild("Tree", &tree);
     viewer->addRenderable(root);
     application.exec();
 #endif
