@@ -77,7 +77,6 @@ void Workspace::move()
         agents[k].position.x= fmod(agents[k].position.x,domainsize);
         agents[k].position.y= fmod(agents[k].position.y,domainsize);
         agents[k].position.z= fmod(agents[k].position.z,domainsize);
-        //std::cout << agents[k].position << " "<<agents[k].position.x << " "<<agents[k].position.y << " "<<agents[k].position.z << std::endl;
     }
 }
 

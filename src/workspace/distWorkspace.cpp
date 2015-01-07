@@ -33,7 +33,7 @@ void DistWorkspace::update() {
 
     // Compute mean boid
     // TODO
-    // kernel(d_agents, d_meanAgent)
+    // mean(d_agents, d_meanAgent)
     // memcpy -> meanAgent
 
     // Get mean boids from the neighborhood and send ours (approximation)

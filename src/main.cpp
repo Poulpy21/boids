@@ -97,6 +97,7 @@ int main(int argc, char **argv) {
     Container tmpContainer = {boid};
     std::vector<int> otherRanks;
     std::map<int, Container> boidsToSend;
+    std::vector<int> receivedBoidsWeight;
     if (rank == 0) {
         otherRanks.push_back(1);
         boidsToSend.emplace(1, tmpContainer);
@@ -106,10 +107,13 @@ int main(int argc, char **argv) {
         boidsToSend.emplace(0, tmpContainer);
     }
     if (rank < 2) {
-        mess.exchangeMeanAgents(receivedBoids, meanBoid, otherRanks);
+        mess.exchangeMeanAgents(meanBoid, rank, receivedBoids, receivedBoidsWeight, otherRanks);
         std::cout << "RANK: " << rank  << " MEANBOIDS: " << receivedBoids.size() << " pos="; 
         for (Agent boid : receivedBoids)
             std::cout << boid.position << "/";
+        std::cout << "\tWEIGHTS : " << receivedBoidsWeight.size() << " values=";
+        for (int w : receivedBoidsWeight)
+            std::cout << w << "/";
         mess.exchangeAgents(localBoids, boidsToSend, otherRanks);
         std::cout << "\tRECEIVEDBOIDS :" << localBoids.size() << " pos=";
         for (Agent boid : localBoids) {

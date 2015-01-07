@@ -14,13 +14,15 @@ void Messenger::sendAgents(std::map<int, Container> &agentsForRanks) {
     }
 }
 
-void Messenger::sendMeanAgent(Agent &meanAgentToSend, std::vector<int> &sourceRanks) {
-    MPI_Request req;
-    int tag = 0;
+void Messenger::sendMeanAgent(Agent &meanAgentToSend, int meanAgentToSendWeight, std::vector<int> &sourceRanks) {
+    MPI_Request req1, req2;
+    int tag1 = 0, tag2 = 1;
 
     for (int rank : sourceRanks) {
-        MPI_Isend(&meanAgentToSend, realsPerAgent, MPI_DOUBLE, rank, tag, comm, &req);
-        pendingRequests.push_back(req);
+        MPI_Isend(&meanAgentToSend, realsPerAgent, MPI_DOUBLE, rank, tag1, comm, &req1);
+        pendingRequests.push_back(req1);
+        MPI_Isend(&meanAgentToSendWeight, 1, MPI_INT, rank, tag2, comm, &req2);
+        pendingRequests.push_back(req2);
     }
 }
 
@@ -53,14 +55,17 @@ void Messenger::receiveAgents(Container &agents, std::vector<int> &sourceRanks) 
     }
 }
 
-void Messenger::receiveMeanAgents(Container &receivedMeanAgents, std::vector<int> &sourceRanks) {
-    // Clear and reserve space in the container
+void Messenger::receiveMeanAgents(Container &receivedMeanAgents, std::vector<int> &receivedMeanAgentsWeight, std::vector<int> &sourceRanks) { 
+    // Clear and reserve space in the containers
     receivedMeanAgents.clear();
     receivedMeanAgents.resize(sourceRanks.size());
+    receivedMeanAgentsWeight.clear();
+    receivedMeanAgentsWeight.resize(sourceRanks.size());
 
     int pos = 0;
     for (int sourceRank : sourceRanks) {
-        MPI_Recv(&receivedMeanAgents[pos], realsPerAgent, MPI_DOUBLE, sourceRank, MPI_ANY_TAG, comm, MPI_STATUS_IGNORE);
+        MPI_Recv(&receivedMeanAgents[pos], realsPerAgent, MPI_DOUBLE, sourceRank, 0, comm, MPI_STATUS_IGNORE);
+        MPI_Recv(&receivedMeanAgentsWeight[pos], 1, MPI_INT, sourceRank, 1, comm, MPI_STATUS_IGNORE);
         pos++;
     }
 }

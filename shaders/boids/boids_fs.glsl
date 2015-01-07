@@ -21,7 +21,7 @@ void main (void)
         outColor = texture(boidTexture0, gl_PointCoord);
     }*/
     if (distance(gl_PointCoord,vec2(0.5,0.5))<0.5)
-        outColor = vec4(1.0);
+        outColor = vec4(1.0,0.0,0.0,1.0);
     else
         discard;
 }
