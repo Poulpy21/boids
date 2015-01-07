@@ -142,13 +142,16 @@ template <unsigned int D, unsigned int N, typename A, typename T, typename L, ty
                     glEnableVertexAttribArray(0);
                     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
+                    std::cout << "Root Node draw :" << std::endl;
                     for (unsigned int i = 0; i < N; i++) {
+                        std::cout << "Root child" << i << "/" << N << std::endl;
                         this->_childs[i]->drawDownwards(currentTransformationMatrix);
                     }
                 }
     
     template <unsigned int D, unsigned int N, typename A, typename T, typename L, typename E>
                 void RootNode<D,N,A,T,L,E>::drawUpwards(const float *currentTransformationMatrix) {
+                    std::cout << "Root Node finished !" << std::endl;
                     glBindBuffer(GL_ARRAY_BUFFER, 0);
                     glUseProgram(0);
                 }
