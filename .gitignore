@@ -2,6 +2,7 @@ main
 display
 tree
 serial
+test_vec
 
 obj
 tags
