@@ -51,6 +51,7 @@ class Globals {
         static Vec3<double> pos;
         static Vec3<double> offset;
 
+        static std::string shaderFolder;
 };
 
 #endif

@@ -19,5 +19,7 @@
 #define RENDETREE_ONLY : public RenderTree
 #endif
 
+#define STRINGIFY(X) #X
+#define STRINGIFY_MACRO(X) STRINGIFY(X)
 
 #endif /* end of include guard: DEFINES_H */

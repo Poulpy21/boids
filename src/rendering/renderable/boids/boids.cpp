@@ -74,8 +74,8 @@ void Boids::makeProgram() {
     _program->bindFragDataLocation(0, "outColor");
     _program->bindUniformBufferLocations("0", "projectionView");
 
-    _program->attachShader(Shader("src/shaders/boids_vs.glsl", GL_VERTEX_SHADER));
-    _program->attachShader(Shader("src/shaders/boids_fs.glsl", GL_FRAGMENT_SHADER));
+    _program->attachShader(Shader(Globals::shaderFolder + "/boids/boids_vs.glsl", GL_VERTEX_SHADER));
+    _program->attachShader(Shader(Globals::shaderFolder + "/boids/boids_fs.glsl", GL_FRAGMENT_SHADER));
 
     _program->link();
 

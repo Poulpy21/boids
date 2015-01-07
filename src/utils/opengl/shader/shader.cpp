@@ -9,7 +9,7 @@
 #include <stdlib.h>
 
 
-Shader::Shader(const char* location_, GLenum shaderType_) :
+Shader::Shader(const std::string &location_, GLenum shaderType_) :
 shader(0), location(location_)
 {
 

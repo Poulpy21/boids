@@ -30,4 +30,8 @@
 #endif
 #endif
 
+#ifndef SHADER_FOLDER
+#define SHADER_FOLDER @SHADER_FOLDER@
+#endif
+
 #endif /* end of include guard: CONFIG.H_H */
