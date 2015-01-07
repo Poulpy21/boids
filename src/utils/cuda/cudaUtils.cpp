@@ -107,9 +107,9 @@ void gpuAssert(cudaError_t code, const std::string &file, int line, bool abort) 
     if (code != cudaSuccess) 
     {
         log4cpp::log_console->errorStream() << "GPU Assert => " << cudaGetErrorString(code) << " in file " <<  file << ":" << line << ".";
+        std::cout << std::endl;
         if (abort) 
-            std::cout << std::endl;
-        exit(1);
+            exit(1);
     }
 }
 
