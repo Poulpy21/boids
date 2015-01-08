@@ -95,7 +95,7 @@ void Workspace::simulate(int nsteps) {
 
 void Workspace::save(int stepid) {
     std::ofstream myfile;
-    myfile.open("boids.xyz", stepid==0 ? std::ios::out : std::ios::app);
+    myfile.open("data/boids.xyz", stepid==0 ? std::ios::out : std::ios::app);
 
     myfile << std::endl;
     myfile << na << std::endl;

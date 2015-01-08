@@ -4,6 +4,8 @@ tree
 serial
 test_vec
 
+data/*
+
 obj
 tags
 types_c.taghl

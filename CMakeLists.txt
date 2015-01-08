@@ -103,9 +103,9 @@ endif()
 #Set executable sources
 list(APPEND executable_sources "${CMAKE_SOURCE_DIR}/src/main.cpp")
 list(APPEND executable_sources "${CMAKE_SOURCE_DIR}/src/serial.cpp")
+list(APPEND executable_sources "${CMAKE_SOURCE_DIR}/src/tree.cpp")
 if(${ENABLE_GUI})
     list(APPEND executable_sources "${CMAKE_SOURCE_DIR}/src/display.cpp")
-    list(APPEND executable_sources "${CMAKE_SOURCE_DIR}/src/tree.cpp")
 endif()
 
 #Find source files
