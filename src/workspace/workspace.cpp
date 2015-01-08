@@ -89,7 +89,7 @@ void Workspace::simulate(int nsteps) {
     while (step++ < nsteps) {
         this->move();
         // store every 20 steps
-        if (step%20 == 0) save(step);
+        /*if (step%20 == 0)*/ save(step);
     }
 }
 

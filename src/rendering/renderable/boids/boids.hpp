@@ -34,7 +34,8 @@ class Boids : public RenderTree {
         Texture **_boidTextures;
 
         bool boidsUpdated;
-        std::string boidsFile; 
+        std::string boidsFile;
+        int currentStep;
         std::ifstream boidsFs;
         std::vector<float> boids;
 };

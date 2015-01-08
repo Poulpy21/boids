@@ -3,13 +3,14 @@
 
 #ifdef GUI_ENABLED
 
+#include <GL/freeglut.h>
 #include "utils/globals.hpp"
 #include "utils/types.hpp"
 #include "utils/maths/vec3.hpp"
 
 using namespace log4cpp;
 
-Boids::Boids() : boidsUpdated(false), boidsFile(""), boids()
+Boids::Boids() : boidsUpdated(false), boidsFile(""), currentStep(0), boids()
 {
     glEnable(GL_POINT_SPRITE);
     glEnable(GL_PROGRAM_POINT_SIZE);
@@ -31,10 +32,10 @@ Boids::~Boids () {
 }
 
 void Boids::drawDownwards(const float *currentTransformationMatrix) {
-
     if (boidsUpdated) {
         glBindBuffer(GL_ARRAY_BUFFER, _VBO);
         glBufferData(GL_ARRAY_BUFFER, boids.size()*sizeof(float), boids.data(), GL_DYNAMIC_DRAW);
+        currentStep++;
     }
     boidsUpdated = false;
 
@@ -51,6 +52,13 @@ void Boids::drawDownwards(const float *currentTransformationMatrix) {
 	glBindVertexArray(0);
 
 	glUseProgram(0);
+
+    // Draw frame
+    glWindowPos2i(10,10);
+    std::stringstream ss;
+    ss << "Step : " << currentStep;
+    glutBitmapString(GLUT_BITMAP_HELVETICA_12, reinterpret_cast<const unsigned char*>(ss.str().c_str()));
+
 }
 
 void Boids::animateDownwards() {
@@ -181,6 +189,8 @@ void Boids::resetFile() {
     boidsFs.seekg(0, std::ios::beg);
 
     parseBoidsFile();
+
+    currentStep = 0;
 }
         
 void Boids::keyPressEvent(QKeyEvent* e) {
