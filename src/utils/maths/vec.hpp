@@ -20,9 +20,11 @@ struct VecBool;
 
 template <unsigned int N, typename T>
 struct Vec {
+#ifndef __CUDACC__
     static_assert(std::is_arithmetic<T>(),         "Vectors can only contain arithmetic types !");
     static_assert(std::is_assignable<T&, T>(),     "T should be assignable !");
     static_assert(std::is_constructible<T, int>(), "T should be constructible from int !");
+#endif
 
     Vec<N,T>();
     Vec(const Vec<N,T> &v);

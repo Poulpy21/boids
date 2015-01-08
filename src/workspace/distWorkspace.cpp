@@ -4,6 +4,7 @@
 #include <iomanip>
 #include "distWorkspace.hpp"
 #include "messenger.hpp"
+#include "agentKernel.cu"
 
 DistWorkspace::DistWorkspace(MPI_Comm comm, int root) : 
     agents(), comm(comm), mess(comm), rootID(root)

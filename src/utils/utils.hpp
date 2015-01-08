@@ -19,14 +19,18 @@ namespace utils {
     template <typename T>
     constexpr bool is_power_of_two(T x)
     {
+#ifndef __CUDACC__
         static_assert(std::is_integral<T>::value,"Only integrals types should call a power of two check !");
+#endif
         return x && ((x & (x-1)) == 0);
     }
 
     template <typename T>
     constexpr T get_power_of_two(T x)
     {
+#ifndef __CUDACC__
         static_assert(x != T(0), "x is zero !");
+#endif
 
         T xx(x);
         T p(0);

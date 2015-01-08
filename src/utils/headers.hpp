@@ -3,6 +3,9 @@
 
 #include "defines.hpp"
 
+// Start NVCC proof
+#ifndef __CUDACC__
+
 #ifdef GUI_ENABLED
 #include <GL/glew.h> //1st gl include (mandatory)
 #include <GL/glut.h>
@@ -64,13 +67,18 @@
 #include <GL/glx.h>
 #endif
 
+#endif
+// end NVCC proof
+
 #ifdef CUDA_ENABLED
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <cuda_gl_interop.h>
 #endif
 
-#include "defines.hpp"
+// Start NVCC proof
+#ifndef __CUDACC__
+
 #include "log.hpp"
 
 #include "utils.hpp"
@@ -79,9 +87,15 @@
 #include "glUtils.hpp"
 #endif
 
+#endif
+// end NVCC proof
+
 #ifdef CUDA_ENABLED
 #include "cudaUtils.hpp"
 #endif
+
+// Start NVCC proof
+#ifndef __CUDACC__
 
 #include "vec.hpp"
 #include "vec2.hpp"
@@ -92,6 +106,10 @@
 
 #include "consts.hpp"
 #include "globals.hpp"
+
+#endif
+// end NVCC proof
+
 
 #endif /* end of include guard: HEADERS_H */
 
