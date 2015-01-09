@@ -3,6 +3,7 @@ display
 tree
 serial
 test_vec
+test_messenger
 
 data/*
 

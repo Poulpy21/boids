@@ -9,13 +9,13 @@
 class DistWorkspace {
 
     public:
-        DistWorkspace(size_t localAgentsCount, MPI_Comm comm, int root = 0);
+        DistWorkspace(Options options, MPI_Comm comm, int root = 0);
 
         void update();
         void save(int stepId);
 
     private:
-        void init(size_t localAgentsCount);
+        void init();
 
         Container agents;
         Options opt;

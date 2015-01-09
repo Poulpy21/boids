@@ -37,16 +37,17 @@ struct Options {
     }
 
     friend std::ostream& operator<<(std::ostream &stream, const Options &opt) {
-        return stream << opt.nAgents << " "
-                      << opt.nSteps << " "
-                      << opt.wCohesion << " "
-                      << opt.wAlignment << " "
-                      << opt.wSeparation << " "
-                      << opt.rCohesion << " "
-                      << opt.rAlignment << " "
-                      << opt.rSeparation << " "
-                      << opt.dt << " "
-                      << opt.maxVel;
+        return stream <<"The simulation will be executed with the following parameters " << std::endl
+                      << "[ nAgents : "     << opt.nAgents      << " ] "
+                      << "[ nSteps : "      << opt.nSteps       << " ]"
+                      << "[ wCohesion : "   << opt.wCohesion    << " ]"
+                      << "[ wAlignement : " << opt.wAlignment   << " ]"
+                      << "[ wSeparation : " << opt.wSeparation  << " ]"
+                      << "[ rCohesion : "   << opt.rCohesion    << " ]"
+                      << "[ rAlignment : "  << opt.rAlignment   << " ]"
+                      << "[ rSeparation : " << opt.rSeparation  << " ]"
+                      << "[ dt : "          << opt.dt           << " ]"
+                      << "[ maxVelocity : " << opt.maxVel       << " ]";
     }
 };
 

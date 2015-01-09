@@ -4,23 +4,28 @@
 #include <iomanip>
 #include "distWorkspace.hpp"
 #include "messenger.hpp"
+#include "agent.hpp"
 #include "agentKernel.cu"
 
-DistWorkspace::DistWorkspace(size_t localAgentsCount, MPI_Comm comm, int root) : 
-    agents(), comm(comm), mess(comm), rootID(root)
+DistWorkspace::DistWorkspace(Options options, MPI_Comm comm, int root) : 
+    agents(), opt(options), comm(comm), mess(comm), rootID(root)
 {
     MPI_Comm_rank(comm, &myID);
-    init(localAgentsCount);
+    init();
 }
 
-void DistWorkspace::init(size_t localAgentsCount) {
-    mess.broadcastOptions(&opt, rootID);
-
+void DistWorkspace::init() {
     // Upload options to device
     // TODO
 
     // Init boids
-    srand48(std::time(0));
+    //srand48(std::time(0));
+    srand48(myID * std::time(0));
+
+    // TODO compute from opt.nAgents and domain size
+    // TODO         OR
+    // TODO init on root and scatter boids to other processes
+    size_t localAgentsCount = 10;
 
     // This loop may be quite expensive due to random number generation
     for(size_t i = 0; i < localAgentsCount; i++){
@@ -76,13 +81,13 @@ void DistWorkspace::save(int stepId) {
     std::ofstream myfile;
 
     std::stringstream ss;
-    ss << "data/boids" << std::setw(3) << std::setfill('0') << myID << ".xyz";
+    ss << "data/boids_" << std::setw(3) << std::setfill('0') << myID << ".xyz";
     myfile.open(ss.str(), stepId==0 ? std::ios::out : std::ios::app);
 
     myfile << std::endl;
     myfile << agents.size() << std::endl;
     for (Agent a : agents)
-        myfile << "B " << a.position;
+        myfile << "B " << a.position << std::endl;
         //TODO: boidType
     myfile.close();
 
