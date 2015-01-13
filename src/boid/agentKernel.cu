@@ -54,5 +54,15 @@ __global__ void applyInternalForces(Vec3<Real> *currentBoidList, Vec3<Real>* new
     newBoidList[3*id] = pos;
 }
 
+void applyInternalForcesKernel(Vec3<Real> *currentBoidList, Vec3<Real>* newBoidList, const int nBoids, const struct Options *opt) {
+    dim3 gridDim(1024,1,1); // TODO: max threads/block in globals.hpp using cudaUtils
+    dim3 blockDim(ceil((float)nBoids/1024),1,1); 
+
+    applyInternalForces<<<<gridDim,blockDim,0,0>>>(currentBoidList, newBoidList, nBoids, opt);
+    
+    cudaDeviceSynchronize();
+    checkKernelExecution();
+}
+
 //TODO applyExternalForces
 #endif

@@ -127,7 +127,7 @@ void DistWorkspace::applyInternalForces() {
     }
 }
 
-void DistWorkspace::applyExternalForces(Container receivedMeanAgents, std::vector<int> receivedMeanAgentsWeight) {
+void DistWorkspace::applyExternalForces(Container &receivedMeanAgents, std::vector<int> &receivedMeanAgentsWeight) {
     //TODO : create new / modify methods for agents to use weights
     //TODO : factor code with applyInternalForces()
     /*Vec3<Real> s,c,a;
