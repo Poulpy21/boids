@@ -1,6 +1,6 @@
 #! /usr/bin/python
 
-import os, re,sys
+import os, re, sys
 
 
 def reglob(path, exp, invert=False):
@@ -22,6 +22,10 @@ def reglob(path, exp, invert=False):
 if __name__ == "__main__":
     outfilename = "data/boids_all.xyz" 
     filenames = reglob("data", "boids_[0-9]+.xyz")
+    if not len(filenames):
+        print("No input files found !")
+        sys.exit(0)
+
     print("Using " + ", ".join(filenames) + " to produce " + outfilename)
 
     files = []
