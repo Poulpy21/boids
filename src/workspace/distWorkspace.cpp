@@ -22,7 +22,7 @@ void DistWorkspace::init() {
     srand48(std::time(0));
     //srand48(myID * std::time(0));
 
-    /*
+    
     // Initalize boids on root and scatter them to other processes after sorting
     if (myID == rootID) {
     // This loop may be quite expensive due to random number generation
@@ -38,14 +38,14 @@ void DistWorkspace::init() {
     // TODO call sort boids method / kernel
     //sortAgents(agents);
     //mess.exchangeAgents(...);
-    */
+    
 
 }
 
 void DistWorkspace::update() {
     // Update neighborhood info
     // TODO
-    // neighbors = ...
+    std::vector<int> neighbors = {};
    
     Agent meanAgent;
 #ifdef CUDA_ENABLED 
@@ -58,24 +58,23 @@ void DistWorkspace::update() {
     // computeMeanBoidKernel(d_agents, d_meanAgent)
     // memcpy : d_meanAgent -> meanAgent
 #else
-    //computeMeanAgent(meanAgent);
+    computeMeanAgent(meanAgent);
 #endif
 
+    Container receivedMeanAgents;
+    std::vector<int> receivedMeanAgentsWeight;
     // Get mean boids from the neighborhood and send ours (approximation)
-    // mess.exchangeMeanAgents(meanAgent, agents.size(), receivedMeanAgents, receivedMeanAgentsWeight, neighbors);
+    mess.exchangeMeanAgents(meanAgent, agents.size(), receivedMeanAgents, receivedMeanAgentsWeight, neighbors);
 
     // Compute and apply forces to local boids
 #ifdef CUDA_ENABLED
     // TODO
     // memcpy : receivedMeanAgents -> d_meanAgents
     // memcpy : receivedMeanAgentsWeight -> d_meanAgentsWeightss
-    //applyInternalForcesKernel(d_currentAgents, d_newAgents, d_opt)
-    //applyExternalForcesKernel(d_currentAgents, d_newAgents, d_meanAgents, d_meanAgentsWeights, d_opt)
+    //applyForcesKernel(d_currentAgents, d_newAgents, d_meanAgents, d_meanAgentsWeights, agents.size(), receivedMeanAgents.size(), d_opt);
     // memcpy : newAgents -> agents
 #else
-    // TODO code workspace.cpp + meanAgents
-    //applyInternalForces();
-    //applyExternalForces(receivedMeanAgents, receivedMeanAgentsWeight);
+    applyForces(receivedMeanAgents, receivedMeanAgentsWeight);
 #endif
     
     // Sort out boids that cross domain boundaries
@@ -84,7 +83,7 @@ void DistWorkspace::update() {
     //sortAgents(agentsForNeighborsMap);
     
     // Exchange boids that cross domain boundaries
-    // mess.exchangeAgents(agents, agentsForNeighborsMap, neighbors);
+    mess.exchangeAgents(agents, agentsForNeighborsMap, neighbors);
 
     // Note: if practically there is too many agents to send, we should compute and send agents by batches
 }
@@ -100,22 +99,55 @@ void DistWorkspace::computeMeanAgent(Agent &meanAgent) {
     meanAgent.position = meanPos / static_cast<Real>(count);
 }
 
-void DistWorkspace::applyInternalForces() {
-    Vec3<Real> s,c,a;
-
-    for(size_t k = 0; k< agents.size(); k++){
-        s = agents[k].separation(agents, k, opt.rSeparation);
-        c = agents[k].cohesion(agents, k, opt.rCohesion);
-        a = agents[k].alignment(agents, k, opt.rAlignment);
-
-        agents[k].direction = opt.wCohesion*c + opt.wAlignment*a + opt.wSeparation*s;
+void DistWorkspace::applyForces(Container &receivedMeanAgents, std::vector<int> &receivedMeanAgentsWeights) {
+    for (size_t k = 0; k < agents.size(); k++) {
+        int countSeparation = 0, countCohesion = 0, countAlignment = 0;
+        Vec3<Real> forceSeparation, forceCohesion, forceAlignment;
+        // Compute "internal forces"
+        for (size_t i = 0; i < agents.size(); i++) {
+            if (i != k) {
+                Real dist = (agents[k].position - agents[i].position).norm();
+                if (dist < opt.rSeparation) {
+                    forceSeparation -= (agents[k].position - agents[i].position).normalized();
+                    ++countSeparation;
+                }
+                if (dist < opt.rCohesion) {
+                    forceCohesion += agents[i].position;
+                    ++countCohesion;
+                }
+                if (dist < opt.rAlignment) {
+                    forceAlignment += agents[i].velocity;
+                    ++countAlignment;
+                }
+            }
+        }
+        // Compute "external forces"
+        for (size_t i = 0; i < receivedMeanAgents.size(); i++) {
+            Real dist = (agents[k].position - receivedMeanAgents[i].position).norm();
+            Real weight = receivedMeanAgentsWeights[i]; 
+            if (dist < opt.rSeparation) {
+                forceSeparation -= weight * (agents[k].position - receivedMeanAgents[i].position).normalized();
+                countSeparation += weight;
+            }
+            if (dist < opt.rCohesion) {
+                forceCohesion += weight * receivedMeanAgents[i].position;
+                countCohesion += weight;
+            }
+            if (dist < opt.rAlignment) {
+                forceAlignment += weight * receivedMeanAgents[i].velocity;
+                countAlignment += weight;
+            }
+        }   
+        agents[k].direction = opt.wSeparation * ( countSeparation>0 ? forceSeparation/static_cast<Real>(countSeparation) : forceSeparation) +
+                              opt.wCohesion   * ( countCohesion  >0 ? forceCohesion  /static_cast<Real>(countCohesion)   : forceCohesion  ) +
+                              opt.wAlignment  * ( countAlignment >0 ? forceAlignment /static_cast<Real>(countAlignment)  : forceAlignment );
     }
 
     // Integration in time using euler method
-    for(size_t k = 0; k< agents.size(); k++){
+    for(size_t k = 0; k < agents.size(); k++){
         agents[k].velocity += agents[k].direction;
 
-        double speed = agents[k].velocity.norm();
+        Real speed = agents[k].velocity.norm();
         if (speed > opt.maxVel) {
             agents[k].velocity *= opt.maxVel/speed;
         }
@@ -127,43 +159,13 @@ void DistWorkspace::applyInternalForces() {
     }
 }
 
-void DistWorkspace::applyExternalForces(Container &receivedMeanAgents, std::vector<int> &receivedMeanAgentsWeight) {
-    //TODO : create new / modify methods for agents to use weights
-    //TODO : factor code with applyInternalForces()
-    /*Vec3<Real> s,c,a;
-
-    // Use SIZE_MAX so the computation is done for each meanAgent
-    for(size_t k = 0; k< agents.size(); k++){
-        s = agents[k].separation(receivedMeanAgents, SIZE_MAX, opt.rSeparation);
-        c = agents[k].cohesion(receivedMeanAgents, SIZE_MAX, opt.rCohesion);
-        a = agents[k].alignment(receivedMeanAgents, SIZE_MAX, opt.rAlignment);
-
-        agents[k].direction = opt.wCohesion*c + opt.wAlignment*a + opt.wSeparation*s;
-    }
-
-    // Integration in time using euler method
-    for(size_t k = 0; k< agents.size(); k++){
-        agents[k].velocity += agents[k].direction;
-
-        double speed = agents[k].velocity.norm();
-        if (speed > opt.maxVel) {
-            agents[k].velocity *= opt.maxVel/speed;
-        }
-        agents[k].position += opt.dt*agents[k].velocity;
-
-        agents[k].position.x= fmod(agents[k].position.x,opt.domainSize);
-        agents[k].position.y= fmod(agents[k].position.y,opt.domainSize);
-        agents[k].position.z= fmod(agents[k].position.z,opt.domainSize);
-    }*/
-}
-        
 void DistWorkspace::sortAgents(std::map<int, Container> &agentsForNeighborsMap) {
     // TODO
     for (size_t i = 0; i < agents.size(); i++) {
         /*if (agents[i].position.x > ..... {
-            agentsForNeighborsMap[neighbor].push_back(agents[i]);
-            agents.erase(agents.begin()+i););
-            }*/
+          agentsForNeighborsMap[neighbor].push_back(agents[i]);
+          agents.erase(agents.begin()+i););
+          }*/
     }
 }
 

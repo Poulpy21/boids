@@ -17,8 +17,7 @@ class DistWorkspace {
     private:
         void init();
         void computeMeanAgent(Agent &meanAgent);
-        void applyInternalForces();
-        void applyExternalForces(Container &receivedMeanAgents, std::vector<int> &receivedMeanAgentsWeight);
+        void applyForces(Container &receivedMeanAgents, std::vector<int> &receivedMeanAgentsWeights);
         void sortAgents(std::map<int, Container> &agentsForNeighborsMap);
 
         Container agents;
