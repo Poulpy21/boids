@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/modules/")
 set(LIBRARY_OUTPUT_PATH "${CMAKE_SOURCE_DIR}/lib/${CMAKE_BUILD_TYPE}")
-#set(EXECUTABLE_OUTPUT_PATH "${CMAKE_SOURCE_DIR}")
+set(EXECUTABLE_OUTPUT_PATH "${CMAKE_SOURCE_DIR}")
 
 project(Boids C CXX)
 set(BOIDS_MAJOR_VERSION 0)
@@ -240,7 +240,7 @@ endforeach()
 #enable_testing()
 
 add_custom_target(run
-    COMMAND mpirun -np 1 ${EXECUTABLE_OUTPUT_PATH}/main -agents 20 && ${EXECUTABLE_OUTPUT_PATH}/script/visu.sh 20
+    COMMAND mpirun -np 1 ${EXECUTABLE_OUTPUT_PATH}/main && ${EXECUTABLE_OUTPUT_PATH}/script/merge_files.py && ${EXECUTABLE_OUTPUT_PATH}/display -f data/boids_all.xyz
     DEPENDS main
     WORKING_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}
 )
