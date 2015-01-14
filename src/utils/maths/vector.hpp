@@ -2,13 +2,19 @@
 #define VECTOR
 
 #include "headers.hpp"
-#include <iostream>
 #include <cmath>
 #include "types.hpp"
+#ifndef __CUDACC__
+#include <iostream>
 #include <limits>
+#endif
 
+#ifndef __CUDACC__
 #define EPSILON std::numeric_limits<Real>::epsilon()
-
+#else
+#define EPSILON NPP_MINABS_32F
+#endif
+ 
 class Vector
 {
   public:
@@ -99,6 +105,8 @@ class Vector
 
 Vector& Zeros();
 Vector operator*( Real s, Vector &u);
+#ifndef __CUDACC__
 std::ostream &operator<< (std::ostream &stream, const Vector & u);
+#endif
 
 #endif

@@ -27,6 +27,13 @@ class DistWorkspace {
         int rootID, myID;
         // TODO: affectation domaine hypercube
         // TODO: structure pour stockage voisinage
+#ifdef CUDA_ENABLED
+        struct Options* d_opt;
+        Vec3<Real> *d_agents;
+        Vec3<Real> *d_meanAgent;
+        Vec3<Real> *d_meanAgents;
+        Vec3<Real> *d_meanAgentsWeights;
+#endif
 
 };
 

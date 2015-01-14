@@ -2,12 +2,15 @@
 #define TYPES
 
 #include "headers.hpp"
-#include <deque>
 
 // Forward declaration
 class Agent;
 
+#ifndef __CUDACC__
 using Real = double;
 using Container = std::vector<Agent>;
+#else
+#define Real double
+#endif
 
 #endif
