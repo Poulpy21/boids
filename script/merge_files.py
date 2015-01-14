@@ -1,6 +1,6 @@
 #! /usr/bin/python
 
-import os, re
+import os, re,sys
 
 
 def reglob(path, exp, invert=False):
@@ -22,20 +22,31 @@ def reglob(path, exp, invert=False):
 if __name__ == "__main__":
     outfilename = "data/boids_all.xyz" 
     filenames = reglob("data", "boids_[0-9]+.xyz")
+    print("Using " + ", ".join(filenames) + " to produce " + outfilename)
 
     files = []
-    i = 0
+    blocks = []
+    nBoids = []
 
     outfile = open(outfilename, 'wb')
-        
     for fname in filenames:
-        print(fname)
-    """    files[i] = open(fname)
-        i += 1
+        f = open(fname)
+        files.append(f)
+        l = [block.split("\n") for block in f.read().split("\n\n")]
+        l[0] = l[0][1:] # Remove first empty line of the file
+        blocks.append(l)
+        nBoids.append([int(b[0]) for b in l])
 
-    #for line in f:
-    #    outfile.write(line)
+    for i in range(0,len(blocks[0])):
+        n = 0
+        for file_n in nBoids:
+            n += file_n[i]
+        outfile.write("\n"+ str(n) +"\n")
+        for file_blocks in blocks:
+            block = file_blocks[i]
+            if len(block) >= 2:
+                outfile.write("\n".join(block[1:]) + "\n")
 
+    outfile.close()
     for f in files:
         f.close()
-        """
