@@ -51,6 +51,9 @@ class Globals {
         static Vec3<double> pos;
         static Vec3<double> offset;
 
+        static bool wireframe;
+        static int  minTreeLevelDisplay;
+
         static std::string shaderFolder;
 };
 

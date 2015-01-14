@@ -6,6 +6,8 @@
 #include "rootNode.hpp"
 #include "hypercube.hpp"
 
+class Boid;
+
 namespace Tree {
 
 #define _N_ utils::compute_power_of_two<unsigned int>(D)
@@ -23,6 +25,11 @@ namespace Tree {
                 unsigned int targetChild(const TreeNode<D,_N_,A,T> *node, const E &e) const override;
                 TreeNode<D,_N_,A,T>* splitLeaf(LeafNode<D,_N_,A,T,L,E>* &leaf) override;
                 LeafNode<D,_N_,A,T,L,E>* mergeChilds(TreeNode<D,_N_,A,T>* &father) override;
+                
+#ifdef GUI_ENABLED
+                void animateDownwards() override { this->insertElement(Boid());}
+#endif
+
         };
                 
     template <unsigned int D, typename A, typename T, typename L, typename E>
@@ -34,15 +41,23 @@ namespace Tree {
     HyperCubeTree<D,A,T,L,E>::HyperCubeTree(const HyperCube<D,A> &cube, 
             unsigned int maxElementsPerLeaf, float fillThreshHold) :
         BoxTree<D,_N_,A,T,L,E>(cube, maxElementsPerLeaf, fillThreshHold) {
+
+            log4cpp::log_console->debugStream() << "[HyperCubeTree] Creating an hypercubetree, domain is :"
+                << "\n" << cube;
             
             //create first leafs
+            
+            log4cpp::log_console->debugStream() << "[HyperCubeTree] Root is creating first leafs...";
+
             const Vec<D,A> &xmin = this->bbox().min;
             const Vec<D,A> &xmax = this->bbox().max;
             Vec<D,A> dx2 = (xmax - xmin)/A(2); 
             for (unsigned int i = 0; i < N; i++) {
                 Vec<D,A> v = Vec<D,A>(VecBool<D>(i));
                 BoundingBox<D,A> bbox(xmin+v*dx2, xmin+(A(1)+v)*dx2);
-                this->child(i) = new LeafNode<D,N,A,T,L,E>(bbox, this->_maxElementsPerLeaf, this, i);
+                
+                log4cpp::log_console->debugStream() << "Creating leaf " << i << " <=> " << v << "...";
+                this->child(i) = new LeafNode<D,N,A,T,L,E>(bbox, 1u, 1ul*N+i, this->_maxElementsPerLeaf, this);
             }
     }
 
@@ -58,14 +73,32 @@ namespace Tree {
     template <unsigned int D, typename A, typename T, typename L, typename E>
     TreeNode<D,_N_,A,T>* HyperCubeTree<D,A,T,L,E>::splitLeaf(LeafNode<D,_N_,A,T,L,E>* &leaf) {
 
+        using log4cpp::log_console;
+        
         assert(leaf->isLeaf()); 
         
+        log_console->debugStream() << "Leaf node " << leaf->id() << " at level " << leaf->level() 
+            << " is splitting !";
+
+
         //clone leaf base treenode and get data
         TreeNode<D,_N_,A,T>* father = new TreeNode<D,N,A,T>(*leaf);
         L data(leaf->data());
         
+        //deleta leaf et set it to null
         delete leaf;
-        leaf = dynamic_cast<LeafNode<D,N,A,T,L,E>*>(father);
+        leaf = nullptr;
+        
+        log_console->debugStream() << "Creating father node " << father->id() << " at level " << father->level() 
+            << "...";
+        
+
+        //set the new child as the cloned treenode
+        unsigned int childId;
+        childId = father->id() % _N_;
+        
+        father->father()->child(childId) = father; 
+       
 
         //create new leafs
         const Vec<D,A> &xmin = father->bbox().min;
@@ -74,11 +107,13 @@ namespace Tree {
         for (unsigned int i = 0; i < N; i++) {
             Vec<D,A> v = Vec<D,A>(VecBool<D>(i));
             BoundingBox<D,A> bbox(xmin+v*dx2, xmin+(A(1)+v)*dx2);
-            father->child(i) = new LeafNode<D,N,A,T,L,E>(bbox, this->_maxElementsPerLeaf, father, i);
+            father->child(i) = new LeafNode<D,N,A,T,L,E>(bbox, father->level()+1u, father->id()*N + i, this->_maxElementsPerLeaf, father);
+            log4cpp::log_console->debugStream() << "Creating leaf " << father->id()*N+i << " <=> " << v << "...";
+            log4cpp::log_console->debugStream() << bbox;
         }
     
         //put back data in the tree
-        this->insert(data);
+        this->insertElements(data);
 
         return father;
     }

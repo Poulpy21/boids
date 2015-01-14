@@ -32,7 +32,7 @@ struct Boid : public Localized<3u,float> {
     ~Boid() {}
     Vec<3u,float> position() const override {
         using Random::randf;
-        return static_cast<Vec<3u,float>>(Vec3<float>(randf(),randf(),randf()));
+        return static_cast<Vec<3u,float>>(0.5f*Vec3<float>(randf(),randf(),randf()));
     }
 };
 int main(int argc, char **argv) {
@@ -79,18 +79,31 @@ int main(int argc, char **argv) {
     Vec3<float> v0(0.0f,0.0f,0.0f);
     Vec3<float> v1(1.0f,1.0f,1.0f);
     HyperCube<3u,float> hypercube(v0,v1);
-    Tree::HyperCubeTree<3u,float,Trunk,ArrayContainer<Boid>,Boid> tree(hypercube, 10u, 0.8f);
+    Tree::HyperCubeTree<3u,float,Trunk,ArrayContainer<Boid>,Boid> tree(hypercube, 5u, 0.8f);
 
-    for (unsigned int i = 0; i < 100; i++) {
-        tree.insert(Boid());
+    //for (unsigned int i = 0; i < 10000; i++) {
+        //tree.insertElement(Boid());
+    //}
+
+    //tree.removeElement(88,3);
+
+//#ifdef GUI_ENABLED
+    //RenderRoot *root = new RenderRoot(); 
+    //root->addChild("Tree", &tree);
+    //viewer->addRenderable(root);
+    //application.exec();
+//#endif
+
+    ArrayContainer<unsigned int> array; 
+    array.allocate(20);
+    for (unsigned int i = 1; i < 11; i++) {
+        array.insert(i-1);
+        std::cout << "fillrate is " << array.fillRate() << std::endl;
     }
 
-#ifdef GUI_ENABLED
-    RenderRoot *root = new RenderRoot(); 
-    root->addChild("Tree", &tree);
-    viewer->addRenderable(root);
-    application.exec();
-#endif
+    std::cout << array;
+    array.remove(0);
+    std::cout << array;
 
     return EXIT_SUCCESS;
 }

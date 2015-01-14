@@ -31,6 +31,9 @@ float Globals::dt = 0.1;
 Vec3<double> Globals::pos = Vec3<double>(0, 0, 0);
 Vec3<double> Globals::offset = Vec3<double>(0, 0, 0);
         
+bool Globals::wireframe = true;
+int  Globals::minTreeLevelDisplay = 0;
+        
 std::string Globals::shaderFolder(STRINGIFY_MACRO(SHADER_FOLDER));
 
 void Globals::init() {

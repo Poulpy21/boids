@@ -18,11 +18,19 @@ class AbstractContainer {
 
         unsigned int elements() const { return _elements; }
         unsigned int size()     const { return _size; }
+        float fillRate()        const { return static_cast<float>(_elements) / static_cast<float>(_size); };
         E* data() { return _data; }
 
-        inline void insert(const E& e)    { _data[_elements] = e; _elements++; }
-        inline void push_back(const E& e) { insert(e); }
-        inline E pop_back() { _elements--; return _data[_elements]; }
+        void insert(const E& e)    { _data[_elements] = e; _elements++; }
+        void remove(unsigned int elementId) {
+            assert(elementId < _elements);
+            memcpy(_data + elementId, _data + _elements - 1, sizeof(E));
+            _elements --;
+        }
+
+        void push_back(const E& e) { insert(e); }
+        E pop_back() { _elements--; return _data[_elements]; }
+
 
         virtual void allocate(unsigned int minData)   = 0;
         //virtual void reallocate(unsigned int minData) = 0;

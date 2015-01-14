@@ -14,15 +14,14 @@ namespace Tree {
             public:
                 LeafNode();
                 LeafNode(const LeafNode<D,N,A,T,L,E> &other);
-                explicit LeafNode(const BoundingBox<D,A> &domain, unsigned int maxData, TreeNode<D,N,A,T> *father, unsigned int childId);
+                explicit LeafNode(const BoundingBox<D,A> &domain, unsigned int level, unsigned int id,
+                        unsigned int maxData, TreeNode<D,N,A,T> *father);
                 ~LeafNode();
 
                 bool isLeaf() const final;
 
-                unsigned int elements() const;
-                void insert(E e);
-
                 L& data() ;
+                unsigned int elements() const;
 
             private:
                 L _leafData;
@@ -50,15 +49,15 @@ namespace Tree {
             }
 
     template <unsigned int D, unsigned int N, typename A, typename T, typename L, typename E>
-        LeafNode<D,N,A,T,L,E>::LeafNode(const BoundingBox<D,A> &domain, unsigned int maxData, TreeNode<D,N,A,T> *father, unsigned int childId) :
-            TreeNode<D,N,A,T>(domain), _leafData(), _maxData(maxData) {
+        LeafNode<D,N,A,T,L,E>::LeafNode(const BoundingBox<D,A> &domain, unsigned int level, unsigned int id,
+                unsigned int maxData, TreeNode<D,N,A,T> *father) :
+            TreeNode<D,N,A,T>(domain, level, id),
+            _leafData(), _maxData(maxData) {
                 this->_father = father;
                 _leafData.allocate(maxData);
                 
 #ifdef GUI_ENABLED
                 Vec<D,A> dx = domain.max - domain.min;
-                std::cout << "Creating leaf node !";
-                std::cout << domain << std::endl;
                 this->move(domain.center());
                 this->scale(dx[0], dx[1], dx[2]);
 #endif
@@ -75,11 +74,6 @@ namespace Tree {
         }
 
     template <unsigned int D, unsigned int N, typename A, typename T, typename L, typename E>
-        void LeafNode<D,N,A,T,L,E>::insert(E e) {
-            _leafData.insert(e);
-        }
-
-    template <unsigned int D, unsigned int N, typename A, typename T, typename L, typename E>
         L& LeafNode<D,N,A,T,L,E>::data() {
             return _leafData;
         }
@@ -88,10 +82,19 @@ namespace Tree {
     template <unsigned int D, unsigned int N, typename A, typename T, typename L, typename E>
         void LeafNode<D,N,A,T,L,E>::drawDownwards(const float *currentTransformationMatrix) {
             static_assert(D==3, "Tree display only possible in dimension 3 !");
-	
-            std::cout << "Leaf Node draw" << std::endl;
-            glUniformMatrix4fv(this->_drawBoxUniformLocs["modelMatrix"], 1, GL_TRUE, currentTransformationMatrix);
-            glDrawArrays(GL_TRIANGLES, 0, this->_nTriangles*3);
+            glUniformMatrix4fv(this->_drawBoxUniformLocs["modelMatrix"], 1, GL_TRUE, this->relativeModelMatrix);
+            glUniform1i(this->_drawBoxUniformLocs["level"], this->_level);
+         
+            if(this->level() >= Globals::minTreeLevelDisplay) {
+                if(Globals::wireframe) {
+                    for (unsigned int i = 0; i < 6; i++) {
+                        glDrawArrays(GL_LINE_LOOP,4*i,4);
+                    }
+                }
+                else {
+                    glDrawArrays(GL_TRIANGLES, 0, this->_nTriangles*3);
+                }
+            }
         }
 #endif /* GUI_ENABLED */
 

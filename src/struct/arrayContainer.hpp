@@ -11,8 +11,20 @@ class ArrayContainer : public AbstractContainer<E> {
 
         void allocate(unsigned int minData) final override {
             this->_data = new E[minData];
+            this->_size = minData;
         };
 };
+
+template <typename E>
+std::ostream & operator << ( std::ostream &os, ArrayContainer<E> array) {
+    os << "Array : " << array.elements() << " out of " << array.size() 
+        << ", fillrate is " << array.fillRate() << " :" << std::endl;
+    for (unsigned int i = 0; i < array.elements(); i++) {
+        os << array[i] << ", ";
+    }
+    os << std::endl;
+    return os;
+}
 
 
 

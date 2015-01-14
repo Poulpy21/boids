@@ -42,7 +42,7 @@ namespace Tree {
             public:
                 TreeNode();
                 TreeNode(const TreeNode<D,N,A,T> &other);
-                explicit TreeNode(const BoundingBox<D,A> &domain);
+                explicit TreeNode(const BoundingBox<D,A> &domain, unsigned int level, unsigned int id);
                 virtual ~TreeNode();
 
                 //parent-child handling
@@ -58,8 +58,6 @@ namespace Tree {
 
                 //acessors
                 unsigned long id() const;
-                unsigned int nChilds() const;
-                unsigned int nSubchilds() const;
                 BoundingBox<D,A> bbox() const;
 
                 //helper funcs
@@ -70,8 +68,9 @@ namespace Tree {
 
             protected:
                 unsigned long _id;
-                unsigned int _nChilds;
-                unsigned int _nSubchilds;
+                unsigned int _level;
+                
+                static unsigned int _maxLevel;
 
                 BoundingBox<D,A> _bbox;
                 T _nodeData;
@@ -81,14 +80,15 @@ namespace Tree {
 
 #ifdef GUI_ENABLED
             public:
-                virtual void drawDownwards(const float *currentTransformationMatrix = consts::identity4);
+                virtual void drawDownwards(const float *currentTransformationMatrix = consts::identity4) override;
 
             protected:
                 static unsigned int constexpr _nTriangles = 6*2;
                 static const float _unitCube[_nTriangles*3*3];
+                static const float _unitWireframeCube[6*4*3];
 
                 static Program *_drawBoxProgram; 
-                static unsigned int _cubeVBO;
+                static unsigned int _cubeVBO, _wireCubeVBO;
                 static std::map<std::string, int> _drawBoxUniformLocs;
 
                 static void makeDrawBoxProgram();
@@ -96,10 +96,13 @@ namespace Tree {
                 static void initProgram();
 #endif
         };
+        
+    template <unsigned int D, unsigned int N, typename A, typename T>
+        unsigned int TreeNode<D,N,A,T>::_maxLevel = floor(64u*log(2.0f)/log(N));
 
     template <unsigned int D, unsigned int N, typename A, typename T>
         TreeNode<D,N,A,T>::TreeNode() :
-            _id(0ul), _nChilds(0u), _nSubchilds(0u),
+            _id(0ul), _level(0u),
             _bbox(),  _nodeData() {
                 _father = nullptr;
                 for (unsigned int i = 0; i < N; i++) {
@@ -115,8 +118,8 @@ namespace Tree {
         }
 
     template <unsigned int D, unsigned int N, typename A, typename T>
-        TreeNode<D,N,A,T>::TreeNode(const BoundingBox<D,A> &domain) :
-            _id(0ul), _nChilds(0u), _nSubchilds(0u),
+        TreeNode<D,N,A,T>::TreeNode(const BoundingBox<D,A> &domain, unsigned int level, unsigned int id) :
+            _id(id), _level(level),
             _bbox(domain),  _nodeData() {
                 _father = nullptr;
                 for (unsigned int i = 0; i < N; i++) {
@@ -132,7 +135,7 @@ namespace Tree {
 #ifdef GUI_ENABLED
             RenderTree(other),
 #endif
-            _id(other._id), _nChilds(other._nChilds), _nSubchilds(other._nSubchilds),
+            _id(other._id), _level(other._level),
             _bbox(other._bbox),  _nodeData(other._nodeData)
     {
         _father = other._father;
@@ -184,16 +187,6 @@ namespace Tree {
         }
 
     template <unsigned int D, unsigned int N, typename A, typename T>
-        unsigned int TreeNode<D,N,A,T>::nChilds() const {
-            return _nChilds;
-        }
-
-    template <unsigned int D, unsigned int N, typename A, typename T>
-        unsigned int TreeNode<D,N,A,T>::nSubchilds() const {
-            return _nSubchilds;
-        }
-
-    template <unsigned int D, unsigned int N, typename A, typename T>
         BoundingBox<D,A> TreeNode<D,N,A,T>::bbox() const {
             return _bbox;
         }
@@ -201,14 +194,7 @@ namespace Tree {
     //helper funcs
     template <unsigned int D, unsigned int N, typename A, typename T>
         unsigned int TreeNode<D,N,A,T>::level() const {
-            unsigned int level = 0ul;
-            unsigned long buf = _id;
-            while(buf) {
-                buf /= D;
-                level++;
-            }
-
-            return level;
+            return this->_level;
         }
 
     template <unsigned int D, unsigned int N, typename A, typename T>
@@ -226,11 +212,10 @@ namespace Tree {
     template <unsigned int D, unsigned int N, typename A, typename T>
         void TreeNode<D,N,A,T>::drawDownwards(const float *currentTransformationMatrix) {
             for (unsigned int i = 0; i < N; i++) {
-                std::cout << "Tree Node draw " << i << "/" << N << std::endl;
                 this->_childs[i]->drawDownwards(currentTransformationMatrix);
             }
         }
-
+            
 
     template <unsigned int D, unsigned int N, typename A, typename T>
         void TreeNode<D,N,A,T>::initProgram() {
@@ -251,7 +236,7 @@ namespace Tree {
                 _drawBoxProgram->attachShader(Shader(Globals::shaderFolder + "/box/box_fs.glsl", GL_FRAGMENT_SHADER));
 
                 _drawBoxProgram->link();
-                _drawBoxUniformLocs = _drawBoxProgram->getUniformLocationsMap("modelMatrix", true);
+                _drawBoxUniformLocs = _drawBoxProgram->getUniformLocationsMap("modelMatrix level", true);
             }
         }
 
@@ -261,6 +246,12 @@ namespace Tree {
                 glGenBuffers(1, &_cubeVBO);
                 glBindBuffer(GL_ARRAY_BUFFER, _cubeVBO);
                 glBufferData(GL_ARRAY_BUFFER, 6*2*3*3*sizeof(float), _unitCube, GL_STATIC_DRAW);
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+            }
+            if(_wireCubeVBO == 0) {
+                glGenBuffers(1, &_wireCubeVBO);
+                glBindBuffer(GL_ARRAY_BUFFER, _wireCubeVBO);
+                glBufferData(GL_ARRAY_BUFFER, 6*4*3*sizeof(float), _unitWireframeCube, GL_STATIC_DRAW);
                 glBindBuffer(GL_ARRAY_BUFFER, 0);
             }
         }
@@ -315,9 +306,45 @@ namespace Tree {
             -0.5f, -0.5f,  0.5f,  //0
             -0.5f, -0.5f, -0.5f   //4
         };
+    
+    template <unsigned int D, unsigned int N, typename A, typename T>
+        const float TreeNode<D,N,A,T>::_unitWireframeCube[6*4*3] = {
+            -0.5f, -0.5f,  0.5f,  //0
+            0.5f, -0.5f,  0.5f,  //1
+            0.5f,  0.5f,  0.5f,  //2
+            -0.5f,  0.5f,  0.5f,  //3
+
+            0.5f, -0.5f,  0.5f,  //1
+            0.5f,  0.5f,  0.5f,  //2
+            0.5f,  0.5f, -0.5f,  //6 
+            0.5f, -0.5f, -0.5f,  //5
+
+            -0.5f, -0.5f, -0.5f,  //4
+            -0.5f,  0.5f, -0.5f,  //7
+            0.5f,  0.5f, -0.5f,  //6 
+            0.5f, -0.5f, -0.5f,  //5
+
+            -0.5f,  0.5f,  0.5f,  //3
+            -0.5f,  0.5f, -0.5f,  //7
+            -0.5f, -0.5f, -0.5f,  //4
+            -0.5f, -0.5f,  0.5f,  //0
+
+            0.5f,  0.5f,  0.5f,  //2
+            0.5f,  0.5f, -0.5f,  //6 
+            -0.5f,  0.5f, -0.5f,  //7
+            -0.5f,  0.5f,  0.5f,  //3
+
+            -0.5f, -0.5f, -0.5f,  //4
+            0.5f, -0.5f, -0.5f,  //5
+            0.5f, -0.5f,  0.5f,  //1
+            -0.5f, -0.5f,  0.5f,  //0
+        };
 
     template <unsigned int D, unsigned int N, typename A, typename T>
         unsigned int TreeNode<D,N,A,T>::_cubeVBO = 0u;
+    
+    template <unsigned int D, unsigned int N, typename A, typename T>
+        unsigned int TreeNode<D,N,A,T>::_wireCubeVBO = 0u;
 
 #endif /* GUI_ENABLED */
 
