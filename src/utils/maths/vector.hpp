@@ -108,9 +108,9 @@ class Vector
         }
 };
 
-DEVICE Vector& Zeros();
-
 #ifndef __CUDACC__
+Vector& Zeros();
+
 std::ostream &operator<< (std::ostream &stream, const Vector & u);
 #endif
 
