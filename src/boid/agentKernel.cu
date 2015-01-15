@@ -72,7 +72,7 @@ __global__ void applyForces(Vector *currentBoidList,
     newBoidList[3*id+1] = (speed > opt->maxVel ? newBoidList[3*id+1]*opt->maxVel/speed : newBoidList[3*id+1]);
 
     // Update position
-    Vector pos = currentBoidList[3*id] + dt * newBoidList[3*id+1];
+    Vector pos = currentBoidList[3*id] + opt->dt * newBoidList[3*id+1];
 
     // Make sure the boid stays inside the domain
     pos.x = fmod(pos.x, opt->domainSize);
@@ -94,7 +94,7 @@ void applyForcesKernel(Vector *currentBoidList,
     dim3 gridDim(1024,1,1); // TODO: max threads/block in globals.hpp using cudaUtils
     dim3 blockDim(ceil((float)nBoids/1024),1,1); 
 
-    applyForces<<<<gridDim,blockDim,0,0>>>(currentBoidList, 
+    applyForces<<<gridDim,blockDim,0,0>>>(currentBoidList, 
                                            newBoidList, 
                                            meanBoidList, 
                                            meanBoidWeights, 

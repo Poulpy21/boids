@@ -1,6 +1,6 @@
 
 #include "cudaUtils.hpp"
-#ifdef USE_CUDA
+#ifdef CUDA_ENABLED
 
 namespace utils {
     void printCudaDevices(std::ostream &outputStream) {

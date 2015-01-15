@@ -5,13 +5,15 @@
 #include "distWorkspace.hpp"
 #include "messenger.hpp"
 #include "agent.hpp"
-#include "agentKernel.cu"
+#include "vector.hpp"
 
 DistWorkspace::DistWorkspace(Options options, MPI_Comm comm, int root) : 
     agents(), opt(options), comm(comm), mess(comm), rootID(root)
 {
     MPI_Comm_rank(comm, &myID);
     init();
+
+    log_console->infoStream() << "Vectors are different sizes :(   " << "Vector="<<sizeof(Vector) << "///" << "Vec<3u,Real>="<<sizeof(Vec<3u,Real>) << "///" << "Vec3<Real>="<<sizeof(Vec3<Real>);
 }
 
 void DistWorkspace::init() {
@@ -58,7 +60,9 @@ void DistWorkspace::update() {
     // Upload boids to device
     // TODO convert Container to Vec3<Real>[]
     CHECK_CUDA_ERRORS(cudaMalloc((void **) &d_agents, agents.size()*sizeof(Vec3<Real>)));
+    log_console->infoStream() << "AGENTS";
     CHECK_CUDA_ERRORS(cudaMemcpy(d_agents, &agents, agents.size()*sizeof(Vec3<Real>), cudaMemcpyHostToDevice));
+    log_console->infoStream() << "AGENTS2";
 
     // Compute mean boid
     // TODO

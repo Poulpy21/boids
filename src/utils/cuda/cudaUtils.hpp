@@ -3,7 +3,7 @@
 #define _CUDA_UTILS_
 
 #include "headers.hpp"
-#ifdef USE_CUDA
+#ifdef CUDA_ENABLED
 
 #include <log4cpp/Category.hh>
 

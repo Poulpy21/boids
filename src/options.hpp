@@ -20,12 +20,12 @@ struct Options {
     double maxVel;
     double domainSize;
 
+#ifndef __CUDACC__
     Options() : nAgents(0l), nSteps(0l), 
         wCohesion(0.0), wAlignment(0.0), wSeparation(0.0),
         rCohesion(0.0), rAlignment(0.0), rSeparation(0.0),
         dt(0.0), maxVel(0.0), domainSize(1.0) {};
 
-#ifndef __CUDACC__
     Options(ArgumentParser &parser) {
         nAgents     = static_cast<unsigned long int>(parser("agents").asInt());
         nSteps      = static_cast<unsigned long int>(parser("steps").asInt());
@@ -53,7 +53,7 @@ struct Options {
                       << "[ dt : "          << opt.dt           << " ]"
                       << "[ maxVelocity : " << opt.maxVel       << " ]";
     }
-};
 #endif
+};
 
 #endif
