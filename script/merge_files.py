@@ -39,7 +39,11 @@ if __name__ == "__main__":
         l = [block.split("\n") for block in f.read().split("\n\n")]
         l[0] = l[0][1:] # Remove first empty line of the file
         blocks.append(l)
-        nBoids.append([int(b[0]) for b in l])
+        try:
+            nBoids.append([int(b[0]) for b in l])
+        except:
+            print("FATAL ERROR: Empty file : " + fname + " !")
+            sys.exit(1)
 
     for i in range(0,len(blocks[0])):
         n = 0
