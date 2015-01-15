@@ -25,6 +25,8 @@ int main(int argc, char **argv) {
     parser.addOption("ra", 0.5);
     parser.addOption("rs", 0.1);
 
+    parser.addOption("save", true);
+
     // Parse command line arguments
     parser.setOptions(argc, argv);
 
@@ -33,7 +35,8 @@ int main(int argc, char **argv) {
 
     // Launch simulation
     int nSteps = parser("steps").asInt();
-    workspace.simulate(nSteps);
+    bool saveWorkspace = parser("save").asBool();
+    workspace.simulate(nSteps, saveWorkspace);
 
     return 0;
 }

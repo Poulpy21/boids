@@ -1,19 +1,19 @@
 #include "headers.hpp"
+#include "distWorkspace.hpp"
 #include <iostream>
 #include <fstream>
 #include <iomanip>
-#include "distWorkspace.hpp"
-#include "messenger.hpp"
 #include "agent.hpp"
-#include "vector.hpp"
+
 
 DistWorkspace::DistWorkspace(Options options, MPI_Comm comm, int root) : 
     agents(), opt(options), comm(comm), mess(comm), rootID(root)
+#ifdef CUDA_ENABLED
+    , h_agents(), h_meanAgents()
+#endif
 {
     MPI_Comm_rank(comm, &myID);
     init();
-
-    log_console->infoStream() << "Vectors are different sizes :(   " << "Vector="<<sizeof(Vector) << "///" << "Vec<3u,Real>="<<sizeof(Vec<3u,Real>) << "///" << "Vec3<Real>="<<sizeof(Vec3<Real>);
 }
 
 void DistWorkspace::init() {
@@ -57,17 +57,17 @@ void DistWorkspace::update() {
    
     Agent meanAgent;
 #ifdef CUDA_ENABLED 
-    // Upload boids to device
-    // TODO convert Container to Vec3<Real>[]
-    CHECK_CUDA_ERRORS(cudaMalloc((void **) &d_agents, agents.size()*sizeof(Vec3<Real>)));
-    log_console->infoStream() << "AGENTS";
-    CHECK_CUDA_ERRORS(cudaMemcpy(d_agents, &agents, agents.size()*sizeof(Vec3<Real>), cudaMemcpyHostToDevice));
-    log_console->infoStream() << "AGENTS2";
+    // Convert Container to std::vector<Vector>
+    prepareContainerForUpload(agents, h_agents);
+    // Malloc and upload boids to device
+    CHECK_CUDA_ERRORS(cudaMalloc((void **) &d_agents1, h_agents.size()*sizeof(Vector)));
+    CHECK_CUDA_ERRORS(cudaMalloc((void **) &d_agents2, h_agents.size()*sizeof(Vector)));
+    CHECK_CUDA_ERRORS(cudaMemcpy(d_agents1, &h_agents, h_agents.size()*sizeof(Vector), cudaMemcpyHostToDevice));
 
     // Compute mean boid
     // TODO
-    // computeMeanBoidKernel(d_agents, d_meanAgent)
-    //CHECK_CUDA_ERRORS(cudaMemcpy(&meanAgent, d_meanAgent, sizeof(Vec3<Real>), cudaMemcpyDeviceToHost));
+    // computeMeanBoidKernel(d_agents1, d_meanAgent)
+    //CHECK_CUDA_ERRORS(cudaMemcpy(&meanAgent, d_meanAgent, sizeof(Vector), cudaMemcpyDeviceToHost));
 #else
     computeMeanAgent(meanAgent);
 #endif
@@ -80,18 +80,24 @@ void DistWorkspace::update() {
     // Compute and apply forces to local boids
 #ifdef CUDA_ENABLED
     // TODO
-    // memcpy : receivedMeanAgents -> d_meanAgents
-    // memcpy : receivedMeanAgentsWeight -> d_meanAgentsWeightss
+    // Convert Container to std::vector<Vector>
+    prepareContainerForUpload(receivedMeanAgents, h_meanAgents);
+
+    CHECK_CUDA_ERRORS(cudaMalloc((void **) &d_meanAgents, receivedMeanAgents.size()*sizeof(Vector)));
+    CHECK_CUDA_ERRORS(cudaMemcpy(d_meanAgents, &receivedMeanAgents, receivedMeanAgents.size()*sizeof(Vector), cudaMemcpyHostToDevice));
+    CHECK_CUDA_ERRORS(cudaMalloc((void **) &d_meanAgentsWeights, receivedMeanAgentsWeight.size()*sizeof(int)));
+    CHECK_CUDA_ERRORS(cudaMemcpy(d_meanAgentsWeights, &receivedMeanAgentsWeight, receivedMeanAgentsWeight.size()*sizeof(int), cudaMemcpyHostToDevice));
     //applyForcesKernel(d_currentAgents, d_newAgents, d_meanAgents, d_meanAgentsWeights, agents.size(), receivedMeanAgents.size(), d_opt);
     // memcpy : newAgents -> agents
-    CHECK_CUDA_ERRORS(cudaFree(d_agents));
+    CHECK_CUDA_ERRORS(cudaMemcpy(&h_agents, d_agents2, h_agents.size()*sizeof(Vector), cudaMemcpyDeviceToHost));
+    CHECK_CUDA_ERRORS(cudaFree(d_agents1));
+    CHECK_CUDA_ERRORS(cudaFree(d_agents2));
 #else
     applyForces(receivedMeanAgents, receivedMeanAgentsWeight);
 #endif
     
     // Sort out boids that cross domain boundaries
-    static std::map<int, Container> agentsForNeighborsMap;
-    agentsForNeighborsMap.clear();
+    std::map<int, Container> agentsForNeighborsMap;
     //sortAgents(agentsForNeighborsMap);
     
     // Exchange boids that cross domain boundaries
@@ -179,6 +185,11 @@ void DistWorkspace::sortAgents(std::map<int, Container> &agentsForNeighborsMap) 
           agents.erase(agents.begin()+i););
           }*/
     }
+}
+
+void DistWorkspace::prepareContainerForUpload(Container &c, std::vector<Real> &array) {
+    //TODO
+    //cudaMallocHost((void **) &h_agents, 
 }
 
 

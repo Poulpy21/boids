@@ -72,6 +72,8 @@ int main(int argc, char **argv) {
     parser.addOption("dt", 0.05);
     parser.addOption("mv", 2.0);
 
+    parser.addOption("save", true);
+
     // Parse command line arguments
     parser.setOptions(argc, argv);
     Options opt(parser);
@@ -79,11 +81,16 @@ int main(int argc, char **argv) {
         log_console->infoStream() << opt;
 
     DistWorkspace workspace(opt, comm);
+    
+    // Store initial positions
+    if (parser("save").asBool())
+        workspace.save(0);
 
     // Launch simulation
     for (size_t step = 1; step <= opt.nSteps; step++) {
         workspace.update();
-        workspace.save(step);
+        if (parser("save").asBool())
+            workspace.save(step);
     }
 
     MPI_Finalize();
