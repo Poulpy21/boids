@@ -15,8 +15,14 @@ DistWorkspace::DistWorkspace(Options options, MPI_Comm comm, int root) :
 }
 
 void DistWorkspace::init() {
+#ifdef CUDA_ENABLED 
     // Upload options to device
-    // TODO
+    CHECK_CUDA_ERRORS(cudaMalloc((void **) &d_opt, sizeof(struct Options)));
+    CHECK_CUDA_ERRORS(cudaMemcpy(d_opt, &opt, sizeof(struct Options), cudaMemcpyHostToDevice));
+    
+    // Malloc d_meanAgent
+    CHECK_CUDA_ERRORS(cudaMalloc((void **) &d_meanAgent, sizeof(Vec3<Real>)));
+#endif
 
     // Init boids
     srand48(std::time(0));
@@ -51,19 +57,20 @@ void DistWorkspace::update() {
 #ifdef CUDA_ENABLED 
     // Upload boids to device
     // TODO convert Container to Vec3<Real>[]
-    // memcpy : agents -> d_agents
+    CHECK_CUDA_ERRORS(cudaMalloc((void **) &d_agents, agents.size()*sizeof(Vec3<Real>)));
+    CHECK_CUDA_ERRORS(cudaMemcpy(d_agents, &agents, agents.size()*sizeof(Vec3<Real>), cudaMemcpyHostToDevice));
 
     // Compute mean boid
     // TODO
     // computeMeanBoidKernel(d_agents, d_meanAgent)
-    // memcpy : d_meanAgent -> meanAgent
+    //CHECK_CUDA_ERRORS(cudaMemcpy(&meanAgent, d_meanAgent, sizeof(Vec3<Real>), cudaMemcpyDeviceToHost));
 #else
     computeMeanAgent(meanAgent);
 #endif
 
+    // Get mean boids from the neighborhood and send ours (approximation)
     Container receivedMeanAgents;
     std::vector<int> receivedMeanAgentsWeight;
-    // Get mean boids from the neighborhood and send ours (approximation)
     mess.exchangeMeanAgents(meanAgent, agents.size(), receivedMeanAgents, receivedMeanAgentsWeight, neighbors);
 
     // Compute and apply forces to local boids
@@ -73,6 +80,7 @@ void DistWorkspace::update() {
     // memcpy : receivedMeanAgentsWeight -> d_meanAgentsWeightss
     //applyForcesKernel(d_currentAgents, d_newAgents, d_meanAgents, d_meanAgentsWeights, agents.size(), receivedMeanAgents.size(), d_opt);
     // memcpy : newAgents -> agents
+    CHECK_CUDA_ERRORS(cudaFree(d_agents));
 #else
     applyForces(receivedMeanAgents, receivedMeanAgentsWeight);
 #endif

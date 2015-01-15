@@ -1,8 +1,11 @@
-#include "utils/types.hpp"
-#include "parser.hpp"
-
 #ifndef OPTIONS_HPP
 #define OPTIONS_HPP
+
+#ifndef __CUDACC__
+#include "utils/types.hpp"
+#include "parser.hpp"
+#endif
+
 
 struct Options {
     unsigned long int nAgents;
@@ -22,6 +25,7 @@ struct Options {
         rCohesion(0.0), rAlignment(0.0), rSeparation(0.0),
         dt(0.0), maxVel(0.0), domainSize(1.0) {};
 
+#ifndef __CUDACC__
     Options(ArgumentParser &parser) {
         nAgents     = static_cast<unsigned long int>(parser("agents").asInt());
         nSteps      = static_cast<unsigned long int>(parser("steps").asInt());
@@ -50,5 +54,6 @@ struct Options {
                       << "[ maxVelocity : " << opt.maxVel       << " ]";
     }
 };
+#endif
 
 #endif
