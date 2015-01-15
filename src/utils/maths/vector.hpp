@@ -104,7 +104,8 @@ class Vector
 };
 
 Vector& Zeros();
-Vector operator*( Real s, Vector &u);
+//Vector operator*( Real s, const Vector &u);
+
 #ifndef __CUDACC__
 std::ostream &operator<< (std::ostream &stream, const Vector & u);
 #endif
