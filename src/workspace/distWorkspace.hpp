@@ -4,6 +4,7 @@
 #include "utils/headers.hpp"
 #include "options.hpp"
 #include "utils/types.hpp"
+#include "vector.hpp"
 #include "messenger.hpp"
 
 class DistWorkspace {
@@ -19,6 +20,8 @@ class DistWorkspace {
         void computeMeanAgent(Agent &meanAgent);
         void applyForces(Container &receivedMeanAgents, std::vector<int> &receivedMeanAgentsWeights);
         void sortAgents(std::map<int, Container> &agentsForNeighborsMap);
+        void makeArrayFromContainer(Container &c, std::vector<Real> &array);
+        void makeContainerFromArray(std::vector<Real> &array, Container &c);
 
         Container agents;
         Options opt;
@@ -29,10 +32,10 @@ class DistWorkspace {
         // TODO: structure pour stockage voisinage
 #ifdef CUDA_ENABLED
         struct Options* d_opt;
-        Vec3<Real> *d_agents;
-        Vec3<Real> *d_meanAgent;
-        Vec3<Real> *d_meanAgents;
-        Vec3<Real> *d_meanAgentsWeights;
+        std::vector<Real> h_agents, h_meanAgents;
+        Real *d_agents1, *d_agents2, *d_meanAgents;
+        Vector *d_meanAgent;
+        int *d_meanAgentsWeights;
 #endif
 
 };

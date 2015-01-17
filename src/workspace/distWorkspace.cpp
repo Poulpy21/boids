@@ -1,14 +1,17 @@
 #include "headers.hpp"
+#include "distWorkspace.hpp"
 #include <iostream>
 #include <fstream>
 #include <iomanip>
-#include "distWorkspace.hpp"
-#include "messenger.hpp"
 #include "agent.hpp"
-#include "agentKernel.cu"
+
+#undef CUDA_ENABLED //FIXME when the kernels are done
 
 DistWorkspace::DistWorkspace(Options options, MPI_Comm comm, int root) : 
     agents(), opt(options), comm(comm), mess(comm), rootID(root)
+#ifdef CUDA_ENABLED
+    , h_agents(), h_meanAgents()
+#endif
 {
     MPI_Comm_rank(comm, &myID);
     init();
@@ -55,15 +58,17 @@ void DistWorkspace::update() {
    
     Agent meanAgent;
 #ifdef CUDA_ENABLED 
-    // Upload boids to device
-    // TODO convert Container to Vec3<Real>[]
-    CHECK_CUDA_ERRORS(cudaMalloc((void **) &d_agents, agents.size()*sizeof(Vec3<Real>)));
-    CHECK_CUDA_ERRORS(cudaMemcpy(d_agents, &agents, agents.size()*sizeof(Vec3<Real>), cudaMemcpyHostToDevice));
+    makeArrayFromContainer(agents, h_agents);
+    
+    // Malloc and upload boids to device
+    CHECK_CUDA_ERRORS(cudaMalloc((void **) &d_agents1, h_agents.size()*sizeof(Real)));
+    CHECK_CUDA_ERRORS(cudaMalloc((void **) &d_agents2, h_agents.size()*sizeof(Real)));
+    CHECK_CUDA_ERRORS(cudaMemcpy(d_agents1, &h_agents, h_agents.size()*sizeof(Real), cudaMemcpyHostToDevice));
 
     // Compute mean boid
-    // TODO
-    // computeMeanBoidKernel(d_agents, d_meanAgent)
-    //CHECK_CUDA_ERRORS(cudaMemcpy(&meanAgent, d_meanAgent, sizeof(Vec3<Real>), cudaMemcpyDeviceToHost));
+    computeMeanBoidKernel(d_agents1, agents.size(), d_meanAgent);
+    
+    CHECK_CUDA_ERRORS(cudaMemcpy(&meanAgent, d_meanAgent, sizeof(Vector), cudaMemcpyDeviceToHost));
 #else
     computeMeanAgent(meanAgent);
 #endif
@@ -75,25 +80,30 @@ void DistWorkspace::update() {
 
     // Compute and apply forces to local boids
 #ifdef CUDA_ENABLED
-    // TODO
-    // memcpy : receivedMeanAgents -> d_meanAgents
-    // memcpy : receivedMeanAgentsWeight -> d_meanAgentsWeightss
-    //applyForcesKernel(d_currentAgents, d_newAgents, d_meanAgents, d_meanAgentsWeights, agents.size(), receivedMeanAgents.size(), d_opt);
-    // memcpy : newAgents -> agents
-    CHECK_CUDA_ERRORS(cudaFree(d_agents));
+    makeArrayFromContainer(receivedMeanAgents, h_meanAgents);
+
+    CHECK_CUDA_ERRORS(cudaMalloc((void **) &d_meanAgents, receivedMeanAgents.size()*9*sizeof(Real)));
+    CHECK_CUDA_ERRORS(cudaMemcpy(d_meanAgents, &receivedMeanAgents, receivedMeanAgents.size()*9*sizeof(Real), cudaMemcpyHostToDevice));
+    CHECK_CUDA_ERRORS(cudaMalloc((void **) &d_meanAgentsWeights, receivedMeanAgentsWeight.size()*sizeof(int)));
+    CHECK_CUDA_ERRORS(cudaMemcpy(d_meanAgentsWeights, &receivedMeanAgentsWeight, receivedMeanAgentsWeight.size()*sizeof(int), cudaMemcpyHostToDevice));
+    
+    applyForcesKernel(d_currentAgents, d_newAgents, d_meanAgents, d_meanAgentsWeights, agents.size(), receivedMeanAgents.size(), d_opt);
+    
+    CHECK_CUDA_ERRORS(cudaMemcpy(&h_agents, d_agents2, h_agents.size()*sizeof(Real), cudaMemcpyDeviceToHost));
+    CHECK_CUDA_ERRORS(cudaFree(d_agents1));
+    CHECK_CUDA_ERRORS(cudaFree(d_agents2));
+
+    makeContainerFromArray(h_agents, agents);
 #else
     applyForces(receivedMeanAgents, receivedMeanAgentsWeight);
 #endif
     
     // Sort out boids that cross domain boundaries
-    static std::map<int, Container> agentsForNeighborsMap;
-    agentsForNeighborsMap.clear();
-    //sortAgents(agentsForNeighborsMap);
+    std::map<int, Container> agentsForNeighborsMap;
+    sortAgents(agentsForNeighborsMap);
     
     // Exchange boids that cross domain boundaries
     mess.exchangeAgents(agents, agentsForNeighborsMap, neighbors);
-
-    // Note: if practically there is too many agents to send, we should compute and send agents by batches
 }
 
 
@@ -169,12 +179,20 @@ void DistWorkspace::applyForces(Container &receivedMeanAgents, std::vector<int> 
 
 void DistWorkspace::sortAgents(std::map<int, Container> &agentsForNeighborsMap) {
     // TODO
-    for (size_t i = 0; i < agents.size(); i++) {
-        /*if (agents[i].position.x > ..... {
+    /*for (size_t i = 0; i < agents.size(); i++) {
+        if (agents[i].position.x > ..... {
           agentsForNeighborsMap[neighbor].push_back(agents[i]);
           agents.erase(agents.begin()+i););
-          }*/
-    }
+          }
+    }*/
+}
+
+void DistWorkspace::makeArrayFromContainer(Container &c, std::vector<Real> &array) {
+    //TODO
+}
+
+void DistWorkspace::makeContainerFromArray(std::vector<Real> &array, Container &c) {
+    //TODO
 }
 
 

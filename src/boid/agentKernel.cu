@@ -7,11 +7,12 @@
 
 #include "vector.hpp"
 
+// FIXME: Vector * ---> Real *
 __global__ void applyForces(Vector *currentBoidList,
                             Vector *newBoidList,
                             Vector *meanBoidList, 
                             int *meanBoidWeights, 
-                            const int nBoids, 
+                            const size_t nBoids, 
                             const int nMeanBoids,
                             const struct Options *opt) 
 {
@@ -72,7 +73,7 @@ __global__ void applyForces(Vector *currentBoidList,
     newBoidList[3*id+1] = (speed > opt->maxVel ? newBoidList[3*id+1]*opt->maxVel/speed : newBoidList[3*id+1]);
 
     // Update position
-    Vector pos = currentBoidList[3*id] + dt * newBoidList[3*id+1];
+    Vector pos = currentBoidList[3*id] + opt->dt * newBoidList[3*id+1];
 
     // Make sure the boid stays inside the domain
     pos.x = fmod(pos.x, opt->domainSize);
@@ -82,11 +83,12 @@ __global__ void applyForces(Vector *currentBoidList,
 
 }
 
+// FIXME: Vector * ---> Real *
 void applyForcesKernel(Vector *currentBoidList,
                        Vector *newBoidList,
                        Vector *meanBoidList, 
                        int *meanBoidWeights, 
-                       const int nBoids, 
+                       const size_t nBoids, 
                        const int nMeanBoids,
                        const struct Options *opt) 
 {
@@ -94,7 +96,7 @@ void applyForcesKernel(Vector *currentBoidList,
     dim3 gridDim(1024,1,1); // TODO: max threads/block in globals.hpp using cudaUtils
     dim3 blockDim(ceil((float)nBoids/1024),1,1); 
 
-    applyForces<<<<gridDim,blockDim,0,0>>>(currentBoidList, 
+    applyForces<<<gridDim,blockDim,0,0>>>(currentBoidList, 
                                            newBoidList, 
                                            meanBoidList, 
                                            meanBoidWeights, 
@@ -107,5 +109,28 @@ void applyForcesKernel(Vector *currentBoidList,
 }
 
 
+
+__global__ void computeMeanBoid(Real *boidList, const size_t nBoids, Vector *meanBoid) {
+
+    int id = blockIdx.x*blockDim.x + threadIdx.x;
+    if (id >= nBoids)
+        return;
+
+    Vector sumVector = Vector(0,0,0);
+    for (size_t i = 0; i < nBoids; i++) {
+        //sumVector += boidList[ FIXME TODO 
+    }
+    *meanBoid =  sumVector / (nBoids>0 ? static_cast<Real>(nBoids) : 1.0);
+}
+
+void computeMeanBoidKernel(Real *boidList, const size_t nBoids, Vector *meanBoid) {
+    dim3 gridDim(1024,1,1); // TODO: max threads/block in globals.hpp using cudaUtils
+    dim3 blockDim(ceil((float)nBoids/1024),1,1); 
+
+    computeMeanBoid<<<gridDim,blockDim,0,0>>>(boidList, nBoids, meanBoid); 
+    
+    cudaDeviceSynchronize();
+    checkKernelExecution();
+}
 
 #endif

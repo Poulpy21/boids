@@ -80,16 +80,18 @@ void Workspace::move()
     }
 }
 
-void Workspace::simulate(int nsteps) {
+void Workspace::simulate(int nsteps, bool saveWorkspace) {
     // store initial positions
-    save(0);
+    if (saveWorkspace)
+        save(0);
 
     // perform nsteps time steps of the simulation
     int step = 0;
     while (step++ < nsteps) {
         this->move();
-        // store every 20 steps
-        /*if (step%20 == 0)*/ save(step);
+        /*if (step%20 == 0)*/ 
+        if (saveWorkspace)
+            save(step);
     }
 }
 

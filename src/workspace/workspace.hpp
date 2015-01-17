@@ -30,7 +30,7 @@ public:
   Real rc, Real ra, Real rs);
 
   void move();
-  void simulate(int nsteps);
+  void simulate(int nsteps, bool saveWorkspace);
   void save(int stepid);
 };
 
