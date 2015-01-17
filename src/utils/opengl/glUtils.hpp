@@ -2,10 +2,11 @@
 #ifndef GLUTILS_H
 #define GLUTILS_H
 
-#ifdef GUI_ENABLED
-
 #include "headers.hpp"
 #include <string>
+
+#ifdef GUI_ENABLED
+#define CHK_GL_ERRORS() { utils::glAssert(__FILE__, __LINE__); }
 
 namespace utils {
 		void glAssert(const std::string &file, int line, bool abort = true);

@@ -153,9 +153,10 @@ template <unsigned int D, unsigned int N, typename A, typename T, typename L, ty
 
             //leaf container is already full
             while(leaf->elements() == _maxElementsPerLeaf) {    
-                
+
                 if(leaf->level() > this->_maxLevel) {
                     log4cpp::log_console->warnStream() << "Max tree level achieved, you are inserting too many elements at the same location ! Insertion aborted !";
+                    return;
                 }
 
                 buffer = splitLeaf(leaf);
@@ -185,21 +186,19 @@ template <unsigned int D, unsigned int N, typename A, typename T, typename L, ty
                     
                     static_assert(D==3, "Tree display only possible in dimension 3 !");
 
-                    this->_drawBoxProgram->use();
+                    glEnable(GL_POINT_SMOOTH);
+                    glEnable(GL_LINE_SMOOTH);
+                    glEnable(GL_POINT_SPRITE);
+                    glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 
-                    glBindBufferBase(GL_UNIFORM_BUFFER, 0,  Globals::projectionViewUniformBlock);
-                    
-                    if(Globals::wireframe)
-                        glBindBuffer(GL_ARRAY_BUFFER, this->_wireCubeVBO);           
-                    else
-                        glBindBuffer(GL_ARRAY_BUFFER, this->_cubeVBO);           
-                    
-                    glEnableVertexAttribArray(0);
-                    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-                        
                     for (unsigned int i = 0; i < N; i++) {
                         this->_childs[i]->drawDownwards(currentTransformationMatrix);
                     }
+                    
+                    glDisable(GL_POINT_SMOOTH);
+                    glDisable(GL_LINE_SMOOTH);
+                    glDisable(GL_POINT_SPRITE);
+                    glDisable(GL_VERTEX_PROGRAM_POINT_SIZE);
                 }
     
     template <unsigned int D, unsigned int N, typename A, typename T, typename L, typename E>

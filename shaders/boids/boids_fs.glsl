@@ -1,6 +1,7 @@
 #version 330
 
-uniform sampler2D boidTexture0;
+uniform vec3 inColor;
+/*uniform sampler2D boidTexture0;*/
 //uniform sampler2D boidTexture1;
 //uniform sampler2D boidTexture2;
 
@@ -21,7 +22,7 @@ void main (void)
         outColor = texture(boidTexture0, gl_PointCoord);
     }*/
     if (distance(gl_PointCoord,vec2(0.5,0.5))<0.5)
-        outColor = vec4(1.0,0.0,0.0,1.0);
+        outColor = vec4(inColor,1.0);
     else
         discard;
 }

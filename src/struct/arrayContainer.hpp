@@ -13,6 +13,10 @@ class ArrayContainer : public AbstractContainer<E> {
             this->_data = new E[minData];
             this->_size = minData;
         };
+        
+        void reallocate(unsigned int minData) final override {
+            this->_data = nullptr;
+        };
 };
 
 template <typename E>

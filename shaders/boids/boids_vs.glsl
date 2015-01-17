@@ -1,9 +1,5 @@
 #version 330
 
-/*uniform mat4 modelMatrix = mat4(1,0,0,0,
-                                0,1,0,0,
-                                0,0,1,0,
-                                0,0,0,1);*/
 layout(std140) uniform projectionView {
 	mat4 projectionMatrix;
 	mat4 viewMatrix;
@@ -12,6 +8,7 @@ layout(std140) uniform projectionView {
 	vec3 cameraUp;
 	vec3 cameraRight;
 };
+
 //uniform ivec2 screenSize;
 uniform float boidSize = 10.0;
 
@@ -28,7 +25,7 @@ void main(void)
 {
     //fBoidType = boidType;
 
-    vec3 centeredPos = vertexPosition - vec3 (.5,.5,.5); // [0,1] -> [-.5,.5]
+    vec3 centeredPos = vertexPosition;
     float cameraDist = distance(centeredPos, cameraPos);
     //float pointScale = 1.0 - (cameraDist / maxDistance);
     float pointScale = 1.0/cameraDist;

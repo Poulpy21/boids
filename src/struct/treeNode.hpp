@@ -236,7 +236,7 @@ namespace Tree {
                 _drawBoxProgram->attachShader(Shader(Globals::shaderFolder + "/box/box_fs.glsl", GL_FRAGMENT_SHADER));
 
                 _drawBoxProgram->link();
-                _drawBoxUniformLocs = _drawBoxProgram->getUniformLocationsMap("modelMatrix level", true);
+                _drawBoxUniformLocs = _drawBoxProgram->getUniformLocationsMap("modelMatrix level fillrate", false);
             }
         }
 

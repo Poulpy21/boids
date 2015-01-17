@@ -93,7 +93,7 @@ Vec<N,T>::Vec(const Vec<N,S> &v) {
 
 template <unsigned int N, typename T>
 Vec<N,T>& Vec<N,T>::operator= (const Vec<N,T> &v) {
-    memcpy(this->data, data, N*sizeof(T));
+    memcpy(this->data, v.data, N*sizeof(T));
     return *this;
 }
     

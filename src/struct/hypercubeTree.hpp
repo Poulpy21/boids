@@ -27,7 +27,11 @@ namespace Tree {
                 LeafNode<D,_N_,A,T,L,E>* mergeChilds(TreeNode<D,_N_,A,T>* &father) override;
                 
 #ifdef GUI_ENABLED
-                void animateDownwards() override { this->insertElement(Boid());}
+                void animateDownwards() override { 
+                    for (unsigned int i = 0; i < 10; i++) {
+                        this->insertElement(Boid());
+                    }
+                }
 #endif
 
         };
@@ -46,7 +50,6 @@ namespace Tree {
                 << "\n" << cube;
             
             //create first leafs
-            
             log4cpp::log_console->debugStream() << "[HyperCubeTree] Root is creating first leafs...";
 
             const Vec<D,A> &xmin = this->bbox().min;
@@ -122,6 +125,7 @@ namespace Tree {
     LeafNode<D,_N_,A,T,L,E>*  HyperCubeTree<D,A,T,L,E>::mergeChilds(TreeNode<D,_N_,A,T>* &father) {
         return dynamic_cast<LeafNode<D,N,A,T,L,E>*>(father->child(0));
     }
+                        
 
 #undef _N_
 

@@ -6,7 +6,7 @@
 namespace utils {
 
 	bool contextError = false;
-
+    
 	void glAssert(const std::string &file, int line, bool abort) {
 
 		GLenum error = glGetError();

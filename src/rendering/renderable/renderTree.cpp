@@ -13,7 +13,7 @@
 }
 
 RenderTree::~RenderTree() {
-    delete [] relativeModelMatrix;
+    //delete [] relativeModelMatrix;
 }
 
 const float *RenderTree::getRelativeModelMatrix() const {

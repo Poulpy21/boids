@@ -82,8 +82,22 @@ namespace Tree {
     template <unsigned int D, unsigned int N, typename A, typename T, typename L, typename E>
         void LeafNode<D,N,A,T,L,E>::drawDownwards(const float *currentTransformationMatrix) {
             static_assert(D==3, "Tree display only possible in dimension 3 !");
+                    
+            this->_drawBoxProgram->use();
+
+            glBindBufferBase(GL_UNIFORM_BUFFER, 0,  Globals::projectionViewUniformBlock);
+
+            if(Globals::wireframe)
+                glBindBuffer(GL_ARRAY_BUFFER, this->_wireCubeVBO);           
+            else
+                glBindBuffer(GL_ARRAY_BUFFER, this->_cubeVBO);           
+
+            glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+                        
             glUniformMatrix4fv(this->_drawBoxUniformLocs["modelMatrix"], 1, GL_TRUE, this->relativeModelMatrix);
             glUniform1i(this->_drawBoxUniformLocs["level"], this->_level);
+            glUniform1f(this->_drawBoxUniformLocs["fillrate"], this->_leafData.fillRate());
          
             if(this->level() >= Globals::minTreeLevelDisplay) {
                 if(Globals::wireframe) {
@@ -95,7 +109,9 @@ namespace Tree {
                     glDrawArrays(GL_TRIANGLES, 0, this->_nTriangles*3);
                 }
             }
-        }
+
+            _leafData.template drawDownwards<float>(currentTransformationMatrix);
+    }
 #endif /* GUI_ENABLED */
 
 }
