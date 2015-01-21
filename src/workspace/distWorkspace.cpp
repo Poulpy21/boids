@@ -199,7 +199,7 @@ void DistWorkspace::save(int stepId) {
 
     std::stringstream ss;
     ss << "data/boids_" << std::setw(3) << std::setfill('0') << myID << ".xyz";
-    myfile.open(ss.str(), stepId==0 ? std::ios::out : std::ios::app);
+    myfile.open(ss.str(), stepId==1 ? std::ios::out : std::ios::app);
 
     myfile << std::endl;
     myfile << agents.size() << std::endl;

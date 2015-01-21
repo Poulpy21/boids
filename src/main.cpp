@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
         workspace.save(0);
 
     // Launch simulation
-    for (size_t step = 1; step <= opt.nSteps; step++) {
+    for (unsigned long int step = 1; step <= opt.nSteps; step++) {
         workspace.update();
         if (parser("save").asBool())
             workspace.save(step);

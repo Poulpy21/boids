@@ -63,7 +63,7 @@ void Boids::drawDownwards(const float *currentTransformationMatrix) {
 
 void Boids::animateDownwards() {
     static int i = 0;
-    if (i++%10) return;
+    if (i++%2) return;
 
     if (boidsFile.compare("") != 0)
         parseBoidsFile();
@@ -123,10 +123,7 @@ void Boids::makeVAO() {
 
     glGenBuffers(1, &_VBO);
     glBindBuffer(GL_ARRAY_BUFFER, _VBO);
-    /*//test
-    GLfloat array[9] = {0,0,0,0.5,0.5,0.5,0,1.0,0};
-    glBufferData(GL_ARRAY_BUFFER, 9*sizeof(GLfloat), array, GL_STATIC_DRAW);
-    */
+
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(0);
     //TODO attrib #1 : boidType
