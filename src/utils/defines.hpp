@@ -13,6 +13,12 @@
 #else
 #error "Please provide a definition for ALIGN macro for your host compiler (in utils/defines.hpp) !"
 #endif
+
+#ifdef __CUDACC__
+#define DEVICE __device__
+#else
+#define DEVICE
+#endif
     
 #ifdef GUI_ENABLED
 #define RENDETREE ,public RenderTree
