@@ -94,6 +94,8 @@
 #include "cudaUtils.hpp"
 #endif
 
+#include "types.hpp"
+
 // Start NVCC proof
 #ifndef __CUDACC__
 
@@ -102,7 +104,6 @@
 #include "vec3.hpp"
 #include "vecBool.hpp"
 #include "matrix.hpp"
-#include "types.hpp"
 
 #include "consts.hpp"
 #include "globals.hpp"

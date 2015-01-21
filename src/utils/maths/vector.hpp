@@ -11,10 +11,8 @@
 
 #ifndef __CUDACC__
 #define EPSILON std::numeric_limits<Real>::epsilon()
-#define DEVICE 
 #else
 #define EPSILON 1.19209e-07
-#define DEVICE __device__
 #endif
 
 class Vector

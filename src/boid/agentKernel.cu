@@ -2,19 +2,17 @@
 
 #ifdef CUDA_ENABLED
 
-//#include "vec3.hpp"
 #include "options.hpp"
+#include "agentData.hpp"
 
 #include "vector.hpp"
 
-// FIXME: Vector * ---> Real *
-__global__ void applyForces(Vector *currentBoidList,
-                            Vector *newBoidList,
-                            Vector *meanBoidList, 
-                            int *meanBoidWeights, 
-                            const size_t nBoids, 
-                            const int nMeanBoids,
-                            const struct Options *opt) 
+__global__ void computeForces(AgentData *boidList,
+                              AgentData *meanBoidList, 
+                              int *meanBoidWeights, 
+                              const int nBoids, 
+                              const int nMeanBoids,
+                              const struct Options *opt) 
 {
     int id = blockIdx.x*blockDim.x + threadIdx.x;
     if (id >= nBoids)
@@ -23,11 +21,11 @@ __global__ void applyForces(Vector *currentBoidList,
     // Compute "internal forces"
     int countSeparation = 0, countCohesion = 0, countAlignment = 0;
     Vector forceSeparation, forceCohesion, forceAlignment;
-    Vector thisBoidPosition = currentBoidList[3*id];
+    Vector thisBoidPosition = boidList->getPosition(id);
     Vector otherBoidPosition;
-    for (size_t i = 0; i < nBoids; i++) {
+    for (int i = 0; i < nBoids; i++) {
         if (i != id) {
-            otherBoidPosition = currentBoidList[3*i];
+            otherBoidPosition = boidList->getPosition(i);
             Real dist = (thisBoidPosition - otherBoidPosition).norm();
             if (dist < opt->rSeparation) {
                 forceSeparation -= (thisBoidPosition - otherBoidPosition).normalized();
@@ -38,71 +36,55 @@ __global__ void applyForces(Vector *currentBoidList,
                 ++countCohesion;
             }
             if (dist < opt->rAlignment) {
-                forceAlignment += currentBoidList[3*i+1];
+                forceAlignment += boidList->getVelocity(i);
                 ++countAlignment;
             }
         }
     }
 
     // Compute "external forces"
-    for (size_t i = 0; i < nMeanBoids; i++) {
-        otherBoidPosition = meanBoidList[3*i];
+    for (int i = 0; i < nMeanBoids; i++) {
+        otherBoidPosition = boidList->getPosition(i);
         Real dist = (thisBoidPosition - otherBoidPosition).norm();
         Real weight = meanBoidWeights[i];
         if (dist < opt->rSeparation) {
             forceSeparation -= weight * (thisBoidPosition - otherBoidPosition).normalized();
-            countSeparation += weight; 
+            countSeparation += weight;
         }
         if (dist < opt->rCohesion) {
             forceCohesion += weight * thisBoidPosition;
-            countCohesion += weight; 
+            countCohesion += weight;
         }
         if (dist < opt->rAlignment) {
-            forceAlignment += weight * meanBoidList[3*i+1];
+            forceAlignment += weight * boidList->getVelocity(i);
             countAlignment += weight;
         }
     }
-
+    
     // Update direction
-    newBoidList[3*id+2] = opt->wSeparation * ( countSeparation>0 ? forceSeparation/static_cast<Real>(countSeparation) : forceSeparation) +
-                          opt->wCohesion   * ( countCohesion  >0 ? forceCohesion  /static_cast<Real>(countCohesion)   : forceCohesion  ) +
-                          opt->wAlignment  * ( countAlignment >0 ? forceAlignment /static_cast<Real>(countAlignment)  : forceAlignment );
-    // Update velocity
-    newBoidList[3*id+1] = currentBoidList[3*id+1] + newBoidList[3*id+2];
-    Real speed = newBoidList[3*id+1].norm();
-    newBoidList[3*id+1] = (speed > opt->maxVel ? newBoidList[3*id+1]*opt->maxVel/speed : newBoidList[3*id+1]);
-
-    // Update position
-    Vector pos = currentBoidList[3*id] + opt->dt * newBoidList[3*id+1];
-
-    // Make sure the boid stays inside the domain
-    pos.x = fmod(pos.x, opt->domainSize);
-    pos.y = fmod(pos.y, opt->domainSize);
-    pos.z = fmod(pos.z, opt->domainSize);
-    newBoidList[3*id] = pos;
+    Vector direction( opt->wSeparation * ( countSeparation>0 ? forceSeparation/static_cast<Real>(countSeparation) : forceSeparation) +
+                      opt->wCohesion   * ( countCohesion  >0 ? forceCohesion  /static_cast<Real>(countCohesion)   : forceCohesion  ) +
+                      opt->wAlignment  * ( countAlignment >0 ? forceAlignment /static_cast<Real>(countAlignment)  : forceAlignment ));
+    boidList->setDirection(id, direction);
 
 }
 
-// FIXME: Vector * ---> Real *
-void applyForcesKernel(Vector *currentBoidList,
-                       Vector *newBoidList,
-                       Vector *meanBoidList, 
-                       int *meanBoidWeights, 
-                       const size_t nBoids, 
-                       const int nMeanBoids,
-                       const struct Options *opt) 
+void computeForcesKernel(AgentData *boidList,
+                         AgentData *meanBoidList, 
+                         int *meanBoidWeights, 
+                         const int nBoids, 
+                         const int nMeanBoids,
+                         const struct Options *opt) 
 {
-
     dim3 gridDim(1024,1,1); // TODO: max threads/block in globals.hpp using cudaUtils
     dim3 blockDim(ceil((float)nBoids/1024),1,1); 
 
-    applyForces<<<gridDim,blockDim,0,0>>>(currentBoidList, 
-                                           newBoidList, 
-                                           meanBoidList, 
-                                           meanBoidWeights, 
-                                           nBoids, 
-                                           nMeanBoids, 
-                                           opt);
+    computeForces<<<gridDim,blockDim,0,0>>>(boidList, 
+                                            meanBoidList, 
+                                            meanBoidWeights, 
+                                            nBoids, 
+                                            nMeanBoids, 
+                                            opt);
     
     cudaDeviceSynchronize();
     checkKernelExecution();
@@ -110,20 +92,54 @@ void applyForcesKernel(Vector *currentBoidList,
 
 
 
-__global__ void computeMeanBoid(Real *boidList, const size_t nBoids, Vector *meanBoid) {
+__global__ void applyForces(AgentData *boidList, const int nBoids, const struct Options *opt) {
+
+    int id = blockIdx.x*blockDim.x + threadIdx.x;
+    if (id >= nBoids)
+        return;
+
+    // Update velocity
+    Vector velocity = boidList->getVelocity(id) + boidList->getDirection(id);
+    Real speed = velocity.norm();
+    velocity = (speed > opt->maxVel ? velocity*opt->maxVel/speed : velocity);
+    boidList->setVelocity(id, velocity);
+
+    // Update position
+    Vector pos = boidList->getPosition(id) + opt->dt * boidList->getVelocity(id);
+
+    // Make sure the boid stays inside the domain
+    pos.x = fmod(pos.x, opt->domainSize);
+    pos.y = fmod(pos.y, opt->domainSize);
+    pos.z = fmod(pos.z, opt->domainSize);
+    boidList->setPosition(id, pos);
+}
+
+void applyForcesKernel(AgentData *boidList, const int nBoids, const struct Options *opt) {
+    dim3 gridDim(1024,1,1); // TODO: max threads/block in globals.hpp using cudaUtils
+    dim3 blockDim(ceil((float)nBoids/1024),1,1); 
+
+    applyForces<<<gridDim,blockDim,0,0>>>(boidList, nBoids, opt);
+    
+    cudaDeviceSynchronize();
+    checkKernelExecution();
+}
+
+
+
+__global__ void computeMeanBoid(AgentData *boidList, const int nBoids, Vector *meanBoid) {
 
     int id = blockIdx.x*blockDim.x + threadIdx.x;
     if (id >= nBoids)
         return;
 
     Vector sumVector = Vector(0,0,0);
-    for (size_t i = 0; i < nBoids; i++) {
-        //sumVector += boidList[ FIXME TODO 
+    for (int i = 0; i < nBoids; i++) {
+        sumVector += boidList->getPosition(i);
     }
     *meanBoid =  sumVector / (nBoids>0 ? static_cast<Real>(nBoids) : 1.0);
 }
 
-void computeMeanBoidKernel(Real *boidList, const size_t nBoids, Vector *meanBoid) {
+void computeMeanBoidKernel(AgentData *boidList, const int nBoids, Vector *meanBoid) {
     dim3 gridDim(1024,1,1); // TODO: max threads/block in globals.hpp using cudaUtils
     dim3 blockDim(ceil((float)nBoids/1024),1,1); 
 
