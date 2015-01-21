@@ -45,8 +45,6 @@ void DistWorkspace::init() {
     // TODO call sort boids method / kernel
     //sortAgents(agents);
     //mess.exchangeAgents(...);
-    
-
 }
 
 void DistWorkspace::update() {

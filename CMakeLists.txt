@@ -13,8 +13,8 @@ set(BOIDS_VERSION ${BOIDS_MAJOR_VERSION}.${BOIDS_MINOR_VERSION}.${BOIDS_PATCH_VE
 get_filename_component(SHADER_FOLDER "${CMAKE_SOURCE_DIR}/shaders" ABSOLUTE)
 
 # TODO # TODO # TODO # TODO # TODO # TODO ###
-set(MIN_COMPUTE_CAPABILITY "400")          #T#
-set(COMPUTE_CAPABILITY "12")              #O#
+set(MIN_COMPUTE_CAPABILITY "20")          #T#
+set(COMPUTE_CAPABILITY "20")              #O#
 set(ENABLE_GUI "1")                       ###
 set(CONSOLE_LOG_LEVEL "INFO")             #D#
 set(FILE_LOG_LEVEL "DEBUG")               #O#

@@ -371,6 +371,9 @@ namespace utils {
             case(GL_R11F_G11F_B10F):
             case(GL_RGB16F):
             case(GL_RGB32F):
+#ifndef GL_RGB565       //WTF mesa driver?
+#define GL_RGB565 0x8D62
+#endif
             case(GL_RGB565):
             case(GL_RGB8):
             case(GL_RGB8_SNORM):
