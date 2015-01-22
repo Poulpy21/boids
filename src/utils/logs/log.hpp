@@ -8,7 +8,6 @@
 
 namespace log4cpp {
     extern Category *log_console;
-    extern Category *log_file;
 
     void initLogs();
 }
