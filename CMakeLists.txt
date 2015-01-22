@@ -13,8 +13,8 @@ set(BOIDS_VERSION ${BOIDS_MAJOR_VERSION}.${BOIDS_MINOR_VERSION}.${BOIDS_PATCH_VE
 get_filename_component(SHADER_FOLDER "${CMAKE_SOURCE_DIR}/shaders" ABSOLUTE)
 
 # TODO # TODO # TODO # TODO # TODO # TODO ###
-set(MIN_COMPUTE_CAPABILITY "400")         #T#
-set(COMPUTE_CAPABILITY "12")              #O#
+set(MIN_COMPUTE_CAPABILITY "20")          #T#
+set(COMPUTE_CAPABILITY "20")              #O#
 set(ENABLE_GUI "1")                       ###
 # TODO # TODO # TODO # TODO # TODO # TODO ###
 
@@ -110,7 +110,7 @@ endif()
 
 #Set executable sources
 list(APPEND executable_sources "${CMAKE_SOURCE_DIR}/src/main.cpp")
-list(APPEND executable_sources "${CMAKE_SOURCE_DIR}/src/serial.cpp")
+list(APPEND executable_sources "${CMAKE_SOURCE_DIR}/src/sequential.cpp")
 list(APPEND executable_sources "${CMAKE_SOURCE_DIR}/src/tree.cpp")
 if(${ENABLE_GUI})
     list(APPEND executable_sources "${CMAKE_SOURCE_DIR}/src/display.cpp")
@@ -254,6 +254,12 @@ endforeach()
 
 add_custom_target(run
     COMMAND mpirun -np 1 ${EXECUTABLE_OUTPUT_PATH}/main && ${EXECUTABLE_OUTPUT_PATH}/script/merge_files.py && ${EXECUTABLE_OUTPUT_PATH}/display -f data/boids_all.xyz
+    DEPENDS main
+    WORKING_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}
+)
+
+add_custom_target(bench
+    COMMAND mpirun -np 1 nvprof ${EXECUTABLE_OUTPUT_PATH}/main -steps 10 -agents 1000
     DEPENDS main
     WORKING_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}
 )

@@ -1,6 +1,6 @@
 #version 330
 
-uniform vec3 inColor;
+uniform vec3 inColor = vec3(1.0, 0.0, 0.0);
 /*uniform sampler2D boidTexture0;*/
 //uniform sampler2D boidTexture1;
 //uniform sampler2D boidTexture2;

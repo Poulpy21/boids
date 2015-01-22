@@ -1,7 +1,7 @@
 main
 display
 tree
-serial
+sequential
 test_vec
 test_messenger
 

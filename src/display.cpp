@@ -74,6 +74,8 @@ int main(int argc, char** argv) {
 
     //Configure viewer
     viewer->addRenderable(root);
+    viewer->camera()->setSceneCenter(qglviewer::Vec(.5,.5,.5));
+    viewer->camera()->showEntireScene(); 
 
     //Run main loop.
     application.exec();

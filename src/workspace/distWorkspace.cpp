@@ -5,8 +5,13 @@
 #include <iomanip>
 #include "agent.hpp"
 
+extern void computeForcesKernel(Real *boidData, Real *meanBoidData, int *meanBoidWeights, 
+                                const int nBoids, const int nMeanBoids, const struct Options *opt);
+extern void applyForcesKernel(Real *boidData, const int nBoids, const struct Options *opt);
+extern void computeMeanBoidKernel(Real *boidData, const int nBoids, Vector *meanBoid);
 
-#undef CUDA_ENABLED //FIXME when the kernels are done
+
+//#undef CUDA_ENABLED //FIXME when the kernels are done
 
 DistWorkspace::DistWorkspace(Options options, MPI_Comm comm, int root) : 
     agents(), opt(options), comm(comm), mess(comm), rootID(root)
@@ -16,7 +21,7 @@ DistWorkspace::DistWorkspace(Options options, MPI_Comm comm, int root) :
 }
 
 void DistWorkspace::init() {
-#ifdef CUDA_ENABLED 
+#ifdef CUDA_ENABLED
     // Upload options to device
     CHECK_CUDA_ERRORS(cudaMalloc((void **) &d_opt, sizeof(struct Options)));
     CHECK_CUDA_ERRORS(cudaMemcpy(d_opt, &opt, sizeof(struct Options), cudaMemcpyHostToDevice));
@@ -45,8 +50,6 @@ void DistWorkspace::init() {
     // TODO call sort boids method / kernel
     //sortAgents(agents);
     //mess.exchangeAgents(...);
-    
-
 }
 
 void DistWorkspace::update() {
@@ -55,21 +58,22 @@ void DistWorkspace::update() {
     std::vector<int> neighbors = {};
    
     Agent meanAgent;
-#ifdef CUDA_ENABLED 
-    AgentData *h_agents, *h_meanAgents;
-    makeArrayFromContainer(agents, h_agents); //TODO
+#ifdef CUDA_ENABLED
+    AgentData h_agents(agents.size());
+    makeAgentDataFromContainer(agents, h_agents);
     
     // Malloc and upload boids to device
-    CHECK_CUDA_ERRORS(cudaMalloc((void **) &d_agents, h_agents->size()));
-    CHECK_CUDA_ERRORS(cudaMemcpy(d_agents, h_agents, h_agents->size(), cudaMemcpyHostToDevice));
+    CHECK_CUDA_ERRORS(cudaMalloc((void **) &d_agents, agents.size()*9*sizeof(Real)));
+    CHECK_CUDA_ERRORS(cudaMemcpy(d_agents, h_agents.data, agents.size()*9*sizeof(Real), cudaMemcpyHostToDevice));
 
-    // Compute mean boid
-    computeMeanBoidKernel(d_agents, agents.size(), d_meanAgent);
+    // Compute mean boid FIXME
+    /*computeMeanBoidKernel(d_agents, agents.size(), d_meanAgent);
     
     CHECK_CUDA_ERRORS(cudaMemcpy(&meanAgent, d_meanAgent, sizeof(Vector), cudaMemcpyDeviceToHost));
-#else
+#else*/
+#endif //FIXME
     computeMeanAgent(meanAgent);
-#endif
+//#endif
 
     // Get mean boids from the neighborhood and send ours (approximation)
     Container receivedMeanAgents;
@@ -77,23 +81,24 @@ void DistWorkspace::update() {
     mess.exchangeMeanAgents(meanAgent, agents.size(), receivedMeanAgents, receivedMeanAgentsWeight, neighbors);
 
     // Compute and apply forces to local boids
-#ifdef CUDA_ENABLED
-    makeArrayFromContainer(receivedMeanAgents, h_meanAgents); //TODO
+#ifdef CUDA_ENABLED 
+    AgentData h_meanAgents(receivedMeanAgents.size());
+    makeAgentDataFromContainer(receivedMeanAgents, h_meanAgents);
 
-    CHECK_CUDA_ERRORS(cudaMalloc((void **) &d_meanAgents, h_meanAgents->size()));
-    CHECK_CUDA_ERRORS(cudaMemcpy(d_meanAgents, &receivedMeanAgents, h_meanAgents->size(), cudaMemcpyHostToDevice));
+    CHECK_CUDA_ERRORS(cudaMalloc((void **) &d_meanAgents, agents.size()*9*sizeof(Real)));
+    CHECK_CUDA_ERRORS(cudaMemcpy(d_meanAgents, h_meanAgents.data, receivedMeanAgents.size()*9*sizeof(Real), cudaMemcpyHostToDevice));
     CHECK_CUDA_ERRORS(cudaMalloc((void **) &d_meanAgentsWeights, receivedMeanAgentsWeight.size()*sizeof(int)));
     CHECK_CUDA_ERRORS(cudaMemcpy(d_meanAgentsWeights, &receivedMeanAgentsWeight, receivedMeanAgentsWeight.size()*sizeof(int), cudaMemcpyHostToDevice));
     
     computeForcesKernel(d_agents, d_meanAgents, d_meanAgentsWeights, agents.size(), receivedMeanAgents.size(), d_opt);
     applyForcesKernel(d_agents, agents.size(), d_opt);
     
-    CHECK_CUDA_ERRORS(cudaMemcpy(h_agents, d_agents, h_agents.size(), cudaMemcpyDeviceToHost));
-    CHECK_CUDA_ERRORS(cudaFree(d_agents));
+    CHECK_CUDA_ERRORS(cudaMemcpy(h_agents.data, d_agents, agents.size()*9*sizeof(Real), cudaMemcpyDeviceToHost));
 
-    makeContainerFromArray(h_agents, agents);
-    delete h_agents;
-    delete h_meanAgents;
+    CHECK_CUDA_ERRORS(cudaFree(d_agents));
+    CHECK_CUDA_ERRORS(cudaFree(d_meanAgents));
+
+    makeContainerFromAgentData(h_agents, agents);
 #else
     computeAndApplyForces(receivedMeanAgents, receivedMeanAgentsWeight);
 #endif
@@ -187,12 +192,26 @@ void DistWorkspace::sortAgents(std::map<int, Container> &agentsForNeighborsMap) 
     }*/
 }
 
-void DistWorkspace::makeArrayFromContainer(Container &c, AgentData *array) {
-    //TODO
+void DistWorkspace::makeAgentDataFromContainer(Container &c, AgentData &d) {
+    for (size_t i = 0; i < c.size(); i++) {
+        Vec3<Real> pos = c[i].position;
+        Vec3<Real> vel = c[i].velocity;
+        Vec3<Real> dir = c[i].direction;
+        d.setPosition (i, pos.x, pos.y, pos.z);
+        d.setVelocity (i, vel.x, vel.y, vel.z);
+        d.setDirection(i, dir.x, dir.y, dir.z);
+    }
 }
 
-void DistWorkspace::makeContainerFromArray(AgentData *array, Container &c) {
-    //TODO
+void DistWorkspace::makeContainerFromAgentData(AgentData &d, Container &c) {
+    for (int i = 0; i < d.nAgents; i++) {
+        Vector pos = d.getPosition(i);
+        Vector vel = d.getPosition(i);
+        Vector dir = d.getPosition(i);
+        c[i].position.setValue(pos.x,pos.y,pos.z);
+        c[i].velocity.setValue(vel.x,vel.y,vel.z);
+        c[i].direction.setValue(dir.x,dir.y,dir.z);
+    }
 }
 
 

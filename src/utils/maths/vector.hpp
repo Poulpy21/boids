@@ -21,7 +21,9 @@ class Vector
         Real x, y ,z;
 
         // Default constructor
-        DEVICE Vector(){}
+        DEVICE Vector(){
+            this->x = 0; this->y = 0; this->z = 0;
+        }
 
         // Constructor from three real numbers
         DEVICE Vector(Real x0, Real y0, Real z0){

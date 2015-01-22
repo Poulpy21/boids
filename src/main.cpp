@@ -21,18 +21,9 @@ int main(int argc, char **argv) {
     MPI_Init(&argc,&argv); 
     
     int rank, size;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
-
     MPI_Comm comm;
-    int dimensions[3] = {0,0,0};
-    MPI_Dims_create(size, 3, dimensions);
-    if (rank == 0) {
-        log_console->infoStream() << "[MPI] Cartesian grid dimensions : " << dimensions[0] << "/" << dimensions[1] << "/" << dimensions[2]; 
-    }
-    int wrap[3] = {1,1,1};
-    int reorder = 1;
-    MPI_Cart_create(MPI_COMM_WORLD, 3, dimensions, wrap, reorder, &comm);
+
+    MPI_Comm_dup(MPI_COMM_WORLD, &comm);
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &size);
 
@@ -47,14 +38,10 @@ int main(int argc, char **argv) {
     MPI_Get_processor_name(name, &len);
     memset(name+len,0,MPI_MAX_PROCESSOR_NAME-len);
 
-    int coords[3];
-    MPI_Cart_coords(comm, rank, 3, coords);
-
-    std::cout << "Number of tasks=" << size << " My rank=" << rank << " My name="<< name 
-              << " My coords=" << coords[0] << "/" << coords[1] << "/" << coords[2] << "." << std::endl;
+    std::cout << " My rank=" << rank << " My name="<< name << std::endl;
    
     MPI_Barrier(comm);
-    
+
 
     // Create parser
     ArgumentParser parser;
@@ -77,8 +64,11 @@ int main(int argc, char **argv) {
     // Parse command line arguments
     parser.setOptions(argc, argv);
     Options opt(parser);
-    if (rank == 0)
+    if (rank == 0) {
         log_console->infoStream() << opt;
+        //TODO create tree
+    }
+    //TODO broadcast map<domain, procID>
 
     DistWorkspace workspace(opt, comm);
     
@@ -87,11 +77,16 @@ int main(int argc, char **argv) {
         workspace.save(0);
 
     // Launch simulation
-    for (size_t step = 1; step <= opt.nSteps; step++) {
+    for (unsigned long int step = 1; step <= opt.nSteps; step++) {
         workspace.update();
         if (parser("save").asBool())
             workspace.save(step);
+        //TODO load balancing
     }
+
+#ifdef CUDA_ENABLED
+    cudaDeviceReset();
+#endif
 
     MPI_Finalize();
 
