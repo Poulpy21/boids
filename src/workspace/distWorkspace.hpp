@@ -20,8 +20,8 @@ class DistWorkspace {
         void computeMeanAgent(Agent &meanAgent);
         void computeAndApplyForces(Container &receivedMeanAgents, std::vector<int> &receivedMeanAgentsWeights);
         void sortAgents(std::map<int, Container> &agentsForNeighborsMap);
-        void makeArrayFromContainer(Container &c, AgentData *array);
-        void makeContainerFromArray(AgentData *array, Container &c);
+        void makeAgentDataFromContainer(Container &c, AgentData &d);
+        void makeContainerFromAgentData(AgentData &d, Container &c);
 
         Container agents;
         Options opt;

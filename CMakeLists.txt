@@ -251,3 +251,9 @@ add_custom_target(run
     DEPENDS main
     WORKING_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}
 )
+
+add_custom_target(bench
+    COMMAND mpirun -np 1 nvprof ${EXECUTABLE_OUTPUT_PATH}/main -steps 10 -agents 1000
+    DEPENDS main
+    WORKING_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}
+)

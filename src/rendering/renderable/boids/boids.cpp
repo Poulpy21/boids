@@ -10,7 +10,7 @@
 
 using namespace log4cpp;
 
-Boids::Boids() : boidsUpdated(false), boidsFile(""), currentStep(0), boids()
+Boids::Boids() : boidsUpdated(false), boidsFile(""), currentStep(-1), boids()
 {
     glEnable(GL_POINT_SPRITE);
     glEnable(GL_PROGRAM_POINT_SIZE);
@@ -187,7 +187,7 @@ void Boids::resetFile() {
 
     parseBoidsFile();
 
-    currentStep = 0;
+    currentStep = -1;
 }
         
 void Boids::keyPressEvent(QKeyEvent* e) {

@@ -84,6 +84,10 @@ int main(int argc, char **argv) {
         //TODO load balancing
     }
 
+#ifdef CUDA_ENABLED
+    cudaDeviceReset();
+#endif
+
     MPI_Finalize();
 
     return EXIT_SUCCESS;
