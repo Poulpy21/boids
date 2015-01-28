@@ -176,9 +176,12 @@ void DistWorkspace::computeAndApplyForces(Container &receivedMeanAgents, std::ve
         }
         agents[k].position += opt.dt*agents[k].velocity;
 
-        agents[k].position.x= fmod(agents[k].position.x,opt.domainSize);
-        agents[k].position.y= fmod(agents[k].position.y,opt.domainSize);
-        agents[k].position.z= fmod(agents[k].position.z,opt.domainSize);
+        Real modX = fmod(agents[k].position.x, opt.domainSize);
+        Real modY = fmod(agents[k].position.y, opt.domainSize);
+        Real modZ = fmod(agents[k].position.z, opt.domainSize);
+        agents[k].position.x = modX > 0 ? modX : modX + opt.domainSize;
+        agents[k].position.y = modY > 0 ? modY : modY + opt.domainSize;
+        agents[k].position.z = modZ > 0 ? modZ : modZ + opt.domainSize;
     }
 }
 

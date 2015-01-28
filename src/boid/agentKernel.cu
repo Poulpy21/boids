@@ -113,9 +113,12 @@ __global__ void applyForces(Real *boidData, const int nBoids, const struct Optio
     Vector pos = boidList.getPosition(id) + opt->dt * boidList.getVelocity(id);
 
     // Make sure the boid stays inside the domain
-    pos.x = fmod(pos.x, opt->domainSize);
-    pos.y = fmod(pos.y, opt->domainSize);
-    pos.z = fmod(pos.z, opt->domainSize);
+    Real modX = fmod(pos.x, opt->domainSize);
+    Real modY = fmod(pos.y, opt->domainSize);
+    Real modZ = fmod(pos.z, opt->domainSize);
+    pos.x = modX > 0 ? modX : modX + opt->domainSize;
+    pos.y = modY > 0 ? modY : modY + opt->domainSize;
+    pos.z = modZ > 0 ? modZ : modZ + opt->domainSize;
     boidList.setPosition(id, pos);
 }
 

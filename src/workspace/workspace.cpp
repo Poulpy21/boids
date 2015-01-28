@@ -74,9 +74,12 @@ void Workspace::move()
         }
         agents[k].position += dt*agents[k].velocity;
 
-        agents[k].position.x= fmod(agents[k].position.x,domainsize);
-        agents[k].position.y= fmod(agents[k].position.y,domainsize);
-        agents[k].position.z= fmod(agents[k].position.z,domainsize);
+        Real modX = fmod(agents[k].position.x, domainsize);
+        Real modY = fmod(agents[k].position.y, domainsize);
+        Real modZ = fmod(agents[k].position.z, domainsize);
+        agents[k].position.x = modX > 0 ? modX : modX + domainsize;
+        agents[k].position.y = modY > 0 ? modY : modY + domainsize;
+        agents[k].position.z = modZ > 0 ? modZ : modZ + domainsize;
     }
 }
 
