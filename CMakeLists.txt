@@ -14,7 +14,7 @@ get_filename_component(SHADER_FOLDER "${CMAKE_SOURCE_DIR}/shaders" ABSOLUTE)
 
 # TODO # TODO # TODO # TODO # TODO # TODO ###
 set(MIN_COMPUTE_CAPABILITY "20")          #T#
-set(COMPUTE_CAPABILITY "20")              #O#
+set(COMPUTE_CAPABILITY "00")              #O#
 set(ENABLE_GUI "1")                       ###
 # TODO # TODO # TODO # TODO # TODO # TODO ###
 
