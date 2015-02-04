@@ -94,12 +94,12 @@ class Vector
         }
 
         DEVICE Vector normalized(){
-            double inorm = 1./this->norm();
+            Real inorm = 1./this->norm();
             return Vector(x*inorm,y*inorm,z*inorm);
         }
 
         DEVICE void normalize(){
-            double inorm = 1./this->norm();
+            Real inorm = 1./this->norm();
             x*=inorm;y*=inorm;z*=inorm;
         }
 

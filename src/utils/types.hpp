@@ -7,10 +7,10 @@
 class Agent;
 
 #ifndef __CUDACC__
-using Real = double;
+using Real = float;
 using Container = std::vector<Agent>;
 #else
-#define Real double
+#define Real float
 #endif
 
 #endif

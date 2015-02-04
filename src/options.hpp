@@ -10,15 +10,15 @@
 struct Options {
     unsigned long int nAgents;
     unsigned long int nSteps;
-    double wCohesion;
-    double wAlignment;
-    double wSeparation;
-    double rCohesion;
-    double rAlignment;
-    double rSeparation;
-    double dt;
-    double maxVel;
-    double domainSize;
+    Real wCohesion;
+    Real wAlignment;
+    Real wSeparation;
+    Real rCohesion;
+    Real rAlignment;
+    Real rSeparation;
+    Real dt;
+    Real maxVel;
+    Real domainSize;
 
 #ifndef __CUDACC__
     Options() : nAgents(0l), nSteps(0l), 
