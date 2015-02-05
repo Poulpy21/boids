@@ -1,0 +1,64 @@
+\documentclass[12pt,a4paper,sans]{article}
+
+\RequirePackage[utf8]{inputenc}
+\usepackage[french]{babel}
+\usepackage{amsmath} 
+\usepackage{amsfonts} 
+\usepackage{amssymb} 
+\usepackage{graphicx} 
+\usepackage[margin=0.8in]{geometry}
+\usepackage{stackrel}
+\usepackage{float}
+
+\hyphenpenalty=10000
+
+\title{Simulation d'essaims particulaires}
+\author{Keck Jean-Baptiste - Gauthier Zirnhelt}
+
+\begin{document}
+\maketitle
+
+\section{Présentation du problème}
+\paragraph{Étapes de la simulation}
+% donner les étapes de la simu
+\paragraph{Coûts des étapes de la simulation}
+% surtout dans le calcul des forces (quadratique)
+
+\section{Solution implémentée}
+\subsection{Architecture générale}
+% building the solution = cmake + sm_20 pour cuda
+% différents éxecutables
+% différents tests
+% les arbres utilisés
+\subsection{MPI}
+% Architecture centralisée seulement pour le load balancing
+\subsection{CUDA}
+% mémoire coalescente
+% optimisations diverses...
+\subsection{Visualisation}
+% Expliquer comment marche le viewer (merge fichiers, parsing fichier, sprites)
+
+\section{Résultats}
+% En gros, surtout des images commentées
+
+% C'est pas mal ça
+%\begin{minipage}{0.33\textwidth}
+%	\begin{flushright}
+%		\begin{figure}[H]
+%			\centering
+%			\includegraphics[width=\textwidth]{image.png}
+%			\caption{Image}
+%		\end{figure}
+%	\end{flushright}
+%\end{minipage}\\
+
+\section{Analyse des résultats}
+\subsection{Performances}
+% Tableau comparatif : méthode(sequential, mpi seul, cuda seul, hybride) / nombre de boids (100-1000-10k-1M-...) [/ nombre de process / gpu]
+\subsection{Qualité de la simulation}
+% Vite dit, visuellement dans le viewer
+
+\section{Perspectives d'amélioration}
+% A voir à la fin
+
+\end{document}
