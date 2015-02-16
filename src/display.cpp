@@ -19,7 +19,7 @@ int main(int argc, char** argv) {
     // Create parser
     ArgumentParser parser;
     // Add options to parser
-    parser.addOption("f", "data/boids.xyz");
+    parser.addOption("f", "data/boids_all.xyz");
     // Parse command line arguments
     parser.setOptions(argc, argv);
 

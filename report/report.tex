@@ -16,30 +16,92 @@
 \author{Keck Jean-Baptiste - Gauthier Zirnhelt}
 
 \begin{document}
+
 \maketitle
 
-\section{Présentation du problème}
-\paragraph{Étapes de la simulation}
-% donner les étapes de la simu
-\paragraph{Coûts des étapes de la simulation}
-% surtout dans le calcul des forces (quadratique)
 
+
+\section{Présentation du problème}
+
+\subsection{Étapes de la simulation}
+La simulation débute par l'initialisation d'un domaine de taille configurable avec des agents positionnés aléatoirement, aux propriétés également configurables.\\
+La boucle de calcul pour la simulation de base est la suivante :
+\begin{enumerate}
+    \item Calcul des forces appliquées à chaque agent en fonction de tous ceux qui se trouvent à sa portée.
+    \item Application des forces précédemment calculées à chaque agent.
+    \item Sérialisation des données des agents dans un fichier.
+\end{enumerate}
+Si un agent sort du domaine pendant un pas de simulation, il est téléporté à l'opposé dans le domaine tout en gardant sa vitesse et sa direction.
+
+\subsection{Coûts des étapes de la simulation}
+L'évaluation des forces appliquées à chaque agent est l'opération la plus coûteuse de la simulation, car sa complexité est quadratiquement liée à celle du nombre d'agents à simuler. Les autres étapes n'ont en revanche qu'une complexité directement proportionnelle au nombre d'agents.\\
+Nous avons donc dû privilégier l'accélération de l'étape de calcul des forces qui déjà dans le programme de base (640 agents) prenait plus de 99\% du temps de calcul total.
+
+
+
+\newpage
 \section{Solution implémentée}
+
 \subsection{Architecture générale}
-% building the solution = cmake + sm_20 pour cuda
-% les scripts
-% différents éxecutables
-% différents tests
+% C++11 MANDATORY [insert perrier référence]
+% building the solution = cmake + sm_20 pour cuda à cause de compil séparée
+% MPI / CUDA merged => mpirun -n 1 ou disable CUDA dans CMakeLists.txt
+% les scripts (listés plus bas, pas détailler ici)
+% différents éxecutables (sequential / tree???? / main(TODO rename it?) / display)
+% différents tests (test_vec : vecteurs<T>           test_messenger : envoi/réception des messages MPI)
 % les arbres utilisés
+Notre base de code requiert :
+\begin{itemize}
+    \item un compilateur supportant le standard C++11
+    \item une carte graphique Nvidia avec l'architecture $sm\_20$ au minimum (pour la compilation séparée des kernels)
+    \item CMake 2.8(.12???TODO) ou plus
+    \item mpi? nvcc? TODO 
+\end{itemize}
+
+Dans le cas où vous n'auriez pas un compilateur supportant C++11, nous fournissons un script qui permet de télécharger et installer GCC 4.8.2 sur votre machine (voir dans la sous-section Scripts utilitaires).\\\\
+
+Nous avons opté pour un programme hybride permettant d'utiliser à la fois la performance du calcul distribué avec MPI et également celle du GPGPU avec CUDA. Il est toutefois toujours possible de tester notre programme avec seulement MPI ou seulement CUDA, respectivement en lançant un seul processus ou en désactivant CUDA dans les paramètres au début de $CMakeLists.txt$.\\\\
+
+Les exécutables générés sont les suivants : (TODO description)
+\begin{itemize}
+    \item sequential
+    \item main (TODO rename???)
+    \item display
+\end{itemize}
+
+Nous fournissons en outre gracieusement des scripts utilitaires pour paramétrer l'utilisation de MPI ou de préparer les données à la visualisation.
+
 \subsection{MPI}
 % Architecture centralisée seulement pour le load balancing
+% Init par racine, puis scatter en fonction de la densité des agents et de leurs coordonnées.
+% Réception des messages bloquante
+% Chaque processus connait ses voisins et leur échange son agent moyen, ses agents "sortants". Il envoie aussi périodiquement sa charge d'agents à simuler au processus racine qui peut prendre la décision de rééquilibrer l'affectation des domaines aux processus.
+
 \subsection{CUDA}
 % mémoire coalescente
 % optimisations diverses...
+
 \subsection{Scripts utilitaires}
 % Donner leur fonction
+Les scripts utilitaires fournis avec nos sources sont les suivants :
+\begin{itemize}
+    \item $dependancies.sh$ : Installe les dépendances de GCC 4.8.2 
+    \item $gcc.sh$          : Installe GCC 4.8.2 (pour le support de C++11)
+    \item $genAppFile.sh$   : Génère un fichier Appfile automatiquement à partir d'une liste d'host en stdin.
+    \item $merge\_files.py$ : Fusionne tous les fichiers de données issus de la simulation par des processus différents en un seul fichier.
+    \item $path.sh$         : Corrige le $.bashrc$ des ensipc.
+    \item $scanner.sh$      : Établit rapidement la liste des machines (ensipc) en ligne.
+    \item $utils.sh$        : Contient des fonctions utilitaires utilisées par $gcc.sh$.
+    \item $visu.sh$         : Script permettant de visualiser les résultats avec $gnuplot$ sur une machine ne permettant pas de compiler et/ou eexécuter le programme de visualisation d'agents fourni.
+\end{itemize}
+
 \subsection{Visualisation}
 % Expliquer comment marche le viewer (merge fichiers, parsing fichier, sprites)
+Nous fournissons un programme permettant de visualiser les agents simulés dans de meilleures conditions qu'avec gnuplot.
+Celui-ci se lance avec la commande $./display$ et va par défaut lire le fichier résultant de l'opération de fusion réalisée par le script $merge\_files.py$. Il est possible de modifier le fichier lu par défaut en en spécifiant un autre à l'aide de l'option $-f$ du programme.\\\\
+Le progamme affiche chaque agent sous la forme d'une sprite faisant face à la caméra. Cette sprite contient un cercle coloré représentant le type d'agent affiché. Cette technique de rendu très simple permet d'afficher beaucoup plus d'agents simultanément que si l'on représentait chaque agent par un volume texturé par exemple, ce qui permet de conserver une visualisation fluide pour grand nombre d'agents.
+
+
 
 \section{Résultats}
 % En gros, surtout des images commentées
@@ -55,14 +117,26 @@
 %	\end{flushright}
 %\end{minipage}\\
 
+
+
 \section{Analyse des résultats}
+
 \subsection{Performances}
 % Tableau comparatif : méthode(sequential, mpi seul, cuda seul, hybride) / nombre de boids (100-1000-10k-1M-...) [/ nombre de process / gpu]
 % Peut-être aussi en fonction des rayons?
+
 \subsection{Qualité de la simulation}
 % Vite dit, visuellement dans le viewer
+% formation d'esseims avec la force de cohésion : ok
+% force de séparation => esseims assez étalés : ok
+% alignement dans un direction commune qui sera conservée sauf collisions : ok 
+
+
 
 \section{Perspectives d'amélioration}
+% timeout sur les messages MPI au lieu de bloquer indéfiniment.
 % A voir à la fin
+
+
 
 \end{document}
