@@ -15,9 +15,11 @@
 #endif
 
 #ifdef __CUDACC__
-#define DEVICE __device__
+#define __DEVICE__ __device__
+#define __HOST__ __host__
 #else
-#define DEVICE
+#define __DEVICE__
+#define __HOST__
 #endif
     
 #ifdef GUI_ENABLED

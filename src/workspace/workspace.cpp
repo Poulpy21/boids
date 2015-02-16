@@ -68,7 +68,7 @@ void Workspace::move()
     for(size_t k = 0; k< na; k++){
         agents[k].velocity += agents[k].direction;
 
-        double speed = agents[k].velocity.norm();
+        Real speed = agents[k].velocity.norm();
         if (speed > maxU) {
             agents[k].velocity *= maxU/speed;
         }

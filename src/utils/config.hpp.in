@@ -19,7 +19,7 @@
 #endif
 
 #ifndef CUDA_ENABLED
-#if COMPUTE_CAPABILITY >= @MIN_COMPUTE_CAPABILITY@
+#if @ENABLE_CUDA@
 #define CUDA_ENABLED
 #endif
 #endif

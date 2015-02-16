@@ -3,18 +3,16 @@ cmake_minimum_required(VERSION 2.8)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/modules/")
 set(LIBRARY_OUTPUT_PATH "${CMAKE_SOURCE_DIR}/lib/${CMAKE_BUILD_TYPE}")
-set(EXECUTABLE_OUTPUT_PATH "${CMAKE_SOURCE_DIR}")
 
 project(Boids C CXX)
-set(BOIDS_MAJOR_VERSION 0)
-set(BOIDS_MINOR_VERSION 1)
-set(BOIDS_PATCH_VERSION 0)
+set(BOIDS_MAJOR_VERSION 1)
+set(BOIDS_MINOR_VERSION 3)
+set(BOIDS_PATCH_VERSION 2)
 set(BOIDS_VERSION ${BOIDS_MAJOR_VERSION}.${BOIDS_MINOR_VERSION}.${BOIDS_PATCH_VERSION})
 get_filename_component(SHADER_FOLDER "${CMAKE_SOURCE_DIR}/shaders" ABSOLUTE)
 
 # TODO # TODO # TODO # TODO # TODO # TODO ###
-set(MIN_COMPUTE_CAPABILITY "20")          #T#
-set(COMPUTE_CAPABILITY "00")              #O#
+set(MIN_COMPUTE_CAPABILITY "30")          #T#
 set(ENABLE_GUI "1")                       ###
 # TODO # TODO # TODO # TODO # TODO # TODO ###
 
@@ -33,9 +31,19 @@ endif()
 find_package(MPI REQUIRED)
 find_package(OpenMP)
 find_package(CUDA 5.5)
+
+set(ENABLE_CUDA "0")
 if(${CUDA_FOUND})
     include(CUDA_compute_capability)
+    set(COMPUTE_CAPABILITY ${CUDA_COMPUTE_CAPABILITY})
+    if(COMPUTE_CAPABILITY LESS MIN_COMPUTE_CAPABILITY)
+        message("--     Found compute capability ${COMPUTE_CAPABILITY} but minimum is set to ${MIN_COMPUTE_CAPABILITY}. CUDA will be DISABLED !")
+    else()
+        set(ENABLE_CUDA "1")
+        message("--     Found compute capability ${COMPUTE_CAPABILITY}, CUDA will be ENABLED !")
+    endif()
 else()
+    message(WARNING "-- No CUDA Device found. Cuda will be disabled !")
     set(CUDA_TOOLKIT_ROOT_DIR "")
     set(CUDA_NVCC_EXECUTABLE "")
     set(CUDA_INCLUDE_DIRS "")
@@ -95,7 +103,7 @@ add_definitions("${COMPILER_DEFINES}")
 # Makes us stronger
 set(BUILD_SHARED_LIBS OFF)
 
-if(${CUDA_FOUND})
+if(${ENABLE_CUDA})
     set(CUDA_SEPARABLE_COMPILATION ON)
     set(CUDA_PROPAGATE_HOST_FLAGS OFF)
     if (${CUDA_COMPUTE_CAPABILITY} STREQUAL "21")
@@ -112,6 +120,9 @@ endif()
 list(APPEND executable_sources "${CMAKE_SOURCE_DIR}/src/main.cpp")
 list(APPEND executable_sources "${CMAKE_SOURCE_DIR}/src/sequential.cpp")
 list(APPEND executable_sources "${CMAKE_SOURCE_DIR}/src/tree.cpp")
+if(${ENABLE_CUDA})
+    list(APPEND executable_sources "${CMAKE_SOURCE_DIR}/src/cuda.cpp")
+endif()
 if(${ENABLE_GUI})
     list(APPEND executable_sources "${CMAKE_SOURCE_DIR}/src/display.cpp")
 endif()
@@ -185,7 +196,7 @@ set_property(TARGET Qt4::QtOpenGL APPEND PROPERTY INTERFACE_SYSTEM_INCLUDE_DIREC
     )
 
 #Precompiled CUDA kernels (static library)
-if(${CUDA_FOUND} AND NOT "${kernel_files}" STREQUAL "")
+if(${ENABLE_CUDA} AND NOT "${kernel_files}" STREQUAL "")
     set(CUDA_KERNELS "CudaKernels")
     cuda_include_directories(${include_directories})
     if(${CMAKE_VERSION} VERSION_GREATER 3.0.0)
