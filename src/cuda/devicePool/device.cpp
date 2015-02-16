@@ -69,6 +69,9 @@ Device::Device(unsigned int deviceId) :
             maxSurface2DLayered[i] = prop.maxSurface2DLayered[i];
             maxTexture2DLayered[i] = prop.maxTexture2DLayered[i];
         }
+
+        coresPerSM = utils::SMVersionToCores(major, minor);
+        coresCount = multiProcessorCount * coresPerSM;
     }
 
 Device::~Device() {

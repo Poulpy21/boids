@@ -1,16 +1,18 @@
 
+#ifndef RAND_H
+#define RAND_H
+
 #include <cstdlib>
+#include <time.h>  
 
 namespace Random {
-                float randf() {
-                        return static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-                }
+                void init();
 
-                float randf(float LO, float HI) {
-                        return LO + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(HI-LO)));
-                }
-                
-               int randi(int LO, int HI) {
-                        return LO + static_cast <float> (rand()) /( static_cast <float> (RAND_MAX/(HI-LO)));
-                }
+                float randf();
+                unsigned long randl();
+
+                int randi(int LO, int HI);
+                float randf(float LO, float HI);
 };
+
+#endif /* end of include guard: RAND_H */

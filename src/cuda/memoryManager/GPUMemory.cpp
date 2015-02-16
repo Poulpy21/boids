@@ -30,10 +30,9 @@ void GPUMemory::init() {
 		cudaGetDeviceProperties(&prop, i);
 		cudaMemGetInfo( &avail, &total );
 		const_cast<unsigned long *>(GPUMemory::_memorySize)[i] = total;
-		//GPUMemory::_memoryLeft[i] = avail - __MAX_RUNTIME_MEMORY;
-		//GPUMemory::_memoryRuntime[i] = __MAX_RUNTIME_MEMORY;
+		GPUMemory::_memoryLeft[i] = avail - _GPU_MIN_RESERVED_MEMORY;
+		GPUMemory::_memoryRuntime[i] = _GPU_MIN_RESERVED_MEMORY;
 	}
-
 }
 
 unsigned long GPUMemory::memorySize(int deviceId) {
@@ -46,7 +45,7 @@ unsigned long GPUMemory::memoryLeft(int deviceId) {
 	size_t total;
 	cudaSetDevice(deviceId);
 	cudaMemGetInfo( &avail, &total );
-	return avail;
+	return avail - _GPU_MIN_RESERVED_MEMORY;
 }
 
 		

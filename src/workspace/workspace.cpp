@@ -1,11 +1,15 @@
+
+#include "workspace.hpp"
+
+#ifndef __CUDACC__
+
 #include <cmath>
 #include <iostream>
 #include <fstream>
 #include <ctime>
 
-#include "../boid/agent.hpp"
+#include "agent.hpp"
 #include "vec3.hpp"
-#include "workspace.hpp"
 
 Workspace::Workspace(ArgumentParser &parser) :
     dt(0.05), maxU(2.0)
@@ -109,3 +113,5 @@ void Workspace::save(int stepid) {
 
     myfile.close();
 }
+
+#endif

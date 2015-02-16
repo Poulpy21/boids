@@ -1,6 +1,9 @@
 #ifndef  WORKSPACE
 #define  WORKSPACE
 
+
+#ifndef __CUDACC__
+
 #include "headers.hpp"
 #include "parser.hpp"
 #include "types.hpp"
@@ -34,4 +37,5 @@ public:
   void save(int stepid);
 };
 
+#endif
 #endif

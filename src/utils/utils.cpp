@@ -1,15 +1,11 @@
 
-#include "headers.hpp"
-
-#ifdef GUI_ENABLED
-
-#include "utils.hpp"
-#include <cmath>
+#include <string>
 #include <sstream>
+#include <cmath>
 
 namespace utils {
 
-	const std::string toStringMemory(unsigned long bytes) {
+	std::string toStringMemory(unsigned long bytes) {
 		std::stringstream ss;
 
 		const char prefix[] = {' ', 'K', 'M', 'G', 'T', 'P'};
@@ -26,6 +22,12 @@ namespace utils {
 		return str;
 	}
 
-}
-
+#ifdef CUDA_ENABLED
+    std::string toStringDim(const dim3 &dim) {
+        std::stringstream ss;
+        ss << "(" << dim.x << "," << dim.y << "," << dim.z << ")";
+        return ss.str();
+    }
 #endif
+
+}

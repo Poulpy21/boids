@@ -15,6 +15,7 @@
 #endif
 
 #ifdef __CUDACC__
+#define constexpr
 #define __DEVICE__ __device__
 #define __HOST__ __host__
 #else
@@ -29,5 +30,11 @@
 
 #define STRINGIFY(X) #X
 #define STRINGIFY_MACRO(X) STRINGIFY(X)
+
+//System reserved memory in MB
+#define _CPU_MIN_RESERVED_MEMORY 256ul*1024ul*1024ul
+#define _GPU_MIN_RESERVED_MEMORY 256ul*1024ul*1024ul
+
+#define MAX_THREAD_PER_BLOCK 512u
 
 #endif /* end of include guard: DEFINES_H */

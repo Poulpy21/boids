@@ -1,7 +1,7 @@
 #include "headers.hpp"
 #include "distWorkspace.hpp"
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <iomanip>
 #include "agent.hpp"
 
@@ -9,9 +9,6 @@ extern void computeForcesKernel(Real *boidData, Real *meanBoidData, int *meanBoi
                                 const int nBoids, const int nMeanBoids, const struct Options *opt);
 extern void applyForcesKernel(Real *boidData, const int nBoids, const struct Options *opt);
 extern void computeMeanBoidKernel(Real *boidData, const int nBoids, Vector *meanBoid);
-
-
-//#undef CUDA_ENABLED //FIXME when the kernels are done
 
 DistWorkspace::DistWorkspace(Options options, MPI_Comm comm, int root) : 
     agents(), opt(options), comm(comm), mess(comm), rootID(root)
@@ -228,10 +225,7 @@ void DistWorkspace::save(int stepId) {
     myfile << std::endl;
     myfile << agents.size() << std::endl;
     for (Agent a : agents)
-        myfile << "B " << a.position << std::endl;
-        //TODO: boidType
+        //myfile << "B " << a.position << std::endl;
     myfile.close();
-
-    //TODO zlib?
 }
 

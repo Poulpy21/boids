@@ -24,6 +24,12 @@
 #endif
 #endif
 
+#ifndef CURAND_ENABLED
+#if @CURAND_FOUND@ == 1
+#define CURAND_ENABLED
+#endif
+#endif
+
 #ifndef GUI_ENABLED
 #if @ENABLE_GUI@
 #define GUI_ENABLED

@@ -28,6 +28,8 @@ class Device {
 
         unsigned int multiProcessorCount;
         unsigned int maxThreadsPerMultiProcessor;
+        unsigned int coresPerSM;
+        unsigned int coresCount;
         Vec3<unsigned int> maxThreadsDim;
         Vec3<unsigned int> maxGridSize;
 

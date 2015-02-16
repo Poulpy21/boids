@@ -76,12 +76,12 @@
 #include <cuda_gl_interop.h>
 #endif
 
+#ifdef CURAND_ENABLED
+#include <curand.h>
+#endif
+
 // Start NVCC proof
 #ifndef __CUDACC__
-
-#include "log.hpp"
-
-#include "utils.hpp"
 
 #ifdef GUI_ENABLED
 #include "glUtils.hpp"
@@ -89,6 +89,9 @@
 
 #endif
 // end NVCC proof
+
+#include "utils.hpp"
+#include "log.hpp"
 
 #ifdef CUDA_ENABLED
 #include "cudaUtils.hpp"

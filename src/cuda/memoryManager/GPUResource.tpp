@@ -14,7 +14,7 @@ _data(0), _deviceId(device), _size(size), _isOwner(false), _isGPUResource(false)
 }
 	
 template <typename T>
-GPUResource<T>::GPUResource(GPUResource<T> &original) :
+GPUResource<T>::GPUResource(const GPUResource<T> &original) :
 _data(original.data()), _deviceId(original.deviceId()), _size(original.size()), 
 _isOwner(false), _isGPUResource(original.isGPUResource()) {
 }

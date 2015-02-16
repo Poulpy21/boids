@@ -19,8 +19,8 @@ void CPUMemory::init() {
 	long psize = sysconf(_SC_PAGE_SIZE);
 
 	const_cast<unsigned long &>(CPUMemory::_memorySize) = phypz*psize;
-	//const_cast<unsigned long &>(CPUMemory::_memoryRuntime) = __CPU_MIN_RESERVED_MEMORY;
-	//CPUMemory::_memoryLeft = phypz*psize - __CPU_MIN_RESERVED_MEMORY;
+	const_cast<unsigned long &>(CPUMemory::_memoryRuntime) = _CPU_MIN_RESERVED_MEMORY;
+	CPUMemory::_memoryLeft = phypz*psize - _CPU_MIN_RESERVED_MEMORY;
 }
 
 unsigned long CPUMemory::memorySize() {

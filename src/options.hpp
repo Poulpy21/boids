@@ -1,11 +1,8 @@
 #ifndef OPTIONS_HPP
 #define OPTIONS_HPP
 
-#ifndef __CUDACC__
 #include "utils/types.hpp"
 #include "parser.hpp"
-#endif
-
 
 struct Options {
     unsigned long int nAgents;
@@ -20,7 +17,6 @@ struct Options {
     Real maxVel;
     Real domainSize;
 
-#ifndef __CUDACC__
     Options() : nAgents(0l), nSteps(0l), 
         wCohesion(0.0), wAlignment(0.0), wSeparation(0.0),
         rCohesion(0.0), rAlignment(0.0), rSeparation(0.0),
@@ -53,7 +49,6 @@ struct Options {
                       << "[ dt : "          << opt.dt           << " ]"
                       << "[ maxVelocity : " << opt.maxVel       << " ]";
     }
-#endif
 };
 
 #endif

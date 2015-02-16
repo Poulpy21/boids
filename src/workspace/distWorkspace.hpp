@@ -1,7 +1,7 @@
 #ifndef DIST_WORKSPACE_HPP
 #define DIST_WORKSPACE_HPP
 
-#include "utils/headers.hpp"
+#include "headers.hpp"
 #include "options.hpp"
 #include "vector.hpp"
 #include "messenger.hpp"
@@ -30,6 +30,7 @@ class DistWorkspace {
         int rootID, myID;
         // TODO: affectation domaine hypercube
         // TODO: structure pour stockage voisinage
+
 #ifdef CUDA_ENABLED
         struct Options* d_opt;
         Real *d_agents, *d_meanAgents;

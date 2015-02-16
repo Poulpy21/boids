@@ -12,7 +12,7 @@ set(BOIDS_VERSION ${BOIDS_MAJOR_VERSION}.${BOIDS_MINOR_VERSION}.${BOIDS_PATCH_VE
 get_filename_component(SHADER_FOLDER "${CMAKE_SOURCE_DIR}/shaders" ABSOLUTE)
 
 # TODO # TODO # TODO # TODO # TODO # TODO ###
-set(MIN_COMPUTE_CAPABILITY "30")          #T#
+set(MIN_COMPUTE_CAPABILITY "20")          #T#
 set(ENABLE_GUI "1")                       ###
 # TODO # TODO # TODO # TODO # TODO # TODO ###
 
@@ -37,7 +37,7 @@ if(${CUDA_FOUND})
     include(CUDA_compute_capability)
     set(COMPUTE_CAPABILITY ${CUDA_COMPUTE_CAPABILITY})
     if(COMPUTE_CAPABILITY LESS MIN_COMPUTE_CAPABILITY)
-        message("--     Found compute capability ${COMPUTE_CAPABILITY} but minimum is set to ${MIN_COMPUTE_CAPABILITY}. CUDA will be DISABLED !")
+        message(WARNING "--     Found compute capability ${COMPUTE_CAPABILITY} but minimum is set to ${MIN_COMPUTE_CAPABILITY}. CUDA will be DISABLED !")
     else()
         set(ENABLE_CUDA "1")
         message("--     Found compute capability ${COMPUTE_CAPABILITY}, CUDA will be ENABLED !")
@@ -50,6 +50,14 @@ else()
     set(CUDA_CUDART_LIBRARY "")
     set(CUDA_LIBRARIES "")
     set(CUDA_LIBRARY_DIRS "")
+endif()
+
+if(CUDA_curand_LIBRARY STREQUAL "")
+    set(CURAND_FOUND "0")
+    message(WARNING "-- CuRand is not present on your system !")
+else()
+    set(CURAND_FOUND "1")
+    message("-- CuRand has been found !")
 endif()
 
 #Compiler options
@@ -233,6 +241,7 @@ foreach(main_source ${executable_sources})
         ${LOG4CPP_LIBRARIES} #Log4cpp
         ${MPI_CXX_LIBRARIES} #MPI
         ${CUDA_LIBRARIES}    #Cuda
+        ${CUDA_curand_LIBRARY} #Curand
         ${OPENGL_LIBRARIES}  #OpenGl
         ${GLEW_LIBRARIES}    #Glew
         ${GLUT_glut_LIBRARY} #Glut

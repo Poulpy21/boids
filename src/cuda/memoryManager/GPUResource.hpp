@@ -8,7 +8,7 @@ class GPUResource {
 public:
 	
 	GPUResource(int device = 0, unsigned long size = 0);
-	GPUResource(GPUResource<T> &original);
+	GPUResource(const GPUResource<T> &original);
 	explicit GPUResource(T *data, int deviceId, unsigned int size, bool owner);
 	~GPUResource();
 
