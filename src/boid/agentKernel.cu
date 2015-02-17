@@ -1,6 +1,5 @@
-#include "headers.hpp"
 
-#ifdef CUDA_ENABLED
+#include "headers.hpp"
 
 #include "options.hpp"
 #include "agentData.hpp"
@@ -158,4 +157,3 @@ void computeMeanBoidKernel(Real *boidData, const int nBoids, Vector *meanBoid) {
     checkKernelExecution();
 }
 
-#endif

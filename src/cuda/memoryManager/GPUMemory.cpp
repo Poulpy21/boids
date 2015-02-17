@@ -1,9 +1,9 @@
 
-#include <cassert>
 
 #include "GPUMemory.hpp"
-#include "cudaUtils.hpp"
-#include "utils.hpp"
+
+#ifdef CUDA_ENABLED
+#include <cassert>
 
 int GPUMemory::_nDevice = 0;
 const unsigned long * GPUMemory::_memorySize = 0;
@@ -75,3 +75,5 @@ unsigned long GPUMemory::getMinAvailableMemoryOnDevices() {
 void GPUMemory::setVerbose(bool verbose) {
 	GPUMemory::_verbose = verbose;
 }
+
+#endif

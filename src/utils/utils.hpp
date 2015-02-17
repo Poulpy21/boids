@@ -16,15 +16,19 @@
 #include <cxxabi.h>
 #endif
 
+#ifdef CUDA_ENABLED
+#define MODULO(T) utils::modulo
+#define ARE_EQUAL(T) utils::areEqual
+#else
+#include <type_traits>
+#define MODULO(T) utils::modulo<T>
+#define ARE_EQUAL(T) utils::areEqual<T>
+#endif
+
 namespace utils {
     
     std::string toStringMemory(unsigned long bytes);
 
-#ifdef CUDA_ENABLED
-    std::string toStringDim(const dim3 &dim);
-#endif
-
-    
     // power of two
     template <typename T>
     __HOST__ __DEVICE__ constexpr bool is_power_of_two(T x)
@@ -102,7 +106,7 @@ namespace utils {
     }
     
     template <typename I, typename std::enable_if<std::is_integral<I>::value>::type* = nullptr>
-     modulo(I a, I b) {
+     I modulo(I a, I b) {
         return a % b;
     }
 
@@ -111,45 +115,36 @@ namespace utils {
         return F(fmod(a, b));
     }
 #else /* else (CUDA ENABLED) */
-    template <typename I>
-    __HOST__ __DEVICE__  bool areEqual(I a, I b) { return a == b; }
-    template <>
-    __HOST__ __DEVICE__  bool areEqual(float a, float b) { 
-#ifdef __CUDA_ARCH__
-        const float epsilon = 1.19209e-07f;
-        return (fabsf(a - b) <= epsilon * fmaxf(fabsf(a), fabsf(b)));
-#else
-        return (std::abs(a - b) <= std::numeric_limits<float>::epsilon() * std::max(std::abs(a), std::abs(b)));
-#endif
-    }
-    template <>
-    __HOST__ __DEVICE__  bool areEqual(double a, double b) { 
-#ifdef __CUDA_ARCH__
-        const float epsilon = 1.19209e-07f;
-        return (fabsf(a - b) <= epsilon * fmaxf(fabsf(a), fabsf(b)));
-#else
-        return (std::abs(a - b) <= std::numeric_limits<double>::epsilon() * std::max(std::abs(a), std::abs(b)));
-#endif
-    }
     
-    template <typename I>
-    __HOST__ __DEVICE__  I modulo(I a, I b) { return a % b; }
-    template <>
-    __HOST__ __DEVICE__  float modulo(float a, float b) {
-#ifdef __CUDA_ARCH__
-        return fmodf(a,b);
-#else 
-        return fmod(a,b);
-#endif
-    }
-    template <>
-    __HOST__ __DEVICE__  double modulo(double a, double b) {
-#ifdef __CUDA_ARCH__
-        return static_cast<double>(fmodf(a,b));
-#else 
-        return static_cast<double>(fmod(a,b));
-#endif
-    }
+    extern __HOST__ __DEVICE__ bool areEqual(bool,bool);
+
+    extern __HOST__ __DEVICE__ bool areEqual(char,char);
+    extern __HOST__ __DEVICE__ bool areEqual(short,short);
+    extern __HOST__ __DEVICE__ bool areEqual(int,int);
+    extern __HOST__ __DEVICE__ bool areEqual(long,long);
+
+    extern __HOST__ __DEVICE__ bool areEqual(unsigned char,unsigned char);
+    extern __HOST__ __DEVICE__ bool areEqual(unsigned short,unsigned short);
+    extern __HOST__ __DEVICE__ bool areEqual(unsigned int,unsigned int);
+    extern __HOST__ __DEVICE__ bool areEqual(unsigned long,unsigned long);
+    
+    extern __HOST__ __DEVICE__ bool areEqual(float,float);
+    extern __HOST__ __DEVICE__ bool areEqual(double,double);
+
+    extern __HOST__ __DEVICE__ bool modulo(bool,bool);
+    extern __HOST__ __DEVICE__ char modulo(char,char);
+    extern __HOST__ __DEVICE__ short modulo(short,short);
+    extern __HOST__ __DEVICE__ int modulo(int,int);
+    extern __HOST__ __DEVICE__ long modulo(long,long);
+
+    extern __HOST__ __DEVICE__ unsigned char modulo(unsigned char,unsigned char);
+    extern __HOST__ __DEVICE__ unsigned short modulo(unsigned short,unsigned short);
+    extern __HOST__ __DEVICE__ unsigned int modulo(unsigned int,unsigned int);
+    extern __HOST__ __DEVICE__ unsigned long modulo(unsigned long,unsigned long);
+    
+    extern __HOST__ __DEVICE__ float modulo(float,float);
+    extern __HOST__ __DEVICE__ double modulo(double,double);
+
 #endif /* CUDA ENABLED */
 
 #ifndef __CUDACC__ //recursive template :(

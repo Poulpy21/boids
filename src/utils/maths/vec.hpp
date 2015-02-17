@@ -5,16 +5,13 @@
 #include "headers.hpp"
 #include "utils.hpp"
 
-#ifndef __CUDACC__
 #include <iostream>
-#include <type_traits>
 #include <cstring>
-#endif
 
 /*
 * ND vector structure of arithmetic type T
 * T should be an arithmetic type, T& = T and T(int) should be defined.
-* Operators %, %=, == and != are safe for integer types and floating point types as well (see utils.hpp for the definition of areEqual<T> and modulo<T>).
+* Operators %, %=, == and != are safe for integer types and floating point types as well (see utils.hpp for the definition of ARE_EQUAL(T) and modulo<T>).
 * VecBool, Vec2 and Vec3 extends this class for more convenience (see vecBool.hpp, vec2.hpp and vec3.hpp)
 * The behaviour of the output stream operator << is specialized in the case N=1 to avoid unnecessary brackets (scalar case).
 */
@@ -138,7 +135,7 @@ __HOST__ __DEVICE__ Vec<N,T> & Vec<N,T>::operator*= (const Vec<N,T> &a) {
 template <unsigned int N, typename T>
 __HOST__ __DEVICE__ Vec<N,T> & Vec<N,T>::operator%= (const Vec<N,T> &a) {
     for (unsigned int i = 0; i < N; i++) {
-        this->data[i] = utils::modulo(this->data[i], a.data[i]);
+        this->data[i] = MODULO(T)(this->data[i], a.data[i]);
     }
     return *this;
 }
@@ -178,7 +175,7 @@ __HOST__ __DEVICE__ Vec<N,T> & Vec<N,T>::operator*= (T k) {
 template <unsigned int N, typename T>
 __HOST__ __DEVICE__ Vec<N,T> & Vec<N,T>::operator%= (T k) {
     for (unsigned int i = 0; i < N; i++) {
-        this->data[i] = utils::modulo(this->data[i] , k); 
+        this->data[i] = MODULO(T)(this->data[i] , k); 
     }
     return *this;
 }
@@ -222,7 +219,7 @@ template <unsigned int N, typename T>
 __HOST__ __DEVICE__ Vec<N,T> operator% (const Vec<N,T> &a, const Vec<N,T> &b) {
     T buffer[N];
     for (unsigned int i = 0; i < N; i++) {
-        buffer[i] = utils::modulo(a[i], b[i]);
+        buffer[i] = MODULO(T)(a[i], b[i]);
     }
     return Vec<N,T>(buffer);
 }
@@ -259,7 +256,7 @@ template <unsigned int N, typename T>
 __HOST__ __DEVICE__ Vec<N,T> operator% (const Vec<N,T> &a, T k) {
     T buffer[N];
     for (unsigned int i = 0; i < N; i++) {
-        buffer[i] = utils::modulo(a[i], k);
+        buffer[i] = MODULO(T)(a[i], k);
     }
     return Vec<N,T>(buffer);
 }
@@ -322,7 +319,7 @@ template <unsigned int N, typename T>
 __HOST__ __DEVICE__ Vec<N,T> operator% (T k, const Vec<N,T> &b) {
     T buffer[N];
     for (unsigned int i = 0; i < N; i++) {
-        buffer[i] = utils::modulo(k, b[i]);
+        buffer[i] = MODULO(T)(k, b[i]);
     }
     return Vec<N,T>(buffer);
 }
@@ -339,9 +336,8 @@ __HOST__ __DEVICE__ Vec<N,T> operator/ (T k, const Vec<N,T> &b) {
 
 template <unsigned int N, typename T>
 __HOST__ __DEVICE__ bool operator!= (const Vec<N,T> &a, const Vec<N,T> &b) {
-    using utils::areEqual;
     for (unsigned int i = 0; i < N; i++) {
-        if (areEqual<T>(a[i],b[i]))
+        if (ARE_EQUAL(T)(a[i],b[i]))
             return false;
     }
     return true;
@@ -349,9 +345,8 @@ __HOST__ __DEVICE__ bool operator!= (const Vec<N,T> &a, const Vec<N,T> &b) {
 
 template <unsigned int N, typename T>
 __HOST__ __DEVICE__ bool operator== (const Vec<N,T> &a, const Vec<N,T> &b) {
-    using utils::areEqual;
     for (unsigned int i = 0; i < N; i++) {
-        if (!areEqual<T>(a[i],b[i]))
+        if (!ARE_EQUAL(T)(a[i],b[i]))
             return false;
     }
     return true;
@@ -359,40 +354,36 @@ __HOST__ __DEVICE__ bool operator== (const Vec<N,T> &a, const Vec<N,T> &b) {
 
 template <unsigned int N, typename T>
 __HOST__ __DEVICE__ VecBool<N> operator<= (const Vec<N,T> &a, const Vec<N,T> &b) {
-    using utils::areEqual;
     bool buffer[N];
     for (unsigned int i = 0; i < N; i++) {
-       buffer[i] = areEqual<T>(a[i],b[i]) || (a[i] < b[i]);
+       buffer[i] = ARE_EQUAL(T)(a[i],b[i]) || (a[i] < b[i]);
     }
     return VecBool<N>(buffer);
 }
 
 template <unsigned int N, typename T>
 __HOST__ __DEVICE__ VecBool<N> operator>= (const Vec<N,T> &a, const Vec<N,T> &b) {
-    using utils::areEqual;
     bool buffer[N];
     for (unsigned int i = 0; i < N; i++) {
-       buffer[i] = areEqual<T>(a[i],b[i]) || (a[i] > b[i]);
+       buffer[i] = ARE_EQUAL(T)(a[i],b[i]) || (a[i] > b[i]);
     }
     return VecBool<N>(buffer);
 }
 
 template <unsigned int N, typename T>
 __HOST__ __DEVICE__ VecBool<N> operator< (const Vec<N,T> &a, const Vec<N,T> &b) {
-    using utils::areEqual;
     bool buffer[N];
     for (unsigned int i = 0; i < N; i++) {
-       buffer[i] = (a < b) && (!areEqual<T>(a[i],b[i]));
+       buffer[i] = (a < b) && (!ARE_EQUAL(T)(a[i],b[i]));
     }
     return VecBool<N>(buffer);
 }
 
 template <unsigned int N, typename T>
 __HOST__ __DEVICE__ VecBool<N> operator> (const Vec<N,T> &a, const Vec<N,T> &b) {
-    using utils::areEqual;
     bool buffer[N];
     for (unsigned int i = 0; i < N; i++) {
-       buffer[i] = (a[i] > b[i]) && (!areEqual<T>(a[i],b[i]));
+       buffer[i] = (a[i] > b[i]) && (!ARE_EQUAL(T)(a[i],b[i]));
     }
     return VecBool<N>(buffer);
 }

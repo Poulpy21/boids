@@ -22,12 +22,4 @@ namespace utils {
 		return str;
 	}
 
-#ifdef CUDA_ENABLED
-    std::string toStringDim(const dim3 &dim) {
-        std::stringstream ss;
-        ss << "(" << dim.x << "," << dim.y << "," << dim.z << ")";
-        return ss.str();
-    }
-#endif
-
 }

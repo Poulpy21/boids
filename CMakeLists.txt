@@ -12,7 +12,7 @@ set(BOIDS_VERSION ${BOIDS_MAJOR_VERSION}.${BOIDS_MINOR_VERSION}.${BOIDS_PATCH_VE
 get_filename_component(SHADER_FOLDER "${CMAKE_SOURCE_DIR}/shaders" ABSOLUTE)
 
 # TODO # TODO # TODO # TODO # TODO # TODO ###
-set(MIN_COMPUTE_CAPABILITY "20")          #T#
+set(MIN_COMPUTE_CAPABILITY "30")          #T#
 set(ENABLE_GUI "1")                       ###
 # TODO # TODO # TODO # TODO # TODO # TODO ###
 
@@ -130,9 +130,13 @@ list(APPEND executable_sources "${CMAKE_SOURCE_DIR}/src/sequential.cpp")
 list(APPEND executable_sources "${CMAKE_SOURCE_DIR}/src/tree.cpp")
 if(${ENABLE_CUDA})
     list(APPEND executable_sources "${CMAKE_SOURCE_DIR}/src/cuda.cpp")
+else()
+    list(APPEND blacklist_sources "${CMAKE_SOURCE_DIR}/src/cuda.cpp")
 endif()
 if(${ENABLE_GUI})
     list(APPEND executable_sources "${CMAKE_SOURCE_DIR}/src/display.cpp")
+else()
+    list(APPEND blacklist_sources "${CMAKE_SOURCE_DIR}/src/display.cpp")
 endif()
 
 #Find source files
@@ -146,6 +150,9 @@ file(GLOB_RECURSE test_sources tests/*.cpp)
 #Remove executable sources so that mains do not conflict
 set(source_files_no_main ${source_files})
 foreach(main_source ${executable_sources})
+    LIST(REMOVE_ITEM source_files_no_main "${main_source}")
+endforeach()
+foreach(main_source ${blacklist_sources})
     LIST(REMOVE_ITEM source_files_no_main "${main_source}")
 endforeach()
 
@@ -264,6 +271,7 @@ foreach(main_source ${test_sources})
         ${LOG4CPP_LIBRARIES} #Log4cpp
         ${MPI_CXX_LIBRARIES} #MPI
         ${CUDA_LIBRARIES}    #Cuda
+        ${CUDA_curand_LIBRARY} #Curand
         ${OPENGL_LIBRARIES}  #OpenGl
         ${GLEW_LIBRARIES}    #Glew
         ${GLUT_glut_LIBRARY} #Glut

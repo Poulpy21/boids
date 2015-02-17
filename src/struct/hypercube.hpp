@@ -46,7 +46,7 @@ HyperCube<D,A>::HyperCube(const Vec<D,A> &min, const Vec<D,A> &max) :
         A val(dv[0]);
 
         for (unsigned int i = 1u; i < D; i++) {
-            if(!utils::areEqual<A>(val, dv[i])) 
+            if(!ARE_EQUAL(A)(val, dv[i])) 
                     throw std::runtime_error("Trying to construct an hypercube with something that is not a cube !");
         }
 }

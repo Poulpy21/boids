@@ -8,16 +8,11 @@
 #include "GPUResource.hpp"
 #include "rand.hpp"
 #include "initBounds.hpp"
-#include "kernels.hpp"
+#include "kernel.hpp"
 
 #include <iostream>
 #include <fstream>
 #include <iomanip>
-
-extern Real dt;
-extern Real wSeparation, wAlignment, wCohesion;
-extern Real rSeparation, rAlignment, rCohesion;
-extern Real maxVelocity, domainSize;
 
 CudaWorkspace::CudaWorkspace(const Options &options, const InitBounds<Real> &initBounds) :
     options(options), initBounds(initBounds), 
@@ -52,18 +47,18 @@ void CudaWorkspace::initStreams() {
 void CudaWorkspace::initSymbols() {
 
     // Upload options to device
-    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&dt, &options.dt, sizeof(Real)));
+    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&kernel::dt, &options.dt, sizeof(Real)));
 
-    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&wCohesion, &options.wCohesion, sizeof(Real)));
-    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&wAlignment, &options.wAlignment, sizeof(Real)));
-    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&wSeparation, &options.wSeparation, sizeof(Real)));
+    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&kernel::wCohesion, &options.wCohesion, sizeof(Real)));
+    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&kernel::wAlignment, &options.wAlignment, sizeof(Real)));
+    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&kernel::wSeparation, &options.wSeparation, sizeof(Real)));
 
-    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&rCohesion, &options.rCohesion, sizeof(Real)));
-    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&rAlignment, &options.rAlignment, sizeof(Real)));
-    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&rSeparation, &options.rSeparation, sizeof(Real)));
+    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&kernel::rCohesion, &options.rCohesion, sizeof(Real)));
+    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&kernel::rAlignment, &options.rAlignment, sizeof(Real)));
+    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&kernel::rSeparation, &options.rSeparation, sizeof(Real)));
     
-    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&maxVelocity, &options.maxVel, sizeof(Real)));
-    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&domainSize, &options.domainSize, sizeof(Real)));
+    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&kernel::maxVelocity, &options.maxVel, sizeof(Real)));
+    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&kernel::domainSize, &options.domainSize, sizeof(Real)));
 }
 
 
@@ -107,7 +102,7 @@ void CudaWorkspace::initBoids() {
         CHECK_CURAND_ERRORS(curandSetStream(generator, streams[i][0]));
         CHECK_CURAND_ERRORS(curandGenerateUniform(generator, random_d[i].data(), devAgents));
 
-        kernel::initializeBoidsKernel(devAgents, random_d[i].data(), agents_d[i].data(), initBounds, streams[i][0]);
+        kernel::initializeBoidsKernel(devAgents, random_d[i].data(), agents_d[i].data(), streams[i][0]);
         
         agentsToInitialize -= devAgents;
         i++;

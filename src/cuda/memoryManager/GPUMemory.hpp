@@ -1,13 +1,15 @@
 
-#include <ostream>
-#include <cassert>
-#include "cuda.h"
-#include "cuda_runtime.h"
-
-#include "cudaUtils.hpp"
 
 #ifndef GPUMEMORY_H
 #define GPUMEMORY_H
+
+#include "headers.hpp"
+
+#ifdef CUDA_ENABLED
+
+#include <ostream>
+#include <cassert>
+
 
 class GPUMemory {
 	public:
@@ -46,4 +48,6 @@ class GPUMemory {
 
 #include "GPUMemory.tpp"
 
+#endif
 #endif /* end of include guard: GPUMEMORY_H */
+

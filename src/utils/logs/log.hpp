@@ -5,7 +5,6 @@
 #include "headers.hpp"
 #include "log4cpp/Category.hh"
 
-
 namespace log4cpp {
     extern Category *log_console;
 

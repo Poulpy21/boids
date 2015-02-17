@@ -1,5 +1,5 @@
 
-#include "initBounds.hpp"
+#include "headers.hpp"
 
 namespace kernel {
 
@@ -16,9 +16,8 @@ namespace kernel {
     __constant__ Real maxVelocity;
     __constant__ Real domainSize;
 
-
     __launch_bounds__(MAX_THREAD_PER_BLOCK)
-        __global__ void initializeBoids(const unsigned int nBoids, float *rand, Real* agents, const InitBounds<Real> initBounds) {
+        __global__ void initializeBoids(const unsigned int nBoids, float *rand, Real* agents) {
 
             unsigned long int id = blockIdx.y*65535ul*512ul + blockIdx.x*512ul + threadIdx.x;
 
@@ -35,7 +34,7 @@ namespace kernel {
             }
         }
 
-    void initializeBoidsKernel(unsigned int nBoids, float *rand_d, Real *agents_d, const InitBounds<Real> initBounds, cudaStream_t &stream) {
+void initializeBoidsKernel(unsigned int nBoids, float *rand_d, Real *agents_d, cudaStream_t &stream) {
         dim3 dimBlock(MAX_THREAD_PER_BLOCK);
         dim3 dimGrid((unsigned int)ceil(nBoids/MAX_THREAD_PER_BLOCK) % 65535, ceil(nBoids/(MAX_THREAD_PER_BLOCK*65535.0f)));
         log4cpp::log_console->infoStream() << "[KERNEL::InitializeBoids] <<<" 
@@ -44,7 +43,7 @@ namespace kernel {
             << stream
             << ">>>";
 
-        initializeBoids<<<dimGrid,dimBlock,0,stream>>>(nBoids, rand_d, agents_d, initBounds);
+        initializeBoids<<<dimGrid,dimBlock,0,stream>>>(nBoids, rand_d, agents_d);
         CHECK_KERNEL_EXECUTION();
     }
 

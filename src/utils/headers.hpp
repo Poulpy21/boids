@@ -83,15 +83,17 @@
 // Start NVCC proof
 #ifndef __CUDACC__
 
-#ifdef GUI_ENABLED
-#include "glUtils.hpp"
-#endif
-
 #endif
 // end NVCC proof
 
 #include "utils.hpp"
 #include "log.hpp"
+
+#ifdef GUI_ENABLED
+#ifndef __CUDACC__
+#include "glUtils.hpp"
+#endif
+#endif
 
 #ifdef CUDA_ENABLED
 #include "cudaUtils.hpp"
@@ -101,18 +103,18 @@
 
 // Start NVCC proof
 #ifndef __CUDACC__
-
 #include "vec.hpp"
 #include "vec2.hpp"
 #include "vec3.hpp"
 #include "vecBool.hpp"
 #include "matrix.hpp"
 
-#include "consts.hpp"
 #include "globals.hpp"
-
+#include "consts.hpp"
 #endif
 // end NVCC proof
+
+
 
 
 #endif /* end of include guard: HEADERS_H */

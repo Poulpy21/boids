@@ -1,9 +1,5 @@
 
-#include "cuda.h"
-#include "cuda_runtime.h"
-#include "cudaUtils.hpp"
-#include "log.hpp"
-#include "utils.hpp"
+#ifdef CUDA_ENABLED
 
 template <typename T>
 T* CPUMemory::malloc(unsigned long nData, bool pinnedMemory) {
@@ -60,3 +56,4 @@ bool CPUMemory::canAllocate(unsigned long nData) {
 }
 
 
+#endif
