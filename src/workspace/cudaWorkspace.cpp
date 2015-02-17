@@ -16,8 +16,7 @@
 
 CudaWorkspace::CudaWorkspace(const Options &options, const InitBounds<Real> &initBounds) :
     options(options), initBounds(initBounds), 
-    nStreamsPerDevice(2u),
-    initBounds_d(nullptr)
+    nStreamsPerDevice(2u)
 {
 
     nAgents = options.nAgents;
@@ -75,9 +74,9 @@ void CudaWorkspace::initSymbols() {
 void CudaWorkspace::initBoids() {
     
     //init agents
+    
     agents_h = PinnedCPUResource<Real>(9u*nAgents); 
     agents_h.allocate();
-
    
 #ifdef CURAND_ENABLED
     unsigned int agentsToInitialize = nAgents;
@@ -133,6 +132,8 @@ void CudaWorkspace::initBoids() {
 #else
     //TODO CURAND NOT PRESENT - CPU GENERATION
 #endif
+    
+    sortBoids();
 }
 
 #ifdef CURAND_ENABLED
@@ -143,71 +144,81 @@ unsigned int CudaWorkspace::computeMaxAgentsAtInit(unsigned int deviceId) {
 #endif
 
 
+void CudaWorkspace::sortBoids() {
+#ifdef THRUST_ENABLED
+    kernel::thrustSort(agents_h.data(), nAgents);
+#endif
+}
+
 void CudaWorkspace::update() {
+
 }
 
 
+
 void CudaWorkspace::computeAndApplyForces(Container &receivedMeanAgents, std::vector<int> &receivedMeanAgentsWeights) {
-    //for (size_t k = 0; k < agents.size(); k++) {
-        //int countSeparation = 0, countCohesion = 0, countAlignment = 0;
-        //Vec3<Real> forceSeparation, forceCohesion, forceAlignment;
-         //Compute "internal forces"
-        //for (size_t i = 0; i < agents.size(); i++) {
-            //if (i != k) {
-                //Real dist = (agents[k].position - agents[i].position).norm();
-                //if (dist < opt.rSeparation) {
-                    //forceSeparation -= (agents[k].position - agents[i].position).normalized();
-                    //++countSeparation;
-                //}
-                //if (dist < opt.rCohesion) {
-                    //forceCohesion += agents[i].position;
-                    //++countCohesion;
-                //}
-                //if (dist < opt.rAlignment) {
-                    //forceAlignment += agents[i].velocity;
-                    //++countAlignment;
-                //}
-            //}
-        //}
-         //Compute "external forces"
-        //for (size_t i = 0; i < receivedMeanAgents.size(); i++) {
-            //Real dist = (agents[k].position - receivedMeanAgents[i].position).norm();
-            //Real weight = receivedMeanAgentsWeights[i]; 
-            //if (dist < opt.rSeparation) {
-                //forceSeparation -= weight * (agents[k].position - receivedMeanAgents[i].position).normalized();
-                //countSeparation += weight;
-            //}
-            //if (dist < opt.rCohesion) {
-                //forceCohesion += weight * receivedMeanAgents[i].position;
-                //countCohesion += weight;
-            //}
-            //if (dist < opt.rAlignment) {
-                //forceAlignment += weight * receivedMeanAgents[i].velocity;
-                //countAlignment += weight;
-            //}
-        //}   
-        //agents[k].direction = opt.wSeparation * ( countSeparation>0 ? forceSeparation/static_cast<Real>(countSeparation) : forceSeparation) +
-                              //opt.wCohesion   * ( countCohesion  >0 ? forceCohesion  /static_cast<Real>(countCohesion)   : forceCohesion  ) +
-                              //opt.wAlignment  * ( countAlignment >0 ? forceAlignment /static_cast<Real>(countAlignment)  : forceAlignment );
-    //}
+#if FALSE
+    for (size_t k = 0; k < agents.size(); k++) {
+        int countSeparation = 0, countCohesion = 0, countAlignment = 0;
+        Vec3<Real> forceSeparation, forceCohesion, forceAlignment;
+         Compute "internal forces"
+        for (size_t i = 0; i < agents.size(); i++) {
+            if (i != k) {
+                Real dist = (agents[k].position - agents[i].position).norm();
+                if (dist < opt.rSeparation) {
+                    forceSeparation -= (agents[k].position - agents[i].position).normalized();
+                    ++countSeparation;
+                }
+                if (dist < opt.rCohesion) {
+                    forceCohesion += agents[i].position;
+                    ++countCohesion;
+                }
+                if (dist < opt.rAlignment) {
+                    forceAlignment += agents[i].velocity;
+                    ++countAlignment;
+                }
+            }
+        }
+         Compute "external forces"
+        for (size_t i = 0; i < receivedMeanAgents.size(); i++) {
+            Real dist = (agents[k].position - receivedMeanAgents[i].position).norm();
+            Real weight = receivedMeanAgentsWeights[i]; 
+            if (dist < opt.rSeparation) {
+                forceSeparation -= weight * (agents[k].position - receivedMeanAgents[i].position).normalized();
+                countSeparation += weight;
+            }
+            if (dist < opt.rCohesion) {
+                forceCohesion += weight * receivedMeanAgents[i].position;
+                countCohesion += weight;
+            }
+            if (dist < opt.rAlignment) {
+                forceAlignment += weight * receivedMeanAgents[i].velocity;
+                countAlignment += weight;
+            }
+        }   
+        agents[k].direction = opt.wSeparation * ( countSeparation>0 ? forceSeparation/static_cast<Real>(countSeparation) : forceSeparation) +
+                              opt.wCohesion   * ( countCohesion  >0 ? forceCohesion  /static_cast<Real>(countCohesion)   : forceCohesion  ) +
+                              opt.wAlignment  * ( countAlignment >0 ? forceAlignment /static_cast<Real>(countAlignment)  : forceAlignment );
+    }
 
-     //Integration in time using euler method
-    //for(size_t k = 0; k < agents.size(); k++){
-        //agents[k].velocity += agents[k].direction;
+     Integration in time using euler method
+    for(size_t k = 0; k < agents.size(); k++){
+        agents[k].velocity += agents[k].direction;
 
-        //Real speed = agents[k].velocity.norm();
-        //if (speed > opt.maxVel) {
-            //agents[k].velocity *= opt.maxVel/speed;
-        //}
-        //agents[k].position += opt.dt*agents[k].velocity;
+        Real speed = agents[k].velocity.norm();
+        if (speed > opt.maxVel) {
+            agents[k].velocity *= opt.maxVel/speed;
+        }
+        agents[k].position += opt.dt*agents[k].velocity;
 
-        //Real modX = fmod(agents[k].position.x, opt.domainSize);
-        //Real modY = fmod(agents[k].position.y, opt.domainSize);
-        //Real modZ = fmod(agents[k].position.z, opt.domainSize);
-        //agents[k].position.x = modX > 0 ? modX : modX + opt.domainSize;
-        //agents[k].position.y = modY > 0 ? modY : modY + opt.domainSize;
-        //agents[k].position.z = modZ > 0 ? modZ : modZ + opt.domainSize;
-    //}
+        Real modX = fmod(agents[k].position.x, opt.domainSize);
+        Real modY = fmod(agents[k].position.y, opt.domainSize);
+        Real modZ = fmod(agents[k].position.z, opt.domainSize);
+        agents[k].position.x = modX > 0 ? modX : modX + opt.domainSize;
+        agents[k].position.y = modY > 0 ? modY : modY + opt.domainSize;
+        agents[k].position.z = modZ > 0 ? modZ : modZ + opt.domainSize;
+    }
+#endif
 }
 
 #endif

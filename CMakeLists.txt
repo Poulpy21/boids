@@ -31,6 +31,7 @@ endif()
 find_package(MPI REQUIRED)
 find_package(OpenMP)
 find_package(CUDA 5.5)
+find_package(Thrust)
 
 set(ENABLE_CUDA "0")
 if(${CUDA_FOUND})
@@ -58,6 +59,14 @@ if(CUDA_curand_LIBRARY STREQUAL "")
 else()
     set(CURAND_FOUND "1")
     message("-- CuRand has been found !")
+endif()
+
+if(THRUST_INCLUDE_DIR STREQUAL "")
+    set(THRUST_FOUND "0")
+    message(WARNING "-- Thrust is not present on your system !")
+else()
+    set(THRUST_FOUND "1")
+    message("-- Thrust has been found !")
 endif()
 
 #Compiler options
@@ -172,6 +181,7 @@ include_directories(SYSTEM
     ${GLUT_INCLUDE_DIR}
     ${QGLVIEWER_INCLUDE_DIR}
     ${CUDA_INCLUDE_DIRS} 
+    ${THRUST_INCLUDE_DIR}
     ${LOG4CPP_INCLUDE_DIRS} 
     ${MPI_INCLUDE_PATH}  
     ${QT_INCLUDE_DIR}

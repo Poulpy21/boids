@@ -30,6 +30,12 @@
 #endif
 #endif
 
+#ifndef THRUST_ENABLED
+#if @THRUST_FOUND@ == 1
+#define THRUST_ENABLED
+#endif
+#endif
+
 #ifndef GUI_ENABLED
 #if @ENABLE_GUI@
 #define GUI_ENABLED

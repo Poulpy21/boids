@@ -39,6 +39,6 @@
 #define _CPU_MIN_RESERVED_MEMORY 256ul*1024ul*1024ul
 #define _GPU_MIN_RESERVED_MEMORY 256ul*1024ul*1024ul
 
-#define MAX_THREAD_PER_BLOCK 512u
+#define MAX_THREAD_PER_BLOCK 512u //opti arch sm20
 
 #endif /* end of include guard: DEFINES_H */

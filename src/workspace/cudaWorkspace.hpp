@@ -26,6 +26,8 @@ class CudaWorkspace {
         void initSymbols();
         void initBoids();
         
+        void sortBoids();
+        
         void computeAndApplyForces(Container &receivedMeanAgents, std::vector<int> &receivedMeanAgentsWeights);
         
 #ifdef CURAND_ENABLED
@@ -44,7 +46,6 @@ class CudaWorkspace {
         std::vector<std::vector<cudaStream_t>> streams;
    
         PinnedCPUResource<Real> agents_h;
-        InitBounds<Real> *initBounds_d;
 };
 
 #endif
