@@ -20,11 +20,6 @@ namespace utils {
     
     std::string toStringMemory(unsigned long bytes);
 
-#ifdef CUDA_ENABLED
-    std::string toStringDim(const dim3 &dim);
-#endif
-
-    
     // power of two
     template <typename T>
     __HOST__ __DEVICE__ constexpr bool is_power_of_two(T x)
@@ -89,70 +84,28 @@ namespace utils {
 #endif
    
     
-//integral and floating point equality (SFINAE)
-#ifndef CUDA_ENABLED
-    template <typename I, typename std::enable_if<std::is_integral<I>::value>::type* = nullptr>
-     bool areEqual(I a, I b) {
-        return a == b;
-    }
-    
-    template <typename F, typename std::enable_if<std::is_floating_point<F>::value>::type* = nullptr>
-     bool areEqual(F a, F b) {
-        return (std::abs(a - b) <= std::numeric_limits<F>::epsilon() * std::max(std::abs(a), std::abs(b)));
-    }
-    
-    template <typename I, typename std::enable_if<std::is_integral<I>::value>::type* = nullptr>
-     modulo(I a, I b) {
-        return a % b;
-    }
-
-    template <typename F, typename std::enable_if<std::is_floating_point<F>::value>::type* = nullptr>
-     F modulo(const F a, const F b) {
-        return F(fmod(a, b));
-    }
-#else /* else (CUDA ENABLED) */
-    template <typename I>
-    __HOST__ __DEVICE__  bool areEqual(I a, I b) { return a == b; }
-    template <>
-    __HOST__ __DEVICE__  bool areEqual(float a, float b) { 
-#ifdef __CUDA_ARCH__
-        const float epsilon = 1.19209e-07f;
-        return (fabsf(a - b) <= epsilon * fmaxf(fabsf(a), fabsf(b)));
-#else
-        return (std::abs(a - b) <= std::numeric_limits<float>::epsilon() * std::max(std::abs(a), std::abs(b)));
-#endif
-    }
-    template <>
-    __HOST__ __DEVICE__  bool areEqual(double a, double b) { 
-#ifdef __CUDA_ARCH__
-        const float epsilon = 1.19209e-07f;
-        return (fabsf(a - b) <= epsilon * fmaxf(fabsf(a), fabsf(b)));
-#else
-        return (std::abs(a - b) <= std::numeric_limits<double>::epsilon() * std::max(std::abs(a), std::abs(b)));
-#endif
-    }
-    
-    template <typename I>
-    __HOST__ __DEVICE__  I modulo(I a, I b) { return a % b; }
-    template <>
-    __HOST__ __DEVICE__  float modulo(float a, float b) {
-#ifdef __CUDA_ARCH__
-        return fmodf(a,b);
-#else 
-        return fmod(a,b);
-#endif
-    }
-    template <>
-    __HOST__ __DEVICE__  double modulo(double a, double b) {
-#ifdef __CUDA_ARCH__
-        return static_cast<double>(fmodf(a,b));
-#else 
-        return static_cast<double>(fmod(a,b));
-#endif
-    }
-#endif /* CUDA ENABLED */
-
 #ifndef __CUDACC__ //recursive template :(
+
+//integral and floating point equality (SFINAE)
+    template <typename I, typename std::enable_if<std::is_integral<I>::value>::type* = nullptr>
+        bool areEqual(I a, I b) {
+            return a == b;
+        }
+
+    template <typename F, typename std::enable_if<std::is_floating_point<F>::value>::type* = nullptr>
+        bool areEqual(F a, F b) {
+            return (std::abs(a - b) <= std::numeric_limits<F>::epsilon() * std::max(std::abs(a), std::abs(b)));
+        }
+
+    template <typename I, typename std::enable_if<std::is_integral<I>::value>::type* = nullptr>
+        I modulo(I a, I b) {
+            return a % b;
+        }
+
+    template <typename F, typename std::enable_if<std::is_floating_point<F>::value>::type* = nullptr>
+        F modulo(const F a, const F b) {
+            return F(fmod(a, b));
+        }
 
     template <typename T>
         void templatePrettyPrint(std::ostream &os) {

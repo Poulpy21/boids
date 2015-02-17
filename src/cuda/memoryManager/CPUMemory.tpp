@@ -24,7 +24,16 @@ T* CPUMemory::malloc(unsigned long nData, bool pinnedMemory) {
 		CHECK_CUDA_ERRORS(cudaMallocHost((void **) &data, nData * sizeof(T)));
 	}
 	else {
-		data = new T[nData];		
+        try
+        {
+            data = new T[nData];		
+        }
+        catch (std::bad_alloc &e)
+        {
+			log_console->infoStream() << "\tAllocating " << utils::toStringMemory(nData*sizeof(T)) << " on host !";  
+            log_console->errorStream() << "\tAllocation failed...";
+            exit(EXIT_FAILURE);
+        }
 	}
 
 	CPUMemory::_memoryLeft -= nData*sizeof(T);

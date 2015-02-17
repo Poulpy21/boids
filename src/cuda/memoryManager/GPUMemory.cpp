@@ -9,7 +9,7 @@ int GPUMemory::_nDevice = 0;
 const unsigned long * GPUMemory::_memorySize = 0;
 unsigned long * GPUMemory::_memoryLeft = 0;
 unsigned long * GPUMemory::_memoryRuntime = 0;
-bool GPUMemory::_verbose = false;
+bool GPUMemory::_verbose = true;
 
 GPUMemory::GPUMemory() {
 }

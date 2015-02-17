@@ -8,7 +8,7 @@
 const volatile unsigned long CPUMemory::_memorySize = 0;
 const volatile unsigned long CPUMemory::_memoryRuntime = 0;
 unsigned long CPUMemory::_memoryLeft = 0;
-bool CPUMemory::_verbose = false;
+bool CPUMemory::_verbose = true;
 
 CPUMemory::CPUMemory() {
 }

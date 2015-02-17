@@ -193,7 +193,7 @@ void curandAssert(curandStatus status, const std::string &file, int line, bool a
             str = "Preexisting failure onlibrary entry.";
             break;
         case CURAND_STATUS_INITIALIZATION_FAILED:
-            str = "Initialization ofCUDA failed.";
+            str = "Initialization of CUDA failed.";
             break;
         case CURAND_STATUS_ARCH_MISMATCH:
             str = "Architecture mismatch, GPU does not support requested feature.";

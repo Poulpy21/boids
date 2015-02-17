@@ -16,9 +16,13 @@
 
 #ifdef __CUDACC__
 #define constexpr
+#define __CONSTANT__ __constant__
+#define __SHARED__ __shared__
 #define __DEVICE__ __device__
 #define __HOST__ __host__
 #else
+#define __CONSTANT__
+#define __SHARED__
 #define __DEVICE__
 #define __HOST__
 #endif

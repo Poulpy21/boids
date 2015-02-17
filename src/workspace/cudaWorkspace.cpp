@@ -8,16 +8,11 @@
 #include "GPUResource.hpp"
 #include "rand.hpp"
 #include "initBounds.hpp"
-#include "kernels.hpp"
+#include "kernel.hpp"
 
 #include <iostream>
 #include <fstream>
 #include <iomanip>
-
-extern Real dt;
-extern Real wSeparation, wAlignment, wCohesion;
-extern Real rSeparation, rAlignment, rCohesion;
-extern Real maxVelocity, domainSize;
 
 CudaWorkspace::CudaWorkspace(const Options &options, const InitBounds<Real> &initBounds) :
     options(options), initBounds(initBounds), 
@@ -50,20 +45,29 @@ void CudaWorkspace::initStreams() {
 }
 
 void CudaWorkspace::initSymbols() {
+    for(unsigned int i = 0u; i < DevicePool::nDevice; i++) {
 
-    // Upload options to device
-    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&dt, &options.dt, sizeof(Real)));
+        // Upload options to devices
+        CHECK_CUDA_ERRORS(cudaSetDevice(i));
 
-    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&wCohesion, &options.wCohesion, sizeof(Real)));
-    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&wAlignment, &options.wAlignment, sizeof(Real)));
-    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&wSeparation, &options.wSeparation, sizeof(Real)));
+        CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&kernel::dt, &options.dt, sizeof(Real)));
 
-    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&rCohesion, &options.rCohesion, sizeof(Real)));
-    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&rAlignment, &options.rAlignment, sizeof(Real)));
-    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&rSeparation, &options.rSeparation, sizeof(Real)));
-    
-    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&maxVelocity, &options.maxVel, sizeof(Real)));
-    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&domainSize, &options.domainSize, sizeof(Real)));
+        CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&kernel::wCohesion, &options.wCohesion, sizeof(Real)));
+        CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&kernel::wAlignment, &options.wAlignment, sizeof(Real)));
+        CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&kernel::wSeparation, &options.wSeparation, sizeof(Real)));
+
+        CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&kernel::rCohesion, &options.rCohesion, sizeof(Real)));
+        CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&kernel::rAlignment, &options.rAlignment, sizeof(Real)));
+        CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&kernel::rSeparation, &options.rSeparation, sizeof(Real)));
+
+        CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&kernel::maxVelocity, &options.maxVel, sizeof(Real)));
+        CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&kernel::domainSize, &options.domainSize, sizeof(Real)));
+
+        CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(kernel::minInitValues, initBounds.minValues, 9u*sizeof(Real)));
+        CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(kernel::maxInitValues, initBounds.maxValues, 9u*sizeof(Real)));
+
+        CHECK_CUDA_ERRORS(cudaDeviceSynchronize());
+    }
 }
 
 
@@ -76,46 +80,59 @@ void CudaWorkspace::initBoids() {
 
    
 #ifdef CURAND_ENABLED
-    unsigned agentsToInitialize = nAgents;
-
-    unsigned int deviceId = 0u, devAgents = 0u, i = 0u; 
+    unsigned int agentsToInitialize = nAgents;
+    unsigned int deviceId = 0u, devAgents = 0u, i = 0u, offset = 0u; 
     std::vector<unsigned int> devMaxAgents;
-    std::vector<GPUResource<float>> random_d;
-    std::vector<GPUResource<Real>> agents_d;
-
-    curandGenerator_t generator;
-    unsigned long long int seed = Random::randl();
-    CHECK_CURAND_ERRORS(curandCreateGenerator(&generator, CURAND_RNG_PSEUDO_MRG32K3A));
-    CHECK_CURAND_ERRORS(curandSetPseudoRandomGeneratorSeed(generator, seed));
+    std::vector<GPUResource<float>*> random_d;
+    std::vector<GPUResource<Real>*> agents_d;
 
     while(agentsToInitialize > 0) {
         deviceId = i % DevicePool::nDevice;
-        cudaSetDevice(deviceId);
+        CHECK_CUDA_ERRORS(cudaSetDevice(deviceId));
 
         if(i < DevicePool::nDevice) {
             devMaxAgents.push_back(computeMaxAgentsAtInit(deviceId));
-            random_d.push_back(GPUResource<float>(deviceId, std::min(devMaxAgents[i], agentsToInitialize)*9u));
-            agents_d.push_back(GPUResource<Real>(deviceId, std::min(devMaxAgents[i], agentsToInitialize)*9u));
-            random_d[i].allocate();
-            agents_d[i].allocate();
-            
+
+            devAgents = std::min(devMaxAgents[i], agentsToInitialize);
+
+            random_d.push_back(new GPUResource<float>(deviceId, devAgents*9ul));
+            agents_d.push_back(new GPUResource<Real>(deviceId, devAgents*9ul));
+            random_d[i]->allocate();
+            agents_d[i]->allocate();
+
             log4cpp::log_console->debugStream() << "Device " << i << " can allocate " << devMaxAgents[i] << " boids !";
         }
-        
-        devAgents = std::min(devMaxAgents[i], agentsToInitialize);
 
-        CHECK_CURAND_ERRORS(curandSetStream(generator, streams[i][0]));
-        CHECK_CURAND_ERRORS(curandGenerateUniform(generator, random_d[i].data(), devAgents));
+        devAgents = std::min(devMaxAgents[deviceId], agentsToInitialize);
 
-        kernel::initializeBoidsKernel(devAgents, random_d[i].data(), agents_d[i].data(), initBounds, streams[i][0]);
-        
+        log4cpp::log_console->debugStream() << "Device " << deviceId << " allocating " << devAgents << " boids !";
+
+        curandGenerator_t generator;
+        unsigned long long int seed = Random::randl();
+        //CHECK_CURAND_ERRORS(curandSetStream(generator, streams[deviceId][0])); //CURAND CRASH ...
+        CHECK_CURAND_ERRORS(curandCreateGenerator(&generator, CURAND_RNG_PSEUDO_MRG32K3A));
+        CHECK_CURAND_ERRORS(curandSetPseudoRandomGeneratorSeed(generator, seed));
+        CHECK_CURAND_ERRORS(curandGenerateUniform(generator, random_d[deviceId]->data(), 9u*devAgents));
+        CHECK_CURAND_ERRORS(curandDestroyGenerator(generator));
+
+        kernel::initializeBoidsKernel(devAgents, random_d[deviceId]->data(), agents_d[deviceId]->data());
+
+        //Copy data back
+        cudaMemcpy(agents_h.data() + 9ul*offset, agents_d[deviceId]->data(), 9u*devAgents*sizeof(Real), cudaMemcpyDeviceToHost);
+
+        offset += devAgents;
         agentsToInitialize -= devAgents;
         i++;
     }
-#else
-    //CPU
-#endif
 
+    for(auto resource : random_d)
+        delete resource;
+    
+    for(auto resource : agents_d)
+        delete resource;
+#else
+    //TODO CURAND NOT PRESENT - CPU GENERATION
+#endif
 }
 
 #ifdef CURAND_ENABLED

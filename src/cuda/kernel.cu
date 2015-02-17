@@ -1,9 +1,11 @@
 
 #include "initBounds.hpp"
+#include "options.hpp"
+#include <string>
 
 namespace kernel {
 
-    __constant__ Real dt;
+    __constant__ __device__ Real dt = 2;
 
     __constant__ Real wCohesion;
     __constant__ Real wAlignment;
@@ -16,36 +18,45 @@ namespace kernel {
     __constant__ Real maxVelocity;
     __constant__ Real domainSize;
 
+    __constant__ Real minInitValues[9];
+    __constant__ Real maxInitValues[9];
+
+    template <typename T>
+    __device__ inline T mix(T alpha, T a, T b) {
+        return (a + alpha*(b-a));
+    }
+
+    std::string toStringDim(const dim3 &dim) {
+        std::stringstream ss;
+        ss << "(" << dim.x << "," << dim.y << "," << dim.z << ")";
+        return ss.str();
+    }
+
 
     __launch_bounds__(MAX_THREAD_PER_BLOCK)
-        __global__ void initializeBoids(const unsigned int nBoids, float *rand, Real* agents, const InitBounds<Real> initBounds) {
+        __global__ void initializeBoids(const unsigned int nBoids, float *rand, Real* agents) {
 
             unsigned long int id = blockIdx.y*65535ul*512ul + blockIdx.x*512ul + threadIdx.x;
 
-            if(id > 9ul * nBoids)
+            if(id >= 9u*nBoids)
                 return;
 
-            switch(id/nBoids) {
-                case(0): 
-                    agents[id] = 3.14;
-                case(1): 
-                    agents[id] = 4.13;
-                default:
-                    agents[id] = 888;
-            }
+            unsigned int idd = id/nBoids;
+
+            agents[id] = mix(rand[id], minInitValues[idd], maxInitValues[idd]);
         }
 
-    void initializeBoidsKernel(unsigned int nBoids, float *rand_d, Real *agents_d, const InitBounds<Real> initBounds, cudaStream_t &stream) {
+    void initializeBoidsKernel(unsigned int nBoids, float *rand_d, Real *agents_d) {
+        float nReals = nBoids * 9u;
         dim3 dimBlock(MAX_THREAD_PER_BLOCK);
-        dim3 dimGrid((unsigned int)ceil(nBoids/MAX_THREAD_PER_BLOCK) % 65535, ceil(nBoids/(MAX_THREAD_PER_BLOCK*65535.0f)));
+        dim3 dimGrid((unsigned int)ceil(nReals/MAX_THREAD_PER_BLOCK) % 65535, ceil(nReals/(MAX_THREAD_PER_BLOCK*65535.0f)));
         log4cpp::log_console->infoStream() << "[KERNEL::InitializeBoids] <<<" 
-            << utils::toStringDim(dimBlock) << ", " 
-            << utils::toStringDim(dimGrid) <<  ", "
-            << stream
+            << toStringDim(dimBlock) << ", " 
+            << toStringDim(dimGrid)
             << ">>>";
 
-        initializeBoids<<<dimGrid,dimBlock,0,stream>>>(nBoids, rand_d, agents_d, initBounds);
+        initializeBoids<<<dimGrid,dimBlock>>>(nBoids, rand_d, agents_d);
         CHECK_KERNEL_EXECUTION();
     }
-
+    
 }

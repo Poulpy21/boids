@@ -42,8 +42,4 @@ class Memory {
 
 #include "GPUMemory.tpp"
 
-#endif /* end of include guard: GPUMEMORY_H */
-
-
-
 #endif /* end of include guard: MEMORY_H */
