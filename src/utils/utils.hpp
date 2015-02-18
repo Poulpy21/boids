@@ -83,9 +83,8 @@ namespace utils {
 		}
 #endif
    
-    
-#ifndef __CUDACC__ //recursive template :(
-
+   
+#ifndef CUDA_ENABLED
 //integral and floating point equality (SFINAE)
     template <typename I, typename std::enable_if<std::is_integral<I>::value>::type* = nullptr>
         bool areEqual(I a, I b) {
@@ -106,7 +105,44 @@ namespace utils {
         F modulo(const F a, const F b) {
             return F(fmod(a, b));
         }
+#else
+#ifndef __CUDACC__
+    template <typename I>
+        bool areEqual(I a, I b) {
+            return a == b;
+        }
+  
+    template <>
+    bool areEqual<float>(float a, float b);
 
+    template <>
+    bool areEqual<double>(double a, double b);
+
+    template <typename I>
+        I modulo(I a, I b) {
+            return a % b;
+        }
+    
+    template <>
+    float modulo<float>(float a, float b);
+
+    template <>
+    double modulo<double>(double a, double b);
+    
+#else
+    template <typename I> 
+        bool areEqual(I a, I b);
+    extern template bool areEqual<float>(float a, float b);
+    extern template bool areEqual<double>(double a, double b);
+
+    template <typename I> 
+        I modulo(I a, I b);
+    extern template float modulo<float>(float a, float b);
+    extern template double modulo<double>(double a, double b);
+#endif
+#endif
+
+#ifndef __CUDACC__ //recursive template :(
     template <typename T>
         void templatePrettyPrint(std::ostream &os) {
             int status;

@@ -11,6 +11,7 @@
 #include "cudaWorkspace.hpp"
 #include "rand.hpp"
 #include "initBounds.hpp"
+#include "boidGrid.hpp"
 
 void compute(int argc, char **argv);
 void initDevices();
@@ -57,11 +58,6 @@ void resetDevices() {
 
 void compute(int argc, char **argv) {
 
-    //InitBounds
-    Real minValues[9] = {0,0,0, 0,0,0, 0,0,0};
-    Real maxValues[9] = {10,10,10,0,0,0,0,0,0};
-    InitBounds<Real> initBounds(minValues, maxValues);
-    
     // Add options to parser
     ArgumentParser parser;
     //parser.addOption("agents", 100000000);
@@ -73,7 +69,7 @@ void compute(int argc, char **argv) {
 
     parser.addOption("rc", 0.11);
     parser.addOption("ra", 0.15);
-    parser.addOption("rs", 0.01);
+    parser.addOption("rs", 0.1);
     parser.addOption("dt", 0.05);
     parser.addOption("mv", 2.0);
 
@@ -81,10 +77,33 @@ void compute(int argc, char **argv) {
 
     parser.setOptions(argc, argv);
    
+    // Parse options
     Options options(parser);
-    CudaWorkspace workspace(options, initBounds);
+    
+    //create simulation domain
+    Real ds = options.domainSize;
+    BoundingBox<3u, Real> domain(Vec3<Real>(0,0,0), Vec3<Real>(ds,ds,ds));
+    
+    // Set up bounds for boid initialization
+    // format is XYZ  VX VY VZ  AX AY AZ
+    Real minValues[9] = {0, 0, 0,  0,0,0,  0,0,0};
+    Real maxValues[9] = {ds,ds,ds, 0,0,0,  0,0,0};
+    InitBounds<Real> initBounds(minValues, maxValues);
+    
+
+    //Create data structure
+    Real minRadius = std::min<Real>(options.rCohesion, std::min<Real>(options.rAlignment, options.rSeparation));
+
+    BoidGrid<Real> *grid = new BoidGrid<Real>(domain, minRadius);
+    std::cout << *grid << std::endl;
+   
+    
+    // Create workspace and simulate
+    CudaWorkspace workspace(options, initBounds, grid);
 
     for (unsigned long int step = 1; step <= options.nSteps; step++) {
         workspace.update();
     }
+
+    delete grid;
 }

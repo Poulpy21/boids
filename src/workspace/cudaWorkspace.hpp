@@ -13,11 +13,13 @@
 #include "PinnedCPUResource.hpp"
 #include "devicePool.hpp"
 #include "initBounds.hpp"
+#include "boidDataStructure.hpp"
 
 class CudaWorkspace {
 
     public:
-        CudaWorkspace(const Options &options, const InitBounds<Real> &initBounds);
+        CudaWorkspace(const Options &options, const InitBounds<Real> &initBounds, 
+                BoidDataStructure<Real> *boidDataStructure, unsigned int nStreamsPerDevice = 2u);
 
         void update();
 
@@ -33,12 +35,13 @@ class CudaWorkspace {
 #ifdef CURAND_ENABLED
         unsigned int computeMaxAgentsAtInit(unsigned int deviceId);
 #endif
-
     
     private:
+        
 
         const Options options;
         const InitBounds<Real> initBounds;
+        BoidDataStructure<Real>* const boidDataStructure;
         const unsigned int nStreamsPerDevice;
 
         unsigned int nAgents, agentsPerKernel, nKernels;

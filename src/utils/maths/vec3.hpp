@@ -12,15 +12,17 @@
 
 template <typename T> 
  struct Vec3 : public Vec<3u,T> {
-    T& x = this->data[0];
-    T& y = this->data[1];
-    T& z = this->data[2];
+    T& x;
+    T& y;
+    T& z;
 
      Vec3();
      Vec3(const Vec3<T> &v);       //mandatory for references buqs
      Vec3(const Vec<3u,T> &v);     //mandatory for operations on Vec<3u,T>
      explicit Vec3(const T data[]);
      explicit Vec3(T x, T y, T z);
+    
+
      ~Vec3();
 
      void setValue(T x, T y, T z);
@@ -31,29 +33,28 @@ template <typename T>
     
      Vec3<T> orthogonalVec() const;
 };
-    
 
 template <typename T>
- Vec3<T>::Vec3() : Vec<3u,T>() {
+ Vec3<T>::Vec3() : Vec<3u,T>(), x(this->data[0]), y(this->data[1]), z(this->data[2]) {
 }
 
 template <typename T>
- Vec3<T>::Vec3(T x, T y, T z) : Vec<3u,T>() {
+ Vec3<T>::Vec3(T x, T y, T z) : Vec<3u,T>(), x(this->data[0]), y(this->data[1]), z(this->data[2]) {
     this->x = x;
     this->y = y;
     this->z = z;
 }
 
 template <typename T>
- Vec3<T>::Vec3(const Vec<3u,T> &v) : Vec<3u,T>(v) {
+ Vec3<T>::Vec3(const Vec<3u,T> &v) : Vec<3u,T>(v), x(this->data[0]), y(this->data[1]), z(this->data[2])  {
 }
     
 template <typename T>
- Vec3<T>::Vec3(const Vec3<T> &v) : Vec<3u,T>(v) {
+ Vec3<T>::Vec3(const Vec3<T> &v) : Vec<3u,T>(v), x(this->data[0]), y(this->data[1]), z(this->data[2])  {
 }
-
+    
 template <typename T>
- Vec3<T>::Vec3(const T data[]) : Vec<3u,T>(data) {
+ Vec3<T>::Vec3(const T data[]) : Vec<3u,T>(data), x(this->data[0]), y(this->data[1]), z(this->data[2])  {
 }
 
 template <typename T>

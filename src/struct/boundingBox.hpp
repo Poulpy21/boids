@@ -16,10 +16,12 @@
 template <unsigned int D, typename A>
 struct BoundingBox {
 
+#ifndef __CUDACC__
     static_assert(D != 0u,                         "Dimension can't be zero !");
     static_assert(std::is_arithmetic<A>(),         "Positions can only contain arithmetic types !");
     static_assert(std::is_assignable<A&, A>(),     "A should be assignable !");
     static_assert(std::is_constructible<A, int>(), "A should be constructible from int !");
+#endif
 
      BoundingBox();
      BoundingBox(const BoundingBox<D,A> &other);
@@ -87,7 +89,6 @@ template <unsigned int D, typename A>
     return (Vec<D,A>(dir)*max + Vec<D,A>(~dir)*min)/A(2);
 }
 
-#ifndef __CUDACC__
 template <unsigned int D, typename A>
 Vec<D,A> BoundingBox<D,A>::corner(const std::bitset<D> &bitset) const {
     VecBool<D> dir(bitset);
@@ -98,19 +99,20 @@ template <unsigned int D, typename A>
 std::string BoundingBox<D,A>::toString() const {
     std::stringstream ss;
     ss << "BoundingBox<" << D << ",";
+#ifndef __CUDACC__
     utils::templatePrettyPrint<A>(ss);
+#endif
     ss << ">" << std::endl;
     ss << "\tMin: " << min << std::endl;
     ss << "\tMax: " << max << std::endl;
     return ss.str();
-}
+};
 
 template <unsigned int D, typename A>
     std::ostream & operator <<(std::ostream &os, const BoundingBox<D,A> &bbox) {
         os << bbox.toString();
         return os;
 }
-#endif /*end ifndef __CUDACC__*/
 
 
 #endif /* end of include guard: BOUNDINGBOX_H */

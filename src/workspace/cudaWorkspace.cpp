@@ -14,9 +14,12 @@
 #include <fstream>
 #include <iomanip>
 
-CudaWorkspace::CudaWorkspace(const Options &options, const InitBounds<Real> &initBounds) :
+
+CudaWorkspace::CudaWorkspace(const Options &options, const InitBounds<Real> &initBounds, 
+                BoidDataStructure<Real> *boidDataStructure, unsigned int nStreamsPerDevice) :
     options(options), initBounds(initBounds), 
-    nStreamsPerDevice(2u)
+    boidDataStructure(boidDataStructure), nStreamsPerDevice(nStreamsPerDevice),
+    nAgents(0u), agentsPerKernel(0u), nKernels(0u)
 {
 
     nAgents = options.nAgents;
@@ -26,6 +29,8 @@ CudaWorkspace::CudaWorkspace(const Options &options, const InitBounds<Real> &ini
     initStreams();
     initSymbols();
     initBoids();
+
+    boidDataStructure->init(agents_h.data(), nAgents);
 }
         
 void CudaWorkspace::initStreams() {
@@ -132,8 +137,6 @@ void CudaWorkspace::initBoids() {
 #else
     //TODO CURAND NOT PRESENT - CPU GENERATION
 #endif
-    
-    sortBoids();
 }
 
 #ifdef CURAND_ENABLED
@@ -144,17 +147,10 @@ unsigned int CudaWorkspace::computeMaxAgentsAtInit(unsigned int deviceId) {
 #endif
 
 
-void CudaWorkspace::sortBoids() {
-#ifdef THRUST_ENABLED
-    kernel::thrustSort(agents_h.data(), nAgents);
-#endif
-}
 
 void CudaWorkspace::update() {
 
 }
-
-
 
 void CudaWorkspace::computeAndApplyForces(Container &receivedMeanAgents, std::vector<int> &receivedMeanAgentsWeights) {
 #if FALSE

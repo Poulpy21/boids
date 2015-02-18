@@ -5,8 +5,11 @@
 #include "headers.hpp"
 #include "utils.hpp"
 #include <iostream>
-#include <type_traits>
 #include <cstring>
+
+#if __cplusplus >= 201103L
+#include <type_traits>
+#endif
 
 /*
 * ND vector structure of arithmetic type T
