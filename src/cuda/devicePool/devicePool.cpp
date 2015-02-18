@@ -42,9 +42,9 @@ std::string DevicePool::toString() {
             << "="  << dev.coresCount << " CUDA Cores"
             << std::endl;
     }
-    ss << "\tTOTAL : " << nDevice << " devices with " << nCores << " CUDA cores." << std::endl;
+    ss << "\nTOTAL : " << nDevice << " devices with " << nCores << " CUDA cores." << std::endl;
 
-    ss << " => ";
+    ss << "\t=> ";
     if(nCores < 500)
         ss << "Even TX have more computing power... Please upgrade your potato !";
     else if(nCores < 1000)

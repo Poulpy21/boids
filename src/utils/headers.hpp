@@ -87,6 +87,7 @@
 #include <thrust/transform.h>
 #include <thrust/sequence.h>
 #include <thrust/copy.h>
+#include <thrust/unique.h>
 #include <thrust/fill.h>
 #include <thrust/sort.h>
 #include <thrust/replace.h>

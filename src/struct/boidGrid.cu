@@ -4,6 +4,7 @@
 #include "headers.hpp"
 #include "boidGrid.hpp"
 #include "boidMemoryView.hpp"
+#include "thrustBoidMemoryView.hpp"
 
 #ifdef THRUST_ENABLED
 
@@ -17,7 +18,7 @@ struct ComputeCellFunctor
         width(boidGrid.getWidth()), length(boidGrid.getLength()), height(boidGrid.getHeight()),
         xmin(boidGrid.getDomain().min[0]), ymin(boidGrid.getDomain().min[1]), zmin(boidGrid.getDomain().min[2]),
         xmax(boidGrid.getDomain().max[0]), ymax(boidGrid.getDomain().max[2]), zmax(boidGrid.getDomain().max[2]),
-        radius(boidGrid.getMinRadius()) {
+        radius(boidGrid.getMaxRadius()) {
     }
 
     template <typename Tuple>
@@ -35,37 +36,65 @@ struct ComputeCellFunctor
     __host__ __device__ T relativeZ(T z) { return (z - zmin)/(zmax - zmin);}
     __host__ __device__ unsigned int makeId(unsigned int x, unsigned int y, unsigned int z) { return (width*length*z + width*y + x); }
 };
+    
+/*template <typename T>*/
+/*using thrust::device_vector<T>::iterator = deviceIterator;*/
+typedef thrust::device_vector<Real>::iterator  deviceIterator_real;
+typedef thrust::device_vector<unsigned int>::iterator  deviceIterator_ui;
 
 template <typename T>
-__host__ void initBoidGridThrustArrays(const BoidGrid<T> &boidGrid, T* agents_h, unsigned int nAgents) {
-    
-    BoidMemoryView<T> view(agents_h, nAgents);
+__host__ void initBoidGridThrustArrays(const BoidGrid<T> &boidGrid, 
+        BoidMemoryView<T> &agents_h, BoidMemoryView<T> &agents_d, 
+        unsigned int nAgents) {
+   
+    ThrustBoidMemoryView<T> agents_thrust_d(agents_d);
+    thrust::device_vector<unsigned int> cellIds(nAgents);
 
-    thrust::device_vector<T> x(nAgents);
-    thrust::device_vector<T> y(nAgents);
-    thrust::device_vector<T> z(nAgents);
-    thrust::device_vector<T> cellIds(nAgents);
+    //copy X Y Z data to device
+    thrust::copy(agents_h.x, agents_h.x + nAgents, agents_thrust_d.x);
+    thrust::copy(agents_h.y, agents_h.y + nAgents, agents_thrust_d.y);
+    thrust::copy(agents_h.z, agents_h.z + nAgents, agents_thrust_d.z);
 
-    thrust::copy(view.x, view.x + nAgents, x.begin());
-    thrust::copy(view.y, view.y + nAgents, y.begin());
-    thrust::copy(view.z, view.z + nAgents, z.begin());
-
+    //compute cell Id for each boid
     thrust::for_each(
-            thrust::make_zip_iterator(thrust::make_tuple(x.begin(), y.begin(), z.begin(), cellIds.begin())),
-            thrust::make_zip_iterator(thrust::make_tuple(x.end(), y.end(), z.end(), cellIds.end())),
+            thrust::make_zip_iterator(thrust::make_tuple(agents_thrust_d.x, agents_thrust_d.y, agents_thrust_d.z, cellIds.begin())),
+            thrust::make_zip_iterator(thrust::make_tuple(agents_thrust_d.x, agents_thrust_d.y, agents_thrust_d.z, cellIds.end())),
             ComputeCellFunctor<T>(boidGrid));
 
+    //find the permutation to sort everyone according to the cellIds
+    thrust::device_vector<unsigned int> keys(nAgents);
+    thrust::sequence(keys.begin(), keys.end());
+    thrust::stable_sort_by_key(cellIds.begin(), cellIds.end(), keys.begin());
 
-    // print the output
-    for(int i = 0; i < 100; i++)
-        std::cout << x[i] << ", " << y[i] << ", " << z[i] << " => " << cellIds[i] << std::endl;
+    //find the cells that contains at least one agent
+    //and find coresponding array offsets to be copied from the cells
+    thrust::device_vector<unsigned int> uniqueIds(cellIds);
+    thrust::device_vector<unsigned int> offsets(nAgents);
+    thrust::sequence(offsets.begin(), offsets.end());
+
+    thrust::pair<deviceIterator_ui, deviceIterator_ui> end =
+        thrust::unique_by_key(
+            uniqueIds.begin(),
+            uniqueIds.end(),
+            offsets.begin());
+
+    uniqueIds.resize(thrust::distance(uniqueIds.begin(), end.first));
+    offsets.resize(thrust::distance(uniqueIds.begin(), end.first));
+
+    //sort the boids with precomputed permutation
+
+
+    /*for(int i = 0; i < uniqueIds.size(); i++)*/
+        /*std::cout << uniqueIds[i] << " " << offsets[i] << std::endl;;*/
+    /*std::cout << std::endl;*/
+
 }
 
 
-template __host__ void initBoidGridThrustArrays<float>(const BoidGrid<float> &boidGrid, float* agents_h, unsigned int nAgents);
-/*template __host__ void initBoidGridThrustArrays<double>(const BoidGrid<double> &boidGrid, double* agents_h, unsigned int nAgents);*/
+template __host__ void initBoidGridThrustArrays<float>(const BoidGrid<float> &boidGrid, BoidMemoryView<float> &agents_h, 
+        BoidMemoryView<float> &agents_d, unsigned int nAgents);
+/*template __host__ void initBoidGridThrustArrays<double>(const BoidGrid<double> &boidGrid, BoidMemoryView<double> *agents_h, BoidMemoryView<double> *agents_d, unsigned int nAgents);*/
 
 #endif
-
 
 #endif

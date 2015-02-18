@@ -13,6 +13,7 @@
 #include "PinnedCPUResource.hpp"
 #include "devicePool.hpp"
 #include "initBounds.hpp"
+#include "boidMemoryView.hpp"
 #include "boidDataStructure.hpp"
 
 class CudaWorkspace {
@@ -49,6 +50,7 @@ class CudaWorkspace {
         std::vector<std::vector<cudaStream_t>> streams;
    
         PinnedCPUResource<Real> agents_h;
+        BoidMemoryView<Real> agents_view_h;
 };
 
 #endif

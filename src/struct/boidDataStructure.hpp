@@ -4,6 +4,7 @@
 
 #include "headers.hpp"
 #include "boundingBox.hpp"
+#include "boidMemoryView.hpp"
 #include "vec3.hpp"
 #include <vector>
 
@@ -22,8 +23,14 @@ protected:
     const BoundingBox<3u, T> domain;
 
 public:
+
+    //initialize structure with given host boids
+    //All boids should initially be contained in the domain
+    virtual void init(const BoidMemoryView<T> &agent_h, unsigned int agentCount) = 0;
     
-    virtual void init(T* agent_h, unsigned int agentCount) = 0;
+    //compute one step and return boids that went out the domain 
+    //if keepBoidsInDomain is set to true, no boids are returned
+    virtual BoidMemoryView<T> computeStep(bool keepBoidsInDomain) = 0; 
 
     virtual unsigned int getTotalAgentCount() const = 0;
     virtual unsigned int getAgentCount(unsigned int cellId) const = 0;

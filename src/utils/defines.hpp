@@ -30,6 +30,7 @@
 #define override
 #define final
 #define constexpr
+#define nullptr 0
 #endif
     
 #ifdef GUI_ENABLED

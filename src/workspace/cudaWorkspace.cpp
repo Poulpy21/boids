@@ -30,7 +30,7 @@ CudaWorkspace::CudaWorkspace(const Options &options, const InitBounds<Real> &ini
     initSymbols();
     initBoids();
 
-    boidDataStructure->init(agents_h.data(), nAgents);
+    boidDataStructure->init(agents_view_h, nAgents);
 }
         
 void CudaWorkspace::initStreams() {
@@ -80,8 +80,9 @@ void CudaWorkspace::initBoids() {
     
     //init agents
     
-    agents_h = PinnedCPUResource<Real>(9u*nAgents); 
+    agents_h = PinnedCPUResource<Real>(10u*nAgents); 
     agents_h.allocate();
+    agents_view_h = BoidMemoryView<Real>(agents_h.data(), nAgents);
    
 #ifdef CURAND_ENABLED
     unsigned int agentsToInitialize = nAgents;
@@ -109,7 +110,7 @@ void CudaWorkspace::initBoids() {
 
         devAgents = std::min(devMaxAgents[deviceId], agentsToInitialize);
 
-        log4cpp::log_console->debugStream() << "Device " << deviceId << " allocating " << devAgents << " boids !";
+        log4cpp::log_console->infoStream() << "Device " << deviceId << " allocating " << devAgents << " boids !";
 
         curandGenerator_t generator;
         unsigned long long int seed = Random::randl();

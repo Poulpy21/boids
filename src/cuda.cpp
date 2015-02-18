@@ -13,47 +13,40 @@
 #include "initBounds.hpp"
 #include "boidGrid.hpp"
 
-void compute(int argc, char **argv);
+void init();
+void header();
 void initDevices();
+void compute(int argc, char **argv);
 void resetDevices();
-
+void footer();
 
 // Main class for running the parallel flocking sim
 int main(int argc, char **argv) {
 
-    using log4cpp::log_console;
-    log4cpp::initLogs();
+    init();
+    header();
 
-    Random::init();
-
+    std::cout << ":: Looking for cuda device..." << std::endl << std::endl;
     DevicePool::init();
     DevicePool::display(std::cout);
+    std::cout << std::endl;
+    
+    initDevices();
 
     CPUMemory::init();
     CPUMemory::display(std::cout);
+    std::cout << std::endl;
     
     GPUMemory::init();
     GPUMemory::display(std::cout);
+    std::cout << std::endl;
 
-    initDevices();
     compute(argc, argv);
     resetDevices();
+
+    footer();
   
     return EXIT_SUCCESS;
-}
-
-void initDevices() {
-    for (unsigned int i = 0; i < DevicePool::nDevice; i++) {
-        CHECK_CUDA_ERRORS(cudaSetDevice(i));
-        CHECK_CUDA_ERRORS(cudaFree(0));
-    }
-}
-
-void resetDevices() {
-    for (unsigned int i = 0; i < DevicePool::nDevice; i++) {
-        CHECK_CUDA_ERRORS(cudaSetDevice(i));
-        CHECK_CUDA_ERRORS(cudaDeviceReset());
-    }
 }
 
 void compute(int argc, char **argv) {
@@ -92,10 +85,12 @@ void compute(int argc, char **argv) {
     
 
     //Create data structure
-    Real minRadius = std::min<Real>(options.rCohesion, std::min<Real>(options.rAlignment, options.rSeparation));
+    Real maxRadius = std::max<Real>(options.rCohesion, std::max<Real>(options.rAlignment, options.rSeparation));
 
-    BoidGrid<Real> *grid = new BoidGrid<Real>(domain, minRadius);
+    BoidGrid<Real> *grid = new BoidGrid<Real>(domain, maxRadius);
+    std::cout << ":: Data structure used ::" <<std::endl;
     std::cout << *grid << std::endl;
+    std::cout << std::endl;
    
     
     // Create workspace and simulate
@@ -107,3 +102,53 @@ void compute(int argc, char **argv) {
 
     delete grid;
 }
+
+void initDevices() {
+    std::cout << ":: Initializing devices..." << std::endl;
+    for (unsigned int i = 0; i < DevicePool::nDevice; i++) {
+        CHECK_CUDA_ERRORS(cudaSetDevice(i));
+        CHECK_CUDA_ERRORS(cudaFree(0));
+    }
+    std::cout << std::endl;
+}
+
+void resetDevices() {
+    std::cout << std::endl;
+    std::cout << ":: Resetting devices..." << std::endl;
+    for (unsigned int i = 0; i < DevicePool::nDevice; i++) {
+        CHECK_CUDA_ERRORS(cudaSetDevice(i));
+        CHECK_CUDA_ERRORS(cudaDeviceReset());
+    }
+    std::cout << std::endl;
+}
+
+
+void header() {
+    std::cout << std::endl;
+    std::cout
+        << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n"
+        << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n"
+        << "::::::::::::::   Flocking boids implementation v." STRINGIFY_MACRO(BOIDS_VERSION) "   :::::::::::::::\n"
+        << ":::::   High Performance Computing -- GPU Computing -- 2014-2015   :::::\n"
+        << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n"
+        << "::                                                                    ::\n"
+        << "::  Authors:   Keck Jean-Baptiste -- Ensimag - M2 MSIAM               ::\n"
+        << "::             Zirnhelt Gauthier  -- Ensimag                          ::\n" 
+        << "::                                                                    ::\n"
+        << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n"
+        << "::  Program is running in " STRINGIFY_MACRO(COMPILE_MODE) " mode !                                ::\n"
+        << "::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::\n"
+        << "\n";
+}
+
+void footer() {
+    std::cout << ":: All done, exiting !" << std::endl;
+    std::cout << std::endl;
+}
+
+void init() {
+    using log4cpp::log_console;
+    log4cpp::initLogs();
+    Random::init();
+}
+

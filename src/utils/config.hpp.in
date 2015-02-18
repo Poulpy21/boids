@@ -2,6 +2,13 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#define BOIDS_MAJOR_VERSION @BOIDS_MAJOR_VERSION@
+#define BOIDS_MINOR_VERSION @BOIDS_MINOR_VERSION@
+#define BOIDS_PATCH_VERSION @BOIDS_PATCH_VERSION@
+#define BOIDS_VERSION @BOIDS_VERSION@
+
+#define COMPILE_MODE @BUILD_TYPE@
+
 #ifndef CONSOLE_LOG_LEVEL
 #define CONSOLE_LOG_LEVEL @CONSOLE_LOG_LEVEL@
 #endif
@@ -24,6 +31,7 @@
 #endif
 #endif
 
+#if @ENABLE_CUDA@
 #ifndef CURAND_ENABLED
 #if @CURAND_FOUND@ == 1
 #define CURAND_ENABLED
@@ -35,6 +43,7 @@
 #define THRUST_ENABLED
 #endif
 #endif
+#endif /* enable cuda */
 
 #ifndef GUI_ENABLED
 #if @ENABLE_GUI@

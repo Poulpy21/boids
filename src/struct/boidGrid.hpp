@@ -5,28 +5,41 @@
 
 #include "headers.hpp"
 #include "boidDataStructure.hpp"
+#include "boidMemoryView.hpp"
 #include "PinnedCPUResource.hpp"
 #include "vec3.hpp"
 #include <vector>
+
+#ifdef CUDA_ENABLED
+#include "GPUResource.hpp"
+#endif
 
 #ifdef THRUST_ENABLED
 template <typename T>
 class BoidGrid;
 
 template <typename T>
-__HOST__ void initBoidGridThrustArrays(const BoidGrid<T> &boidGrid, T* agents_h, unsigned int nAgents);
+__HOST__ void initBoidGridThrustArrays(const BoidGrid<T> &boidGrid, 
+        BoidMemoryView<T> &agents_h, BoidMemoryView<T> &agents_d, 
+        unsigned int nAgents);
 #endif
 
 template <typename T>
 class BoidGrid : public BoidDataStructure<T> {
 
     public:
-        BoidGrid(const BoundingBox<3u, Real> &domain, Real minRadius);
+        BoidGrid(const BoundingBox<3u, Real> &domain, Real maxRadius);
         BoidGrid(const BoidGrid<T> &other);
         BoidGrid<T>& operator=(const BoidGrid<T> &other);
         ~BoidGrid();
     
-        void init(T* agent_h, unsigned int agentCount);
+        //initialize structure with given host boids
+        //All boids should initially be contained in the domain
+        void init(const BoidMemoryView<T> &agent_h, unsigned int agentCount) override;
+    
+        //compute one step and return boids that went out the domain 
+        //if keepBoidsInDomain is set to true, no boids are returned
+        BoidMemoryView<T> computeStep(bool keepBoidsInDomain) override;
 
         unsigned int          getTotalAgentCount() const override;
         unsigned int          getAgentCount(unsigned int cellId)    const override;
@@ -36,7 +49,7 @@ class BoidGrid : public BoidDataStructure<T> {
         unsigned int getCellId    (const Vec3<T> &pos) const override;
         std::vector<unsigned int> getNeighborCellIds(unsigned int cellId) const override;
 
-        T getMinRadius() const;
+        T getMaxRadius() const;
         T getDomainWidth() const;
         T getDomainLength() const;
         T getDomainHeight() const;
@@ -54,7 +67,7 @@ class BoidGrid : public BoidDataStructure<T> {
         Vec3<T> relativePos(const Vec3<T> &pos) const;
 
     private:
-        const T minRadius;
+        const T maxRadius;
 
         const T domainWidth, domainLength, domainHeight;
         const unsigned int width, length, height;
@@ -64,7 +77,13 @@ class BoidGrid : public BoidDataStructure<T> {
 
         unsigned int agentCount;
 
-        std::vector<PinnedCPUResource<T> > agents_h;
+        PinnedCPUResource<T> agents_h;
+        BoidMemoryView<T> agents_view_h;
+
+#ifdef CUDA_ENABLED
+        GPUResource<T> agents_d;
+        BoidMemoryView<T> agents_view_d;
+#endif
 };
 
 template <typename T>
@@ -83,7 +102,7 @@ std::string BoidGrid<T>::toString() const {
 #endif
     ss << ">";
 
-    ss << "\n\tMin radius : " << getMinRadius();
+    ss << "\n\tMax radius : " << getMaxRadius();
     ss << "\n\tDomain: min " << this->domain.min << "\t max " << this->domain.max;
     ss << "\n\tBox   : " << getBoxSize();
     ss << "\n\tCells : " << getCellsCount();
@@ -92,15 +111,35 @@ std::string BoidGrid<T>::toString() const {
 }
         
 template <typename T>
-void BoidGrid<T>::init(T* agent_h, unsigned int agentCount) {
-#ifdef THRUST_ENABLED
-        initBoidGridThrustArrays<T>(*this, agent_h, agentCount);
+void BoidGrid<T>::init(const BoidMemoryView<T> &agent_h, unsigned int agentCount) {
+    
+    log4cpp::log_console->infoStream() << "Initializing Boid Grid with " << agentCount << " boids !";
+
+    agents_h = PinnedCPUResource<T>(agent_h.data(), 10u*agentCount, false);
+    agents_view_h = agent_h;
+
+#ifdef CUDA_ENABLED
+    this->agentCount = agentCount;
+   
+    agents_d = GPUResource<T>(0, 10u*agentCount);
+    agents_d.allocate();
+    agents_view_d = BoidMemoryView<T>(agents_d.data(), agentCount);
+
+    initBoidGridThrustArrays<T>(*this, agents_view_h, agents_view_d, agentCount);
 #endif
+}
+        
+//compute one step and return boids that went out the domain 
+//if keepBoidsInDomain is set to true, no boids are returned
+template <typename T>
+BoidMemoryView<T> BoidGrid<T>::computeStep(bool keepBoidsInDomain) {
+    BoidMemoryView<T> outofDomainBoids_h;
+    return outofDomainBoids_h;
 }
 
 template <typename T>
-T BoidGrid<T>::getMinRadius() const {
-    return minRadius;
+T BoidGrid<T>::getMaxRadius() const {
+    return maxRadius;
 }
 template <typename T>
 T BoidGrid<T>::getDomainWidth() const {
@@ -137,15 +176,15 @@ Vec3<unsigned int> BoidGrid<T>::getBoxSize() const {
 
 
 template <typename T>
-BoidGrid<T>::BoidGrid(const BoundingBox<3u, Real> &domain, Real minRadius) :
+BoidGrid<T>::BoidGrid(const BoundingBox<3u, Real> &domain, Real maxRadius) :
     BoidDataStructure<T>(domain),
-    minRadius(minRadius),
+    maxRadius(maxRadius),
     domainWidth (domain.max[0] - domain.min[0]),
     domainLength(domain.max[1] - domain.min[1]),
     domainHeight(domain.max[2] - domain.min[2]),
-    width (std::max(1,static_cast<int>(ceil(domainWidth /minRadius)))),
-    length(std::max(1,static_cast<int>(ceil(domainLength/minRadius)))),
-    height(std::max(1,static_cast<int>(ceil(domainHeight/minRadius)))),
+    width (std::max(1,static_cast<int>(ceil(domainWidth /maxRadius)))),
+    length(std::max(1,static_cast<int>(ceil(domainLength/maxRadius)))),
+    height(std::max(1,static_cast<int>(ceil(domainHeight/maxRadius)))),
     boxSize(width, length, height),
     nCells(width*length*height),
     agentCount(0u)
@@ -159,7 +198,7 @@ BoidGrid<T>::~BoidGrid() {
 template <typename T>
 BoidGrid<T>::BoidGrid(const BoidGrid<T> &other) :
     BoidDataStructure<T>(other),
-    minRadius(0),
+    maxRadius(0),
     domainWidth (0),
     domainLength(0),
     domainHeight(0),
@@ -184,12 +223,16 @@ unsigned int BoidGrid<T>::getTotalAgentCount() const {
 
 template <typename T>
 unsigned int BoidGrid<T>::getAgentCount(unsigned int cellId) const {
-    return agents_h[cellId].size();
+    //return agents_h[cellId].size();
+    //TODO
+    return 0;
 }
 
 template <typename T>
 T* BoidGrid<T>::getAgentArray(unsigned int cellId) const {
-    return agents_h[cellId].data();
+    //return agents_h[cellId].data();
+    //TODO
+    return 0;
 }
 
 template <typename T>
