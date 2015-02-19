@@ -118,3 +118,13 @@ template <typename T>
 void GPUResource<T>::setSize(unsigned long size) {
 	this->_size = size;
 }
+
+#ifdef THRUST_ENABLED
+#ifdef __CUDACC__
+template <typename T>
+    thrust::device_ptr<T> GPUResource<T>::wrap() {
+        return thrust::device_ptr<T>(this->data());
+    }
+#endif
+#endif
+

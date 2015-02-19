@@ -43,32 +43,35 @@ typedef thrust::device_vector<Real>::iterator  deviceIterator_real;
 typedef thrust::device_vector<unsigned int>::iterator  deviceIterator_ui;
 
 template <typename T>
-__host__ void initBoidGridThrustArrays(const BoidGrid<T> &boidGrid, 
-        BoidMemoryView<T> &agents_h, BoidMemoryView<T> &agents_d, 
-        unsigned int nAgents) {
-   
-    ThrustBoidMemoryView<T> agents_thrust_d(agents_d);
+__host__ void initBoidGridThrustArrays(BoidGrid<T> &boidGrid) {
+
+    unsigned int nAgents = boidGrid.getTotalLocalAgentCount();
+        
+    ThrustBoidMemoryView<T> agents_thrust_d(boidGrid.getBoidDeviceMemoryView());
     thrust::device_vector<unsigned int> cellIds(nAgents);
 
-    //copy X Y Z data to device
-    thrust::copy(agents_h.x, agents_h.x + nAgents, agents_thrust_d.x);
-    thrust::copy(agents_h.y, agents_h.y + nAgents, agents_thrust_d.y);
-    thrust::copy(agents_h.z, agents_h.z + nAgents, agents_thrust_d.z);
+    //copy  X Y Z  VX VY VZ  AX AY AZ  data to device
+    for(unsigned int i = 0; i < 9u; i++)
+        thrust::copy(boidGrid.getBoidHostMemoryView()[i], boidGrid.getBoidHostMemoryView()[i] + nAgents, agents_thrust_d[i]);
 
     //compute cell Id for each boid
     thrust::for_each(
-            thrust::make_zip_iterator(thrust::make_tuple(agents_thrust_d.x, agents_thrust_d.y, agents_thrust_d.z, cellIds.begin())),
-            thrust::make_zip_iterator(thrust::make_tuple(agents_thrust_d.x, agents_thrust_d.y, agents_thrust_d.z, cellIds.end())),
+            thrust::make_zip_iterator(thrust::make_tuple(agents_thrust_d.x, agents_thrust_d.y, agents_thrust_d.z, agents_thrust_d.id)),
+            thrust::make_zip_iterator(thrust::make_tuple(
+                    agents_thrust_d.x + nAgents, 
+                    agents_thrust_d.y + nAgents,
+                    agents_thrust_d.z + nAgents,
+                    agents_thrust_d.id + nAgents)),
             ComputeCellFunctor<T>(boidGrid));
 
     //find the permutation to sort everyone according to the cellIds
     thrust::device_vector<unsigned int> keys(nAgents);
     thrust::sequence(keys.begin(), keys.end());
-    thrust::stable_sort_by_key(cellIds.begin(), cellIds.end(), keys.begin());
-
+    thrust::stable_sort_by_key(agents_thrust_d.id, agents_thrust_d.id + nAgents, keys.begin());
+    
     //find the cells that contains at least one agent
     //and find coresponding array offsets to be copied from the cells
-    thrust::device_vector<unsigned int> uniqueIds(cellIds);
+    thrust::device_vector<unsigned int> uniqueIds(agents_thrust_d.id, agents_thrust_d.id + nAgents);
     thrust::device_vector<unsigned int> offsets(nAgents);
     thrust::sequence(offsets.begin(), offsets.end());
 
@@ -82,18 +85,56 @@ __host__ void initBoidGridThrustArrays(const BoidGrid<T> &boidGrid,
     offsets.resize(thrust::distance(uniqueIds.begin(), end.first));
 
     //sort the boids with precomputed permutation
+    thrust::device_vector<T> buffer(9u*nAgents);
+    BoidMemoryView<T> buf_view(buffer.data().get(), nAgents);
+    ThrustBoidMemoryView<T> buffer_view(buf_view);
 
+    for(unsigned int i = 0u; i < 9u; i++) {
+        thrust::copy(thrust::make_permutation_iterator(agents_thrust_d[i], keys.begin()),
+                thrust::make_permutation_iterator(agents_thrust_d[i], keys.end()),
+                buffer_view[i]);
+        thrust::copy(buffer_view[i], buffer_view[i]+nAgents, agents_thrust_d[i]);
+    }
 
-    /*for(int i = 0; i < uniqueIds.size(); i++)*/
+    //allocate and store additional data
+    unsigned int uniqueIdsSize = uniqueIds.size();
+    GPUResource<bool> &validIds_d = boidGrid.getDeviceValidIds(); 
+    GPUResource<unsigned int> &uniqueIds_d = boidGrid.getDeviceUniqueIds(); 
+    GPUResource<unsigned int> &offsets_d = boidGrid.getDeviceOffsets(); 
+
+    uniqueIds_d.setSize(uniqueIdsSize);
+    uniqueIds_d.allocate();
+    offsets_d.setSize(uniqueIdsSize);
+    offsets_d.allocate();
+    validIds_d.setSize(nAgents);
+    validIds_d.allocate();
+        
+    thrust::copy(uniqueIds.begin(), uniqueIds.end(), uniqueIds_d.wrap());
+    thrust::copy(offsets.begin(), offsets.end(), offsets_d.wrap());
+    //thrust::copy(validIds.begin(), validIds.end(), validIds_d.wrap());
+   
+    for(int i = 0; i < uniqueIds.size(); i++)
         /*std::cout << uniqueIds[i] << " " << offsets[i] << std::endl;;*/
-    /*std::cout << std::endl;*/
+    std::cout << std::endl;
+}
 
+template <typename T>
+__host__ BoidMemoryView<T> computeThrustStep(BoidGrid<T> &boidGrid) {
+    
+    BoidMemoryView<T> outOfDomainBoids;
+
+    ThrustBoidMemoryView<T> agents_thrust_d(boidGrid.getBoidDeviceMemoryView());
+
+    return outOfDomainBoids;
 }
 
 
-template __host__ void initBoidGridThrustArrays<float>(const BoidGrid<float> &boidGrid, BoidMemoryView<float> &agents_h, 
-        BoidMemoryView<float> &agents_d, unsigned int nAgents);
-/*template __host__ void initBoidGridThrustArrays<double>(const BoidGrid<double> &boidGrid, BoidMemoryView<double> *agents_h, BoidMemoryView<double> *agents_d, unsigned int nAgents);*/
+// full specializations
+template __host__ void initBoidGridThrustArrays<float> (BoidGrid<float > &boidGrid);
+template __host__ void initBoidGridThrustArrays<double>(BoidGrid<double> &boidGrid);
+
+template __host__ BoidMemoryView<float> computeThrustStep<float>(BoidGrid<float> &boidGrid);
+template __host__ BoidMemoryView<double> computeThrustStep<double>(BoidGrid<double> &boidGrid);
 
 #endif
 

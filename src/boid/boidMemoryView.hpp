@@ -53,6 +53,10 @@ public:
     T* data() const {
         return ptrs[0];
     }
+    
+    unsigned int size() const {
+        return nAgents;
+    }
 
     T* operator[](unsigned int i) const {
         return ptrs[i];

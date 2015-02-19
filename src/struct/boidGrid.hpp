@@ -19,9 +19,11 @@ template <typename T>
 class BoidGrid;
 
 template <typename T>
-__HOST__ void initBoidGridThrustArrays(const BoidGrid<T> &boidGrid, 
-        BoidMemoryView<T> &agents_h, BoidMemoryView<T> &agents_d, 
-        unsigned int nAgents);
+__HOST__ void initBoidGridThrustArrays(BoidGrid<T> &boidGrid);
+
+template <typename T>
+__HOST__ BoidMemoryView<T> computeThrustStep(BoidGrid<T> &boidGrid);
+
 #endif
 
 template <typename T>
@@ -54,6 +56,8 @@ class BoidGrid : public LocalBoidDataStructure<T> {
 
     //Implementation specific
     public:
+        BoidMemoryView<T>& getBoidHostMemoryView();
+
         T getMaxRadius() const;
         T getDomainWidth() const;
         T getDomainLength() const;
@@ -79,10 +83,23 @@ class BoidGrid : public LocalBoidDataStructure<T> {
 
         const unsigned int nCells;
 
+
 #ifdef CUDA_ENABLED
+    protected:
         GPUResource<T> agents_d;
         BoidMemoryView<T> agents_view_d;
+
+        GPUResource<unsigned int> offsets_d;
+        GPUResource<unsigned int> uniqueIds_d;
+        GPUResource<bool> validIds_d;
+
+    public:
+        BoidMemoryView<T>& getBoidDeviceMemoryView();
+        GPUResource<unsigned int>& getDeviceOffsets();
+        GPUResource<unsigned int>& getDeviceUniqueIds();
+        GPUResource<bool>& getDeviceValidIds();
 #endif
+
 };
 
         
@@ -98,20 +115,30 @@ void BoidGrid<T>::init(const BoidMemoryView<T> &agent_h, unsigned int agentCount
     agents_d.allocate();
     agents_view_d = BoidMemoryView<T>(agents_d.data(), agentCount);
 
-    initBoidGridThrustArrays<T>(*this, this->agents_view_h, agents_view_d, agentCount);
+    initBoidGridThrustArrays<T>(*this);
+#else
+    NOT_IMPLEMENTED_YET;
 #endif
 }
         
 template <typename T>
 void BoidGrid<T>::feed(const BoidMemoryView<T> &agent_h, unsigned int agentCount) {
+#ifdef CUDA_ENABLED
     NOT_IMPLEMENTED_YET;
+#else
+    NOT_IMPLEMENTED_YET;
+#endif
 }
         
 //compute one step and return boids that went out the domain 
 //if keepBoidsInDomain is set to true, no boids are returned
 template <typename T>
 BoidMemoryView<T> BoidGrid<T>::computeLocalStep() {
+#ifdef CUDA_ENABLED
+    return computeThrustStep(*this);
+#else
     NOT_IMPLEMENTED_YET;
+#endif
 }
 
 template <typename T>
@@ -129,8 +156,15 @@ BoidGrid<T>::BoidGrid(unsigned int globalId,
     length(std::max(1,static_cast<int>(ceil(domainLength/maxRadius)))),
     height(std::max(1,static_cast<int>(ceil(domainHeight/maxRadius)))),
     boxSize(width, length, height),
-    nCells(width*length*height) {
-}
+    nCells(width*length*height)
+#ifdef CUDA_ENABLED 
+        ,agents_d(0,0),
+        agents_view_d(),
+        offsets_d(0,0),
+        uniqueIds_d(0,0),
+        validIds_d(0,0)
+#endif
+{}
 
 template <typename T>
 BoidGrid<T>::~BoidGrid() {
@@ -195,6 +229,33 @@ Vec3<T> BoidGrid<T>::relativePos(const Vec3<T> &pos) const {
             (pos.z - this->localDomain.min[2])/domainHeight
             );
 }
+
+template <typename T>
+BoidMemoryView<T>& BoidGrid<T>::getBoidHostMemoryView() {
+    return this->agents_view_h;
+}
+        
+#ifdef CUDA_ENABLED
+template <typename T>
+GPUResource<unsigned int>& BoidGrid<T>::getDeviceOffsets() {
+    return this->offsets_d;
+}
+
+template <typename T>
+GPUResource<unsigned int>& BoidGrid<T>::getDeviceUniqueIds() {
+    return this->uniqueIds_d;
+}
+    
+template <typename T>
+GPUResource<bool>& BoidGrid<T>::getDeviceValidIds() {
+    return this->validIds_d;
+}
+       
+template <typename T>
+BoidMemoryView<T>& BoidGrid<T>::getBoidDeviceMemoryView() {
+    return agents_view_d;
+}
+#endif
 
 template <typename T>
 T BoidGrid<T>::getMaxRadius() const {

@@ -1,6 +1,6 @@
 
-#include "cudaUtils.hpp"
 #include "utils.hpp"
+#include "cudaUtils.hpp"
 
 template <typename T>
 T* GPUMemory::malloc(unsigned long nData, int deviceId) {

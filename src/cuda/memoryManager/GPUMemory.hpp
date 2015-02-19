@@ -1,13 +1,10 @@
 
-#include <ostream>
-#include <cassert>
-#include "cuda.h"
-#include "cuda_runtime.h"
-
-#include "cudaUtils.hpp"
-
 #ifndef GPUMEMORY_H
 #define GPUMEMORY_H
+
+#include "headers.hpp"
+#include <ostream>
+#include <cassert>
 
 class GPUMemory {
 	public:

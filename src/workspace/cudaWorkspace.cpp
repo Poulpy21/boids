@@ -156,9 +156,8 @@ unsigned int CudaWorkspace::computeMaxAgentsAtInit(unsigned int deviceId) {
 #endif
 
 void CudaWorkspace::update() {
-
     log4cpp::log_console->debugStream() << "Computing step " << stepId;
-
+    boidDataStructure->computeLocalStep();
     stepId++;
 }
 

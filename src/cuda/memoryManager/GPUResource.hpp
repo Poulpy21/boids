@@ -1,6 +1,7 @@
 #ifndef GPURESSOURCE_H
 #define GPURESSOURCE_H
 
+#include "headers.hpp"
 #include <iostream>
 
 template <typename T>
@@ -27,6 +28,12 @@ public:
 	bool isGPUResource() const;
 	
 	const std::string getResourceType() const;
+
+#ifdef THRUST_ENABLED
+#ifdef __CUDACC__
+    thrust::device_ptr<T> wrap();
+#endif
+#endif
 
 protected:
 	T* _data;
