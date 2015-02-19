@@ -4,7 +4,7 @@
 #define BOID_GRID_H
 
 #include "headers.hpp"
-#include "boidDataStructure.hpp"
+#include "localBoidDataStructure.hpp"
 #include "boidMemoryView.hpp"
 #include "PinnedCPUResource.hpp"
 #include "vec3.hpp"
@@ -25,30 +25,35 @@ __HOST__ void initBoidGridThrustArrays(const BoidGrid<T> &boidGrid,
 #endif
 
 template <typename T>
-class BoidGrid : public BoidDataStructure<T> {
+class BoidGrid : public LocalBoidDataStructure<T> {
 
     public:
-        BoidGrid(const BoundingBox<3u, Real> &domain, Real maxRadius);
+        BoidGrid(unsigned int globalId,
+                const BoundingBox<3u, Real> &localDomain,
+                const BoundingBox<3u, Real> &globalDomain,
+                bool keepBoidsInGlobalDomain,
+                Real maxRadius);
         BoidGrid(const BoidGrid<T> &other);
         BoidGrid<T>& operator=(const BoidGrid<T> &other);
         ~BoidGrid();
-    
-        //initialize structure with given host boids
-        //All boids should initially be contained in the domain
+      
+    //Interface
+    public:
         void init(const BoidMemoryView<T> &agent_h, unsigned int agentCount) override;
-    
-        //compute one step and return boids that went out the domain 
-        //if keepBoidsInDomain is set to true, no boids are returned
-        BoidMemoryView<T> computeStep(bool keepBoidsInDomain) override;
+        void feed(const BoidMemoryView<T> &agent_h, unsigned int agentCount) override; 
+        BoidMemoryView<T> computeLocalStep() override; 
 
-        unsigned int          getTotalAgentCount() const override;
-        unsigned int          getAgentCount(unsigned int cellId)    const override;
-        T*                    getAgentArray(unsigned int cellId)    const override;
-        PinnedCPUResource<T>  getAgentResource(unsigned int cellId) const;
+        unsigned int getLocalAgentCount(unsigned int localCellId) const override;
+        bool isLocalCellAtCorner(unsigned int localCellId) const override;
 
-        unsigned int getCellId    (const Vec3<T> &pos) const override;
-        std::vector<unsigned int> getNeighborCellIds(unsigned int cellId) const override;
+    protected:
+        unsigned int getLocalCellId(const Vec3<T> &pos) const override;
+        NeighborIds& getGlobalNeighborCellIds(unsigned int globalCellId) const override;
+        BoidMemoryView<T> getLocalHostAgentsArray(unsigned int localCellId) const override;
+  
 
+    //Implementation specific
+    public:
         T getMaxRadius() const;
         T getDomainWidth() const;
         T getDomainLength() const;
@@ -61,12 +66,11 @@ class BoidGrid : public BoidDataStructure<T> {
 
         std::string toString() const;
 
-    private:
-
-        unsigned int makeId(unsigned int x, unsigned int y, unsigned int z) const;
+    protected:
         Vec3<T> relativePos(const Vec3<T> &pos) const;
+        unsigned int makeLocalId(unsigned int x, unsigned int y, unsigned int z) const;
 
-    private:
+    protected:
         const T maxRadius;
 
         const T domainWidth, domainLength, domainHeight;
@@ -75,48 +79,17 @@ class BoidGrid : public BoidDataStructure<T> {
 
         const unsigned int nCells;
 
-        unsigned int agentCount;
-
-        PinnedCPUResource<T> agents_h;
-        BoidMemoryView<T> agents_view_h;
-
 #ifdef CUDA_ENABLED
         GPUResource<T> agents_d;
         BoidMemoryView<T> agents_view_d;
 #endif
 };
 
-template <typename T>
-std::ostream& operator<<(std::ostream &os, const BoidGrid<T> &grid) {
-    os << grid.toString();
-    return os;
-}
-        
-template <typename T>
-std::string BoidGrid<T>::toString() const {
-    std::stringstream ss;
-
-    ss << "BoidGrid<";
-#ifndef __CUDACC__
-    utils::templatePrettyPrint<T>(ss);
-#endif
-    ss << ">";
-
-    ss << "\n\tMax radius : " << getMaxRadius();
-    ss << "\n\tDomain: min " << this->domain.min << "\t max " << this->domain.max;
-    ss << "\n\tBox   : " << getBoxSize();
-    ss << "\n\tCells : " << getCellsCount();
-
-    return ss.str();
-}
         
 template <typename T>
 void BoidGrid<T>::init(const BoidMemoryView<T> &agent_h, unsigned int agentCount) {
-    
-    log4cpp::log_console->infoStream() << "Initializing Boid Grid with " << agentCount << " boids !";
-
-    agents_h = PinnedCPUResource<T>(agent_h.data(), 10u*agentCount, false);
-    agents_view_h = agent_h;
+    this->agents_h = PinnedCPUResource<T>(agent_h.data(), 10u*agentCount, false);
+    this->agents_view_h = agent_h;
 
 #ifdef CUDA_ENABLED
     this->agentCount = agentCount;
@@ -125,16 +98,102 @@ void BoidGrid<T>::init(const BoidMemoryView<T> &agent_h, unsigned int agentCount
     agents_d.allocate();
     agents_view_d = BoidMemoryView<T>(agents_d.data(), agentCount);
 
-    initBoidGridThrustArrays<T>(*this, agents_view_h, agents_view_d, agentCount);
+    initBoidGridThrustArrays<T>(*this, this->agents_view_h, agents_view_d, agentCount);
 #endif
+}
+        
+template <typename T>
+void BoidGrid<T>::feed(const BoidMemoryView<T> &agent_h, unsigned int agentCount) {
+    NOT_IMPLEMENTED_YET;
 }
         
 //compute one step and return boids that went out the domain 
 //if keepBoidsInDomain is set to true, no boids are returned
 template <typename T>
-BoidMemoryView<T> BoidGrid<T>::computeStep(bool keepBoidsInDomain) {
-    BoidMemoryView<T> outofDomainBoids_h;
-    return outofDomainBoids_h;
+BoidMemoryView<T> BoidGrid<T>::computeLocalStep() {
+    NOT_IMPLEMENTED_YET;
+}
+
+template <typename T>
+BoidGrid<T>::BoidGrid(unsigned int globalId,
+                const BoundingBox<3u, Real> &localDomain,
+                const BoundingBox<3u, Real> &globalDomain,
+                bool keepBoidsInGlobalDomain,
+                Real maxRadius) :
+    LocalBoidDataStructure<T>(globalId, localDomain, globalDomain, keepBoidsInGlobalDomain),
+    maxRadius(maxRadius),
+    domainWidth (localDomain.max[0] - localDomain.min[0]),
+    domainLength(localDomain.max[1] - localDomain.min[1]),
+    domainHeight(localDomain.max[2] - localDomain.min[2]),
+    width (std::max(1,static_cast<int>(ceil(domainWidth /maxRadius)))),
+    length(std::max(1,static_cast<int>(ceil(domainLength/maxRadius)))),
+    height(std::max(1,static_cast<int>(ceil(domainHeight/maxRadius)))),
+    boxSize(width, length, height),
+    nCells(width*length*height) {
+}
+
+template <typename T>
+BoidGrid<T>::~BoidGrid() {
+}
+
+template <typename T>
+BoidGrid<T>::BoidGrid(const BoidGrid<T> &other) :
+    LocalBoidDataStructure<T>(other),
+    maxRadius(0),
+    domainWidth (0),
+    domainLength(0),
+    domainHeight(0),
+    width (0),
+    length(0),
+    height(0),
+    boxSize(0),
+    nCells(0) {
+        throw std::logic_error("Cannot copy a BoidGrid.");
+    }
+
+template <typename T>
+BoidGrid<T>& BoidGrid<T>::operator=(const BoidGrid<T> &other) {
+    throw std::logic_error("Cannot copy a BoidGrid.");
+}
+
+template <typename T>
+unsigned int BoidGrid<T>::getLocalAgentCount(unsigned int cellId) const {
+    NOT_IMPLEMENTED_YET;
+}
+        
+template <typename T>
+bool BoidGrid<T>::isLocalCellAtCorner(unsigned int localCellId) const {
+    NOT_IMPLEMENTED_YET;
+}
+
+template <typename T>
+BoidMemoryView<T> BoidGrid<T>::getLocalHostAgentsArray(unsigned int cellId) const {
+    NOT_IMPLEMENTED_YET;
+}
+
+template <typename T>
+unsigned int BoidGrid<T>::getLocalCellId(const Vec3<T> &pos) const {
+    Vec3<float> relPos = relativePos(pos);
+    return makeLocalId(relPos.x * boxSize.x, relPos.y * boxSize.y, relPos.z * boxSize.z);
+}
+        
+template <typename T>
+NeighborIds& BoidGrid<T>::getGlobalNeighborCellIds(unsigned int globalCellId) const {
+    NOT_IMPLEMENTED_YET;
+}
+
+template <typename T>
+unsigned int BoidGrid<T>::makeLocalId(unsigned int x, unsigned int y, unsigned int z) const {
+    return (width*length*z + width*y + x);
+}
+
+template <typename T>
+Vec3<T> BoidGrid<T>::relativePos(const Vec3<T> &pos) const {
+    return Vec3<T>(
+            (pos.x - this->localDomain.min[0])/domainWidth,
+            (pos.y - this->localDomain.min[1])/domainLength,
+            (pos.z - this->localDomain.min[2])/domainHeight
+            );
 }
 
 template <typename T>
@@ -174,96 +233,29 @@ Vec3<unsigned int> BoidGrid<T>::getBoxSize() const {
     return boxSize;
 }
 
-
 template <typename T>
-BoidGrid<T>::BoidGrid(const BoundingBox<3u, Real> &domain, Real maxRadius) :
-    BoidDataStructure<T>(domain),
-    maxRadius(maxRadius),
-    domainWidth (domain.max[0] - domain.min[0]),
-    domainLength(domain.max[1] - domain.min[1]),
-    domainHeight(domain.max[2] - domain.min[2]),
-    width (std::max(1,static_cast<int>(ceil(domainWidth /maxRadius)))),
-    length(std::max(1,static_cast<int>(ceil(domainLength/maxRadius)))),
-    height(std::max(1,static_cast<int>(ceil(domainHeight/maxRadius)))),
-    boxSize(width, length, height),
-    nCells(width*length*height),
-    agentCount(0u)
-{
+std::ostream& operator<<(std::ostream &os, const BoidGrid<T> &grid) {
+    os << grid.toString();
+    return os;
 }
-
+        
 template <typename T>
-BoidGrid<T>::~BoidGrid() {
-}
+std::string BoidGrid<T>::toString() const {
+    std::stringstream ss;
 
-template <typename T>
-BoidGrid<T>::BoidGrid(const BoidGrid<T> &other) :
-    BoidDataStructure<T>(other),
-    maxRadius(0),
-    domainWidth (0),
-    domainLength(0),
-    domainHeight(0),
-    width (0),
-    length(0),
-    height(0),
-    boxSize(0),
-    nCells(0),
-    agentCount(0) {
-    throw std::logic_error("Cannot copy a BoidGrid.");
-}
+    ss << "BoidGrid<";
+#ifndef __CUDACC__
+    utils::templatePrettyPrint<T>(ss);
+#endif
+    ss << ">";
+    ss << "\n\tGlobal domain id: " << this->getGlobalId();
+    ss << "\n\tGlobal domain: min " << this->globalDomain.min << "\t max " << this->globalDomain.max;
+    ss << "\n\tLocal domain: min " << this->localDomain.min << "\t max " << this->localDomain.max;
+    ss << "\n\tBox   : " << getBoxSize();
+    ss << "\n\tCells : " << getCellsCount();
+    ss << "\n\tMax radius : " << getMaxRadius();
 
-template <typename T>
-BoidGrid<T>& BoidGrid<T>::operator=(const BoidGrid<T> &other) {
-    throw std::logic_error("Cannot copy a BoidGrid.");
-}
-
-template <typename T>
-unsigned int BoidGrid<T>::getTotalAgentCount() const {
-    return agentCount;
-}
-
-template <typename T>
-unsigned int BoidGrid<T>::getAgentCount(unsigned int cellId) const {
-    //return agents_h[cellId].size();
-    //TODO
-    return 0;
-}
-
-template <typename T>
-T* BoidGrid<T>::getAgentArray(unsigned int cellId) const {
-    //return agents_h[cellId].data();
-    //TODO
-    return 0;
-}
-
-template <typename T>
-PinnedCPUResource<T> BoidGrid<T>::getAgentResource(unsigned int cellId) const {
-    return agents_h[cellId];
-}
-
-template <typename T>
-unsigned int BoidGrid<T>::getCellId(const Vec3<T> &pos) const {
-    Vec3<float> relPos = relativePos(pos);
-    return makeId(relPos.x * boxSize.x, relPos.y * boxSize.y, relPos.z * boxSize.z);
-}
-
-template <typename T>
-std::vector<unsigned int> BoidGrid<T>::getNeighborCellIds(unsigned int cellId) const {
-    std::vector<unsigned int> neighbors;
-    return neighbors;
-}
-
-template <typename T>
-unsigned int BoidGrid<T>::makeId(unsigned int x, unsigned int y, unsigned int z) const {
-    return (width*length*z + width*y + x);
-}
-
-template <typename T>
-Vec3<T> BoidGrid<T>::relativePos(const Vec3<T> &pos) const {
-    return Vec3<T>(
-            (pos.x - this->domain.min[0])/domainWidth,
-            (pos.y - this->domain.min[1])/domainLength,
-            (pos.z - this->domain.min[2])/domainHeight
-            );
+    return ss.str();
 }
         
 

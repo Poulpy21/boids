@@ -45,6 +45,16 @@ struct BoundingBox {
 };
 
 template <unsigned int D, typename A>
+bool operator== (const BoundingBox<D,A> &a, const BoundingBox<D,A> &b) {
+    return (a.min == b.min) && (a.max == b.max); 
+}
+
+template <unsigned int D, typename A>
+bool operator!= (const BoundingBox<D,A> &a, const BoundingBox<D,A> &b) {
+    return (a.min != b.min) || (a.max != b.max); 
+}
+
+template <unsigned int D, typename A>
  BoundingBox<D,A>::BoundingBox() : min(), max() {}
 
 template <unsigned int D, typename A>

@@ -14,13 +14,13 @@
 #include "devicePool.hpp"
 #include "initBounds.hpp"
 #include "boidMemoryView.hpp"
-#include "boidDataStructure.hpp"
+#include "localBoidDataStructure.hpp"
 
 class CudaWorkspace {
 
     public:
         CudaWorkspace(const Options &options, const InitBounds<Real> &initBounds, 
-                BoidDataStructure<Real> *boidDataStructure, unsigned int nStreamsPerDevice = 2u);
+                LocalBoidDataStructure<Real> *boidDataStructure, unsigned int nStreamsPerDevice = 2u);
 
         void update();
 
@@ -28,8 +28,6 @@ class CudaWorkspace {
         void initStreams();
         void initSymbols();
         void initBoids();
-        
-        void sortBoids();
         
         void computeAndApplyForces(Container &receivedMeanAgents, std::vector<int> &receivedMeanAgentsWeights);
         
@@ -39,13 +37,13 @@ class CudaWorkspace {
     
     private:
         
-
         const Options options;
         const InitBounds<Real> initBounds;
-        BoidDataStructure<Real>* const boidDataStructure;
+        LocalBoidDataStructure<Real>* const boidDataStructure;
         const unsigned int nStreamsPerDevice;
 
-        unsigned int nAgents, agentsPerKernel, nKernels;
+        unsigned int nAgents;
+        unsigned int stepId;
         
         std::vector<std::vector<cudaStream_t>> streams;
    

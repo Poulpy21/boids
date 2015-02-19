@@ -32,14 +32,19 @@
 #define constexpr
 #define nullptr 0
 #endif
-    
+
+//TODO remove this part //
 #ifdef GUI_ENABLED
 #define RENDETREE ,public RenderTree
 #define RENDETREE_ONLY : public RenderTree
 #endif
+// TODO //
 
 #define STRINGIFY(X) #X
 #define STRINGIFY_MACRO(X) STRINGIFY(X)
+
+//#define NOT_IMPLEMENTED_YET { throw std::runtime_error("Function not implemented yet in file " __FILE__ ":" __LINE__ "."); }
+#define NOT_IMPLEMENTED_YET { throw std::runtime_error("Function not implemented yet in file !"); }
 
 //System reserved memory in MB
 #define _CPU_MIN_RESERVED_MEMORY 256ul*1024ul*1024ul

@@ -16,8 +16,8 @@ struct ComputeCellFunctor
     
     ComputeCellFunctor(const BoidGrid<T> &boidGrid) :
         width(boidGrid.getWidth()), length(boidGrid.getLength()), height(boidGrid.getHeight()),
-        xmin(boidGrid.getDomain().min[0]), ymin(boidGrid.getDomain().min[1]), zmin(boidGrid.getDomain().min[2]),
-        xmax(boidGrid.getDomain().max[0]), ymax(boidGrid.getDomain().max[2]), zmax(boidGrid.getDomain().max[2]),
+        xmin(boidGrid.getLocalDomain().min[0]), ymin(boidGrid.getLocalDomain().min[1]), zmin(boidGrid.getLocalDomain().min[2]),
+        xmax(boidGrid.getLocalDomain().max[0]), ymax(boidGrid.getLocalDomain().max[2]), zmax(boidGrid.getLocalDomain().max[2]),
         radius(boidGrid.getMaxRadius()) {
     }
 

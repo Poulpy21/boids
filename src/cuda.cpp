@@ -53,16 +53,15 @@ void compute(int argc, char **argv) {
 
     // Add options to parser
     ArgumentParser parser;
-    //parser.addOption("agents", 100000000);
-    parser.addOption("agents", 1000);
-    parser.addOption("steps", 1000);
+    parser.addOption("agents", 10000);
+    parser.addOption("steps", 1);
     parser.addOption("wc", 12);
     parser.addOption("wa", 15);
     parser.addOption("ws", 35);
 
     parser.addOption("rc", 0.11);
     parser.addOption("ra", 0.15);
-    parser.addOption("rs", 0.1);
+    parser.addOption("rs", 0.01);
     parser.addOption("dt", 0.05);
     parser.addOption("mv", 2.0);
 
@@ -87,18 +86,33 @@ void compute(int argc, char **argv) {
     //Create data structure
     Real maxRadius = std::max<Real>(options.rCohesion, std::max<Real>(options.rAlignment, options.rSeparation));
 
-    BoidGrid<Real> *grid = new BoidGrid<Real>(domain, maxRadius);
+    BoidGrid<Real> *grid = new BoidGrid<Real>(0u, domain, domain, true, maxRadius);
     std::cout << ":: Data structure used ::" <<std::endl;
     std::cout << *grid << std::endl;
     std::cout << std::endl;
    
     
     // Create workspace and simulate
+    std::cout << "\n:: Initializing workspace...\n\n";
     CudaWorkspace workspace(options, initBounds, grid);
 
-    for (unsigned long int step = 1; step <= options.nSteps; step++) {
+    std::cout << "\n:: Computing...\n\n";
+    unsigned int nSteps = options.nSteps;
+    for (unsigned long int step = 1; step <= nSteps; step++) {
+        if(nSteps < 10u || step == nSteps) {
+            std::cout << "Step " << step << "/" << nSteps << " (" 
+            << 100*static_cast<float>(step)/nSteps << "%)" << std::endl;
+        }
+        else if(step == 1) {
+            std::cout << "Step " << step << "/" << nSteps << " (0%)" << std::endl;
+        }
+        else if((step % (nSteps/10u)) == 0) {
+            std::cout << "Step " << step << "/" << nSteps << " (" 
+            << (10u*step)/nSteps*10u << "%)" << std::endl;
+        }
         workspace.update();
     }
+    std::cout << "\n:: Computing done !\n\n";
 
     delete grid;
 }

@@ -129,6 +129,7 @@
 #endif
 // end NVCC proof
 
+#include <exception> //for NOT_IMPLEMENTED_YET macro
 
 #endif /* end of include guard: HEADERS_H */
 

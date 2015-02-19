@@ -16,15 +16,13 @@
 
 
 CudaWorkspace::CudaWorkspace(const Options &options, const InitBounds<Real> &initBounds, 
-                BoidDataStructure<Real> *boidDataStructure, unsigned int nStreamsPerDevice) :
+                LocalBoidDataStructure<Real> *boidDataStructure, unsigned int nStreamsPerDevice) :
     options(options), initBounds(initBounds), 
     boidDataStructure(boidDataStructure), nStreamsPerDevice(nStreamsPerDevice),
-    nAgents(0u), agentsPerKernel(0u), nKernels(0u)
+    nAgents(0u), stepId(1u)
 {
 
     nAgents = options.nAgents;
-    agentsPerKernel = 1024u;
-    nKernels = (nAgents + agentsPerKernel - 1u)/agentsPerKernel;
     
     initStreams();
     initSymbols();
@@ -85,6 +83,11 @@ void CudaWorkspace::initBoids() {
     agents_view_h = BoidMemoryView<Real>(agents_h.data(), nAgents);
    
 #ifdef CURAND_ENABLED
+    std::cout << std::endl;
+    std::cout << ":: Initializing " << nAgents << " boids with Curand !";
+    std::cout << std::endl;
+    std::cout << std::endl;
+   
     unsigned int agentsToInitialize = nAgents;
     unsigned int deviceId = 0u, devAgents = 0u, i = 0u, offset = 0u; 
     std::vector<unsigned int> devMaxAgents;
@@ -105,12 +108,12 @@ void CudaWorkspace::initBoids() {
             random_d[i]->allocate();
             agents_d[i]->allocate();
 
-            log4cpp::log_console->debugStream() << "Device " << i << " can allocate " << devMaxAgents[i] << " boids !";
+            log4cpp::log_console->debugStream() << "\tDevice " << i << " can allocate " << devMaxAgents[i] << " boids !";
         }
 
         devAgents = std::min(devMaxAgents[deviceId], agentsToInitialize);
 
-        log4cpp::log_console->infoStream() << "Device " << deviceId << " allocating " << devAgents << " boids !";
+        log4cpp::log_console->infoStream() << "\tDevice " << deviceId << " allocating " << devAgents << " boids !";
 
         curandGenerator_t generator;
         unsigned long long int seed = Random::randl();
@@ -137,6 +140,11 @@ void CudaWorkspace::initBoids() {
         delete resource;
 #else
     //TODO CURAND NOT PRESENT - CPU GENERATION
+    std::cout << std::endl;
+    std::cout << "Initializing " << nAgents << " boids with CPU !";
+    std::cout << std::endl;
+    std::cout << std::endl;
+    NOT_IMPLEMENTED_YET;
 #endif
 }
 
@@ -147,10 +155,11 @@ unsigned int CudaWorkspace::computeMaxAgentsAtInit(unsigned int deviceId) {
 }
 #endif
 
-
-
 void CudaWorkspace::update() {
 
+    log4cpp::log_console->debugStream() << "Computing step " << stepId;
+
+    stepId++;
 }
 
 void CudaWorkspace::computeAndApplyForces(Container &receivedMeanAgents, std::vector<int> &receivedMeanAgentsWeights) {
