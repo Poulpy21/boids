@@ -89,15 +89,17 @@ class BoidGrid : public LocalBoidDataStructure<T> {
         GPUResource<T> agents_d;
         BoidMemoryView<T> agents_view_d;
 
-        GPUResource<unsigned int> offsets_d;
         GPUResource<unsigned int> uniqueIds_d;
-        GPUResource<bool> validIds_d;
+        GPUResource<unsigned int> count_d;
+        GPUResource<unsigned int> offsets_d;
+        GPUResource<int> validIds_d;
 
     public:
         BoidMemoryView<T>& getBoidDeviceMemoryView();
-        GPUResource<unsigned int>& getDeviceOffsets();
         GPUResource<unsigned int>& getDeviceUniqueIds();
-        GPUResource<bool>& getDeviceValidIds();
+        GPUResource<unsigned int>& getDeviceCount();
+        GPUResource<unsigned int>& getDeviceOffsets();
+        GPUResource<int>& getDeviceValidIds();
 #endif
 
 };
@@ -160,8 +162,9 @@ BoidGrid<T>::BoidGrid(unsigned int globalId,
 #ifdef CUDA_ENABLED 
         ,agents_d(0,0),
         agents_view_d(),
-        offsets_d(0,0),
         uniqueIds_d(0,0),
+        count_d(0,0),
+        offsets_d(0,0),
         validIds_d(0,0)
 #endif
 {}
@@ -247,8 +250,13 @@ GPUResource<unsigned int>& BoidGrid<T>::getDeviceUniqueIds() {
 }
     
 template <typename T>
-GPUResource<bool>& BoidGrid<T>::getDeviceValidIds() {
+GPUResource<int>& BoidGrid<T>::getDeviceValidIds() {
     return this->validIds_d;
+}
+        
+template <typename T>
+GPUResource<unsigned int>& BoidGrid<T>::getDeviceCount() {
+    return this->count_d;
 }
        
 template <typename T>

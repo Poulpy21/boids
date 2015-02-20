@@ -92,6 +92,10 @@
 #include <thrust/sort.h>
 #include <thrust/replace.h>
 #include <thrust/functional.h>
+#include <thrust/adjacent_difference.h>
+#include <thrust/execution_policy.h>
+#include <thrust/scatter.h>
+#include <thrust/gather.h>
 //#endif
 #endif
 
