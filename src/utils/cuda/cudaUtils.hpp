@@ -10,6 +10,7 @@
 #define CHECK_KERNEL_EXECUTION(ans) { checkKernelExecution(); }
 
 namespace utils {
+    std::string toStringDim(const dim3 &dim);
     void printCudaDevices(std::ostream &outputStream);
     void logCudaDevices(log4cpp::Category &log_output);
     int SMVersionToCores(unsigned int major, unsigned int minor);

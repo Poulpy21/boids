@@ -96,6 +96,7 @@ class BoidGrid : public LocalBoidDataStructure<T> {
 
     public:
         BoidMemoryView<T>& getBoidDeviceMemoryView();
+        GPUResource<T>& getDeviceBoids();
         GPUResource<unsigned int>& getDeviceUniqueIds();
         GPUResource<unsigned int>& getDeviceCount();
         GPUResource<unsigned int>& getDeviceOffsets();
@@ -262,6 +263,10 @@ GPUResource<unsigned int>& BoidGrid<T>::getDeviceCount() {
 template <typename T>
 BoidMemoryView<T>& BoidGrid<T>::getBoidDeviceMemoryView() {
     return agents_view_d;
+}
+template <typename T>
+GPUResource<T>& BoidGrid<T>::getDeviceBoids() {
+    return this->agents_d;
 }
 #endif
 

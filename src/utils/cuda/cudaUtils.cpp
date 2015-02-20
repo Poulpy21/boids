@@ -52,6 +52,12 @@ namespace utils {
 
         outputStream << "======================" << std::endl;
     }
+    
+    std::string toStringDim(const dim3 &dim) {
+        std::stringstream ss;
+        ss << "(" << dim.x << "," << dim.y << "," << dim.z << ")";
+        return ss.str();
+    }
 
     void logCudaDevices(log4cpp::Category &log_output) {
         int nDevices;

@@ -74,6 +74,10 @@ struct ThrustVectorMemoryView {
         unsigned int size() const {
             return _size;
         }
+        
+        T* data() const {
+            return ptrs[0].get();
+        }
 };
 #endif /* end of include guard: THRUSTVECTORMEMORYVIEW_H */
 #endif 

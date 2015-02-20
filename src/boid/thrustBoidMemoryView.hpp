@@ -13,12 +13,12 @@ template <typename T>
 struct ThrustBoidMemoryView {
 
 public:
-    size_t nAgents;
-    thrust::device_ptr<T> & x,  &y,  &z;
+    thrust::device_ptr<T> &x,  &y,  &z;
     thrust::device_ptr<T> &vx,  &vy, &vz;
     thrust::device_ptr<T> &ax,  &ay, &az;
     thrust::device_ptr<unsigned int> &id;
 private:
+    size_t nAgents;
     thrust::device_ptr<T> ptrs[9];
     thrust::device_ptr<unsigned int> cellId;
 
@@ -35,7 +35,7 @@ public:
             }
     }
     
-    ThrustBoidMemoryView(T* a, size_t nAgents) :
+    ThrustBoidMemoryView(const T* a, size_t nAgents) :
         nAgents(nAgents),
          x(*(ptrs+0)),  y(*(ptrs+1)),  z(*(ptrs+2)), 
         vx(*(ptrs+3)), vy(*(ptrs+4)), vz(*(ptrs+5)), 
@@ -45,7 +45,7 @@ public:
             for (unsigned int i = 0; i < 9; i++) {
                 ptrs[i] = thrust::device_ptr<T>(a + i*nAgents);
             }
-            cellId = thrust::device_ptr<unsigned int>(a + 9*nAgents);
+            cellId = thrust::device_ptr<unsigned int>(a + 9u*nAgents);
         }
     
     ThrustBoidMemoryView(const BoidMemoryView<T> &memView) :

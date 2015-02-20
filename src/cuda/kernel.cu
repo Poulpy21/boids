@@ -131,12 +131,6 @@ namespace kernel {
     }
 
 
-    std::string toStringDim(const dim3 &dim) {
-        std::stringstream ss;
-        ss << "(" << dim.x << "," << dim.y << "," << dim.z << ")";
-        return ss.str();
-    }
-
     __launch_bounds__(MAX_THREAD_PER_BLOCK)
         __global__ void initializeBoids(const unsigned int nBoids, float *rand, Real* agents) {
 
@@ -155,8 +149,8 @@ namespace kernel {
         dim3 dimBlock(MAX_THREAD_PER_BLOCK);
         dim3 dimGrid((unsigned int)ceil(nReals/MAX_THREAD_PER_BLOCK) % 65535, ceil(nReals/(MAX_THREAD_PER_BLOCK*65535.0f)));
         log4cpp::log_console->infoStream() << "[KERNEL::InitializeBoids] <<<" 
-            << toStringDim(dimBlock) << ", " 
-            << toStringDim(dimGrid)
+            << utils::toStringDim(dimBlock) << ", " 
+            << utils::toStringDim(dimGrid)
             << ">>>";
 
         initializeBoids<<<dimGrid,dimBlock>>>(nBoids, rand_d, agents_d);
@@ -203,30 +197,30 @@ namespace kernel {
 
         /*}*/
 
-#ifdef THRUST_ENABLED
-    void thrustSort(Real *agents_d, unsigned int nAgents) {
+//#ifdef THRUST_ENABLED
+    //void thrustSort(Real *agents_d, unsigned int nAgents) {
     
-        log4cpp::log_console->infoStream() << "Sorting agents with thrust...";
+        //log4cpp::log_console->infoStream() << "Sorting agents with thrust...";
 
-        thrust::device_ptr<Real> agents_d_ptr[9u];
-        for(unsigned int i = 0u; i < 9u; i++)
-            agents_d_ptr[i] = thrust::device_ptr<Real>(agents_d+i*nAgents);
+        //thrust::device_ptr<Real> agents_d_ptr[9u];
+        //for(unsigned int i = 0u; i < 9u; i++)
+            //agents_d_ptr[i] = thrust::device_ptr<Real>(agents_d+i*nAgents);
 
 
-        thrust::device_vector<unsigned int> keys(nAgents);
-        thrust::sequence(keys.begin(), keys.end());
+        //thrust::device_vector<unsigned int> keys(nAgents);
+        //thrust::sequence(keys.begin(), keys.end());
 
-        for(int i = 2; i >= 0; i--) {
-            thrust::stable_sort_by_key(agents_d_ptr[i], agents_d_ptr[i] + nAgents, keys.begin(), thrust::less<Real>());
-        }
+        //for(int i = 2; i >= 0; i--) {
+            //thrust::stable_sort_by_key(agents_d_ptr[i], agents_d_ptr[i] + nAgents, keys.begin(), thrust::less<Real>());
+        //}
         
-        for(unsigned int i = 0u; i < 9u; i++) {
-            thrust::stable_sort_by_key(keys.begin(), keys.end(), agents_d_ptr[i]);
-        }
+        //for(unsigned int i = 0u; i < 9u; i++) {
+            //thrust::stable_sort_by_key(keys.begin(), keys.end(), agents_d_ptr[i]);
+        //}
 
 
-        thrust::copy(keys.begin(), keys.end(), std::ostream_iterator<Real>(std::cout, " "));
-    }
-#endif
+        //thrust::copy(keys.begin(), keys.end(), std::ostream_iterator<Real>(std::cout, " "));
+    //}
+//#endif
     
 }

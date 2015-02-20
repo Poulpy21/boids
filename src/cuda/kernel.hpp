@@ -4,6 +4,7 @@
 
 #include "headers.hpp"
 #include "initBounds.hpp"
+#include "vector.hpp"
 
 #ifdef CUDA_ENABLED
 

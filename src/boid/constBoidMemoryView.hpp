@@ -1,27 +1,26 @@
 
-#ifndef BOIDMEMORYVIEW_H
-#define BOIDMEMORYVIEW_H
+#ifndef CONSTBOIDMEMORYVIEW_H
+#define CONSTBOIDMEMORYVIEW_H
 
 #include "headers.hpp"
-#include "vectorMemoryView.hpp"
-#include "constBoidMemoryView.hpp"
+#include "constVectorMemoryView.hpp"
 
 template <typename T> 
-struct BoidMemoryView {
+struct ConstBoidMemoryView {
 
     private:
         size_t _size;
-        VectorMemoryView<T> position, velocity, acceleration;
-        unsigned int *cellId;
+        ConstVectorMemoryView<T> position, velocity, acceleration;
+        unsigned int const *cellId;
 
     public:
-        T *&x, *&y, *&z;
-        T *&vx,  *&vy,  *&vz;
-        T *&ax,  *&ay,  *&az;
-        unsigned int *&id;
+        T const *&x, *&y, *&z;
+        T const *&vx,  *&vy,  *&vz;
+        T const *&ax,  *&ay,  *&az;
+        unsigned int const *&id;
 
     public:
-        __HOST__ __DEVICE__ BoidMemoryView() :
+        __HOST__ __DEVICE__ ConstBoidMemoryView() :
             _size(0),
             position(), velocity(), acceleration(), cellId(nullptr), 
             x(position.x),  y(position.y),  z(position.z), 
@@ -30,17 +29,17 @@ struct BoidMemoryView {
             id(cellId) {
             }
 
-        __HOST__ __DEVICE__ BoidMemoryView(T* a, size_t nAgents) :
+        __HOST__ __DEVICE__ ConstBoidMemoryView(T const *const a, size_t nAgents) :
             _size(nAgents), 
             position(a,_size), velocity(a+3*_size,_size), acceleration(a+6*_size,_size), 
-            cellId(reinterpret_cast<unsigned int*>(a+9*_size)),
+            cellId(reinterpret_cast<unsigned int const *>(a+9u*_size)),
             x(position.x),  y(position.y),  z(position.z), 
             vx(velocity.x), vy(velocity.y), vz(velocity.z), 
             ax(acceleration.x), ay(acceleration.y), az(acceleration.z),
             id(cellId) {
             }
 
-        __HOST__ __DEVICE__ BoidMemoryView<T>& operator=(const BoidMemoryView<T> &other) {
+        __HOST__ __DEVICE__ ConstBoidMemoryView<T>& operator=(const ConstBoidMemoryView<T> &other) {
             _size = other.size();
             position = other.pos();
             velocity = other.vel();
@@ -49,7 +48,7 @@ struct BoidMemoryView {
             return *this;
         }
 
-        __HOST__ __DEVICE__ T* data() const {
+        __HOST__ __DEVICE__ T const * data() const {
             return position.data();
         }
 
@@ -57,19 +56,19 @@ struct BoidMemoryView {
             return _size;
         }
 
-        __HOST__ __DEVICE__ VectorMemoryView<T> pos() const {
+        __HOST__ __DEVICE__ ConstVectorMemoryView<T> pos() const {
             return position;
         }
 
-        __HOST__ __DEVICE__ VectorMemoryView<T> vel() const {
+        __HOST__ __DEVICE__ ConstVectorMemoryView<T> vel() const {
             return velocity;
         }
 
-        __HOST__ __DEVICE__ VectorMemoryView<T> acc() const {
+        __HOST__ __DEVICE__ ConstVectorMemoryView<T> acc() const {
             return acceleration;
         }
 
-        __HOST__ __DEVICE__ T* operator[](unsigned int i) const {
+        __HOST__ __DEVICE__ T const * operator[](unsigned int i) const {
             unsigned int k = i/3;
             unsigned int r = i%3;
 
