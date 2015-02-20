@@ -1,11 +1,6 @@
 
 #include <cassert>
 #include <iostream>
-#include "cuda.h"
-#include "cuda_runtime.h"
-
-#include "cudaUtils.hpp"
-#include "GPUMemory.hpp"
 
 template <typename T>
 GPUResource<T>::GPUResource(int device, unsigned long size) :
@@ -120,11 +115,9 @@ void GPUResource<T>::setSize(unsigned long size) {
 }
 
 #ifdef THRUST_ENABLED
-#ifdef __CUDACC__
 template <typename T>
     thrust::device_ptr<T> GPUResource<T>::wrap() {
         return thrust::device_ptr<T>(this->data());
     }
-#endif
 #endif
 

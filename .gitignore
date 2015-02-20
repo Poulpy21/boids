@@ -18,6 +18,8 @@ Makefile
 program.log
 lib
 debug
+release
+
 .exrc
 *.o
 *.xyz

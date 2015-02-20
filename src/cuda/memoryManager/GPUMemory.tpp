@@ -1,7 +1,4 @@
 
-#include "utils.hpp"
-#include "cudaUtils.hpp"
-
 template <typename T>
 T* GPUMemory::malloc(unsigned long nData, int deviceId) {
 
@@ -14,8 +11,8 @@ T* GPUMemory::malloc(unsigned long nData, int deviceId) {
 		}
 	}
 	
-	if(_memoryLeft[deviceId] < nData * sizeof(T)) {
-		log4cpp::log_console->errorStream() << "Trying to allocate " << utils::toStringMemory(nData*sizeof(T))	<< " on device " << deviceId << " which has only " << utils::toStringMemory(_memoryLeft[deviceId]) << " left !";
+	if(GPUMemory::_memoryLeft[deviceId] < nData * sizeof(T)) {
+		log4cpp::log_console->errorStream() << "Trying to allocate " << utils::toStringMemory(nData*sizeof(T))	<< " on device " << deviceId << " which has only " << utils::toStringMemory(GPUMemory::_memoryLeft[deviceId]) << " left !";
 		exit(1);
 	}
 	

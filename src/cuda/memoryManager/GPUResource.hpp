@@ -2,7 +2,7 @@
 #define GPURESSOURCE_H
 
 #include "headers.hpp"
-#include <iostream>
+#include "GPUMemory.hpp"
 
 template <typename T>
 class GPUResource {
@@ -30,9 +30,7 @@ public:
 	const std::string getResourceType() const;
 
 #ifdef THRUST_ENABLED
-#ifdef __CUDACC__
     thrust::device_ptr<T> wrap();
-#endif
 #endif
 
 protected:

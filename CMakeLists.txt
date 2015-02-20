@@ -238,6 +238,11 @@ add_library(
     ${header_files}
 )
 
+# Link CUDA_KERNELS and CORE mutually dependent static libraries
+# more invocations can be needed (see cmake doc for target link libraries)
+target_link_libraries(${CORE_LIB} ${CUDA_KERNELS})
+target_link_libraries(${CUDA_KERNELS} ${CORE_LIB})
+
 #Executables
 foreach(main_source ${executable_sources})
     get_filename_component(exec_name ${main_source} NAME_WE)

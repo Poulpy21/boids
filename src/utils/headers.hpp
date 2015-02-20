@@ -82,8 +82,8 @@
 
 #ifdef THRUST_ENABLED
 #include <thrust/host_vector.h>
-#ifdef __CUDACC__
 #include <thrust/device_vector.h>
+//#ifdef __CUDACC__
 #include <thrust/transform.h>
 #include <thrust/sequence.h>
 #include <thrust/copy.h>
@@ -92,7 +92,7 @@
 #include <thrust/sort.h>
 #include <thrust/replace.h>
 #include <thrust/functional.h>
-#endif
+//#endif
 #endif
 
 // Start NVCC proof
@@ -130,6 +130,7 @@
 // end NVCC proof
 
 #include <exception> //for NOT_IMPLEMENTED_YET macro
+#include <typeinfo>
 
 #endif /* end of include guard: HEADERS_H */
 

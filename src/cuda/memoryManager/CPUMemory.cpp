@@ -1,9 +1,7 @@
 
+#include "CPUMemory.hpp"
 #include <cassert>
 #include <unistd.h>
-
-#include "CPUMemory.hpp"
-#include "utils.hpp"
 
 const volatile unsigned long CPUMemory::_memorySize = 0;
 const volatile unsigned long CPUMemory::_memoryRuntime = 0;

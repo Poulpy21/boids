@@ -1,14 +1,12 @@
 
-#include <cassert>
 
 #include "GPUMemory.hpp"
-#include "cudaUtils.hpp"
-#include "utils.hpp"
+#include <cassert>
 
+const unsigned long * GPUMemory::_memorySize = nullptr;
+const unsigned long * GPUMemory::_memoryRuntime = nullptr;
+unsigned long * GPUMemory::_memoryLeft = nullptr;
 int GPUMemory::_nDevice = 0;
-const unsigned long * GPUMemory::_memorySize = 0;
-unsigned long * GPUMemory::_memoryLeft = 0;
-unsigned long * GPUMemory::_memoryRuntime = 0;
 bool GPUMemory::_verbose = true;
 
 GPUMemory::GPUMemory() {
@@ -30,8 +28,8 @@ void GPUMemory::init() {
 		cudaGetDeviceProperties(&prop, i);
 		cudaMemGetInfo( &avail, &total );
 		const_cast<unsigned long *>(GPUMemory::_memorySize)[i] = total;
+		const_cast<unsigned long *>(GPUMemory::_memoryRuntime)[i] = _GPU_MIN_RESERVED_MEMORY;
 		GPUMemory::_memoryLeft[i] = avail - _GPU_MIN_RESERVED_MEMORY;
-		GPUMemory::_memoryRuntime[i] = _GPU_MIN_RESERVED_MEMORY;
 	}
 }
 

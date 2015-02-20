@@ -3,6 +3,7 @@
 #define GPUMEMORY_H
 
 #include "headers.hpp"
+
 #include <ostream>
 #include <cassert>
 
@@ -34,10 +35,11 @@ class GPUMemory {
 	private:
 		GPUMemory();
 		
-		static int _nDevice;
 		static const unsigned long * _memorySize;
+		static const unsigned long * _memoryRuntime;
+
+		static int _nDevice;
 		static unsigned long * _memoryLeft;
-		static unsigned long * _memoryRuntime;
 		static bool _verbose;
 };
 

@@ -27,10 +27,10 @@
 #endif
 
 #if __cplusplus < 201103L
+#define nullptr 0
 #define override
 #define final
 #define constexpr
-#define nullptr 0
 #endif
 
 //TODO remove this part //
@@ -47,8 +47,8 @@
 #define NOT_IMPLEMENTED_YET { throw std::runtime_error("Function not implemented yet in file !"); }
 
 //System reserved memory in MB
-#define _CPU_MIN_RESERVED_MEMORY 256ul*1024ul*1024ul
-#define _GPU_MIN_RESERVED_MEMORY 256ul*1024ul*1024ul
+#define _CPU_MIN_RESERVED_MEMORY 256ul*1024ul*1024ul // 256Mo
+#define _GPU_MIN_RESERVED_MEMORY 256ul*1024ul*1024ul // 256Mo
 
 #define MAX_THREAD_PER_BLOCK 512u //opti arch sm20
 
