@@ -43,8 +43,8 @@ struct ThrustVectorMemoryView {
                 }
             }
         
-        ThrustVectorMemoryView(thrust::device_vector<T> &v) :
-            _size(v.size()), x(*(ptrs+0)),  y(*(ptrs+1)),  z(*(ptrs+2)) {
+        ThrustVectorMemoryView(thrust::device_vector<T> &v, size_t size) :
+            _size(size), x(*(ptrs+0)),  y(*(ptrs+1)),  z(*(ptrs+2)) {
 
                 for (unsigned int i = 0; i < 3; i++) {
                     ptrs[i] = v.data() + i*_size;

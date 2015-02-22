@@ -89,7 +89,7 @@ void computeForcesKernel(Real *boidData,
                                             opt);
     
     cudaDeviceSynchronize();
-    checkKernelExecution();
+    CHECK_KERNEL_EXECUTION();
 }
 
 
@@ -129,7 +129,7 @@ void applyForcesKernel(Real*boidData, const int nBoids, const struct Options *op
     applyForces<<<gridDim,blockDim,0,0>>>(boidData, nBoids, opt);
     
     cudaDeviceSynchronize();
-    checkKernelExecution();
+    CHECK_KERNEL_EXECUTION();
 }
 
 
@@ -155,7 +155,7 @@ void computeMeanBoidKernel(Real *boidData, const int nBoids, Vector *meanBoid) {
     computeMeanBoid<<<gridDim,blockDim,0,0>>>(boidData, nBoids, meanBoid); 
     
     cudaDeviceSynchronize();
-    checkKernelExecution();
+    CHECK_KERNEL_EXECUTION();
 }
 
 #endif

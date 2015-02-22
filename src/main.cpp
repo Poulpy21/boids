@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
 
     // Add options to parser
     parser.addOption("agents", 640);
-    parser.addOption("steps", 500);
+    parser.addOption("steps", 100);
     parser.addOption("wc", 12);
     parser.addOption("wa", 15);
     parser.addOption("ws", 35);

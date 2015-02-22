@@ -78,7 +78,7 @@ void CudaWorkspace::initBoids() {
     
     //init agents
     
-    agents_h = PinnedCPUResource<Real>(10u*nAgents); 
+    agents_h = PinnedCPUResource<Real>(BoidMemoryView<Real>::N*nAgents); 
     agents_h.allocate();
     agents_view_h = BoidMemoryView<Real>(agents_h.data(), nAgents);
    
@@ -103,8 +103,8 @@ void CudaWorkspace::initBoids() {
 
             devAgents = std::min(devMaxAgents[i], agentsToInitialize);
 
-            random_d.push_back(new GPUResource<float>(deviceId, devAgents*9ul));
-            agents_d.push_back(new GPUResource<Real>(deviceId, devAgents*9ul));
+            random_d.push_back(new GPUResource<float>(deviceId, (devAgents*BoidMemoryView<Real>::N-1u)));
+            agents_d.push_back(new GPUResource<Real> (deviceId, (devAgents*BoidMemoryView<Real>::N-1u)));
             random_d[i]->allocate();
             agents_d[i]->allocate();
 
@@ -120,13 +120,13 @@ void CudaWorkspace::initBoids() {
         //CHECK_CURAND_ERRORS(curandSetStream(generator, streams[deviceId][0])); //CURAND CRASH ...
         CHECK_CURAND_ERRORS(curandCreateGenerator(&generator, CURAND_RNG_PSEUDO_MRG32K3A));
         CHECK_CURAND_ERRORS(curandSetPseudoRandomGeneratorSeed(generator, seed));
-        CHECK_CURAND_ERRORS(curandGenerateUniform(generator, random_d[deviceId]->data(), 9u*devAgents));
+        CHECK_CURAND_ERRORS(curandGenerateUniform(generator, random_d[deviceId]->data(), (BoidMemoryView<Real>::N-1u)*devAgents));
         CHECK_CURAND_ERRORS(curandDestroyGenerator(generator));
 
         kernel::initializeBoidsKernel(devAgents, random_d[deviceId]->data(), agents_d[deviceId]->data());
 
         //Copy data back
-        cudaMemcpy(agents_h.data() + 9ul*offset, agents_d[deviceId]->data(), 9u*devAgents*sizeof(Real), cudaMemcpyDeviceToHost);
+        cudaMemcpy(agents_h.data() + (BoidMemoryView<Real>::N-1u)*offset, agents_d[deviceId]->data(), (BoidMemoryView<Real>::N-1u)*devAgents*sizeof(Real), cudaMemcpyDeviceToHost);
 
         offset += devAgents;
         agentsToInitialize -= devAgents;
@@ -151,7 +151,7 @@ void CudaWorkspace::initBoids() {
 #ifdef CURAND_ENABLED
 unsigned int CudaWorkspace::computeMaxAgentsAtInit(unsigned int deviceId) {
     float safeCoef = 0.5f;
-    return static_cast<unsigned int>(safeCoef*GPUMemory::memoryLeft(deviceId)/(9u*(sizeof(Real) + sizeof(float))));
+    return static_cast<unsigned int>(safeCoef*GPUMemory::memoryLeft(deviceId)/((BoidMemoryView<Real>::N-1)*(sizeof(Real) + sizeof(float))));
 }
 #endif
 

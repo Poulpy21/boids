@@ -15,11 +15,13 @@ struct ThrustBoidMemoryView {
 public:
     thrust::device_ptr<T> &x,  &y,  &z;
     thrust::device_ptr<T> &vx,  &vy, &vz;
-    thrust::device_ptr<T> &ax,  &ay, &az;
+    //thrust::device_ptr<T> &ax,  &ay, &az;
     thrust::device_ptr<unsigned int> &id;
+    
+    static const unsigned int N = 7;
 private:
     size_t nAgents;
-    thrust::device_ptr<T> ptrs[9];
+    thrust::device_ptr<T> ptrs[N-1];
     thrust::device_ptr<unsigned int> cellId;
 
 
@@ -28,9 +30,9 @@ public:
         nAgents(0),
          x(*(ptrs+0)),  y(*(ptrs+1)),  z(*(ptrs+2)), 
         vx(*(ptrs+3)), vy(*(ptrs+4)), vz(*(ptrs+5)), 
-        ax(*(ptrs+6)), ay(*(ptrs+7)), az(*(ptrs+8)),
+        //ax(*(ptrs+6)), ay(*(ptrs+7)), az(*(ptrs+8)),
         id(cellId), cellId() {
-            for (unsigned int i = 0; i < 9; i++) {
+            for (unsigned int i = 0; i < N-1; i++) {
                 ptrs[i] = thrust::device_ptr<T>(nullptr);
             }
     }
@@ -39,30 +41,30 @@ public:
         nAgents(nAgents),
          x(*(ptrs+0)),  y(*(ptrs+1)),  z(*(ptrs+2)), 
         vx(*(ptrs+3)), vy(*(ptrs+4)), vz(*(ptrs+5)), 
-        ax(*(ptrs+6)), ay(*(ptrs+7)), az(*(ptrs+8)),
+        //ax(*(ptrs+6)), ay(*(ptrs+7)), az(*(ptrs+8)),
         id(cellId), cellId() {
             
-            for (unsigned int i = 0; i < 9; i++) {
+            for (unsigned int i = 0; i < N-1; i++) {
                 ptrs[i] = thrust::device_ptr<T>(a + i*nAgents);
             }
-            cellId = thrust::device_ptr<unsigned int>(a + 9u*nAgents);
+            cellId = thrust::device_ptr<unsigned int>(a + (N-1)*nAgents);
         }
     
     ThrustBoidMemoryView(const BoidMemoryView<T> &memView) :
         nAgents(nAgents),
          x(*(ptrs+0)),  y(*(ptrs+1)),  z(*(ptrs+2)), 
         vx(*(ptrs+3)), vy(*(ptrs+4)), vz(*(ptrs+5)), 
-        ax(*(ptrs+6)), ay(*(ptrs+7)), az(*(ptrs+8)),
+        //ax(*(ptrs+6)), ay(*(ptrs+7)), az(*(ptrs+8)),
         id(cellId), cellId() {
             
-            for (unsigned int i = 0; i < 9; i++) {
+            for (unsigned int i = 0; i < N-1; i++) {
                 ptrs[i] = thrust::device_ptr<T>(memView[i]);
             }
             cellId = thrust::device_ptr<unsigned int>(memView.id);
         }
 
     ThrustBoidMemoryView<T>& operator=(const ThrustBoidMemoryView<T> &other) {
-        for (unsigned int i = 0; i < 9; i++) {
+        for (unsigned int i = 0; i < N-1; i++) {
             this->ptrs[i] = other[i];
         }
         this->cellId = other.cellId;

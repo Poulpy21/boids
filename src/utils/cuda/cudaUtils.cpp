@@ -217,3 +217,12 @@ void curandAssert(curandStatus status, const std::string &file, int line, bool a
         exit(1);
 }
 #endif
+
+#ifdef THRUST_ENABLED
+void checkThrustError(const std::exception &e, const std::string &file, int line, bool abort) {
+    log4cpp::log_console->errorStream() << "THRUST Assert => " << e.what() << " in file " <<  file << ":" << line << ".";
+    std::cout << std::endl;
+    if (abort) 
+        exit(1);
+}
+#endif

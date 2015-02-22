@@ -108,13 +108,13 @@ class BoidGrid : public LocalBoidDataStructure<T> {
         
 template <typename T>
 void BoidGrid<T>::init(const BoidMemoryView<T> &agent_h, unsigned int agentCount) {
-    this->agents_h = PinnedCPUResource<T>(agent_h.data(), 10u*agentCount, false);
+    this->agents_h = PinnedCPUResource<T>(agent_h.data(), BoidMemoryView<T>::N*agentCount, false);
     this->agents_view_h = agent_h;
 
 #ifdef CUDA_ENABLED
     this->agentCount = agentCount;
    
-    agents_d = GPUResource<T>(0, 10u*agentCount);
+    agents_d = GPUResource<T>(0, BoidMemoryView<T>::N*agentCount);
     agents_d.allocate();
     agents_view_d = BoidMemoryView<T>(agents_d.data(), agentCount);
 

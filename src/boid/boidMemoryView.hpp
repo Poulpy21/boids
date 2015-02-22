@@ -11,32 +11,35 @@ struct BoidMemoryView {
 
     private:
         size_t _size;
-        VectorMemoryView<T> position, velocity, acceleration;
+        VectorMemoryView<T> position, velocity; //, acceleration;
         unsigned int *cellId;
 
     public:
         T *&x, *&y, *&z;
         T *&vx,  *&vy,  *&vz;
-        T *&ax,  *&ay,  *&az;
+        //T *&ax,  *&ay,  *&az; 
         unsigned int *&id;
+        
+        static const unsigned int N = 7;
 
     public:
         __HOST__ __DEVICE__ BoidMemoryView() :
             _size(0),
-            position(), velocity(), acceleration(), cellId(nullptr), 
+            position(), velocity(), //acceleration(), 
+            cellId(nullptr), 
             x(position.x),  y(position.y),  z(position.z), 
             vx(velocity.x), vy(velocity.y), vz(velocity.z), 
-            ax(acceleration.x), ay(acceleration.y), az(acceleration.z),
+            //ax(acceleration.x), ay(acceleration.y), az(acceleration.z),
             id(cellId) {
             }
 
         __HOST__ __DEVICE__ BoidMemoryView(T* a, size_t nAgents) :
             _size(nAgents), 
-            position(a,_size), velocity(a+3*_size,_size), acceleration(a+6*_size,_size), 
-            cellId(reinterpret_cast<unsigned int*>(a+9*_size)),
+            position(a,_size), velocity(a+3*_size,_size), //acceleration(a+6*_size,_size), 
+            cellId(reinterpret_cast<unsigned int*>(a+(N-1)*_size)),
             x(position.x),  y(position.y),  z(position.z), 
             vx(velocity.x), vy(velocity.y), vz(velocity.z), 
-            ax(acceleration.x), ay(acceleration.y), az(acceleration.z),
+            //ax(acceleration.x), ay(acceleration.y), az(acceleration.z),
             id(cellId) {
             }
 
@@ -44,7 +47,7 @@ struct BoidMemoryView {
             _size = other.size();
             position = other.pos();
             velocity = other.vel();
-            acceleration = other.acc();
+            //acceleration = other.acc();
             this->cellId = other.cellId;
             return *this;
         }
@@ -65,9 +68,9 @@ struct BoidMemoryView {
             return velocity;
         }
 
-        __HOST__ __DEVICE__ VectorMemoryView<T> acc() const {
-            return acceleration;
-        }
+        //__HOST__ __DEVICE__ VectorMemoryView<T> acc() const {
+            //return acceleration;
+        //}
 
         __HOST__ __DEVICE__ T* operator[](unsigned int i) const {
             unsigned int k = i/3;
@@ -76,7 +79,7 @@ struct BoidMemoryView {
             switch(k) {
                 case 0: return position[r];
                 case 1: return velocity[r];
-                case 2: return acceleration[r];
+                //case 2: return acceleration[r];
                 default: return nullptr;
             }
         }
