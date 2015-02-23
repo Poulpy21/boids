@@ -9,22 +9,25 @@
 #include "thrustVectorMemoryView.hpp"
 #include "thrustBoidMemoryView.hpp"
 #include "kernel_utilities.cuh"
-
+  
 #ifdef THRUST_ENABLED
 
 namespace kernel {
-
     namespace boidgrid {
 
         template <typename T>
             __launch_bounds__(MAX_THREAD_PER_BLOCK)
             __global__ void computeForces(
-                    T                   *const __restrict__ boidData,
-                    T            const  *const __restrict__ meanBoidPositionData, 
+                    T                   *const __restrict__ boidData,              // with allocated id : x y z vx vy vz id
+                    int                 *const __restrict__ outOfDomain,           // direction of output 0 -- 26 for the 27 cases (0==stayDomain)
+                    T            const  *const __restrict__ meanBoidData,          // no id !
+                    T            const  *const __restrict__ meanNeighborBoidData,  // no id !
                     unsigned int const  *const __restrict__ uniqueCellIds,
                     unsigned int const  *const __restrict__ uniqueCellCount, 
                     unsigned int const  *const __restrict__ uniqueCellOffsets,
                     int          const  *const __restrict__ validCells,
+                    const Domain<T> localDomain,  //to compute local  id
+                    const Domain<T> globalDomain, //to compute global id
                     unsigned int const nAgents, 
                     unsigned int const nUniqueIds,
                     unsigned int const nCells) {
@@ -37,8 +40,9 @@ namespace kernel {
                     return;
 
                 //Reconstruct memory views 
-                BoidMemoryView<T>   const boids(boidData, nAgents);
-                ConstVectorMemoryView<T> const meanPos(meanBoidPositionData, nUniqueIds);
+                BoidMemoryView<T>       const boids(boidData, nAgents);
+                ConstBoidMemoryView<T>  const localMeanBoids   (meanBoidData, nUniqueIds);
+                ConstBoidMemoryView<T>  const neighborMeanBoids(meanNeighborBoidData, 3u*3u*3u);
 
                 //Get infos
                 unsigned int const  myCellId         = boids.id[boidId];
@@ -86,7 +90,7 @@ namespace kernel {
                     }
                 }
 
-                //Compute "external forces"
+                //Compute "external forces" -- SOOO MUCH BRANCHING
                 //TODO TODO TODO 
 
                 //Update forces
@@ -126,11 +130,12 @@ namespace kernel {
                 myPosition.y += kernel::dt * myVelocity.y;
                 myPosition.z += kernel::dt * myVelocity.z;
 
-                //Handle out of domain // Domain looping
-                //TODO TODO TODO
-
                 //Compute new id
                 //TODO TODO TODO 
+
+                //Handle out of domain
+                //TODO TODO TODO
+                unsigned int myNewCellId = myCellId;
 
                 //Write back data to memory
                 boids.x[boidId]  = myPosition.x;
@@ -139,17 +144,22 @@ namespace kernel {
                 boids.vx[boidId] = myVelocity.x;
                 boids.vy[boidId] = myVelocity.y;
                 boids.vz[boidId] = myVelocity.z;
+                boids.id[boidId] = myNewCellId;
             }
 
 
         template <typename T>
             void computeForcesKernel(
-                    T                   *const __restrict__ boidData,
-                    T            const  *const __restrict__ meanBoidPositionData, 
-                    unsigned int const  *const __restrict__ uniqueCellIds,
-                    unsigned int const  *const __restrict__ uniqueCellCount, 
-                    unsigned int const  *const __restrict__ uniqueCellOffsets,
-                    int          const  *const __restrict__ validCells,
+                    T                   *const boidData,              // with allocated id : x y z vx vy vz id
+                    int                 *const outOfDomain,           // direction of output 0 -- 26 for the 27 cases (0==stayDomain)
+                    T            const  *const meanBoidData,          // no id !
+                    T            const  *const meanNeighborBoidData,  // no id !
+                    unsigned int const  *const uniqueCellIds,
+                    unsigned int const  *const uniqueCellCount, 
+                    unsigned int const  *const uniqueCellOffsets,
+                    int          const  *const validCells,
+                    const Domain<T> localDomain,  //to compute local  id
+                    const Domain<T> globalDomain, //to compute global id
                     unsigned int const nAgents, 
                     unsigned int const nUniqueIds,
                     unsigned int const nCells) {
@@ -166,60 +176,34 @@ namespace kernel {
 
                 computeForces<T><<<dimGrid,dimBlock>>>(
                         boidData,
-                        meanBoidPositionData, 
+                        outOfDomain,
+                        meanBoidData, 
+                        meanNeighborBoidData,
                         uniqueCellIds,
                         uniqueCellCount, 
                         uniqueCellOffsets,
                         validCells,
+                        localDomain,
+                        globalDomain,
                         nAgents, 
                         nUniqueIds,
                         nCells);
 
                 CHECK_KERNEL_EXECUTION();
             }
-
-
-
-        //__global__ void applyForces(Real *boidData, const int nBoids, const struct Options *opt) {
-
-        //int id = blockIdx.x*blockDim.x + threadIdx.x;
-        //if (id >= nBoids)
-        //return;
-
-        //Rebuild AgentData
-        //AgentData boidList(boidData, nBoids);
-
-        //Update velocity
-        //Vector velocity = boidList.getVelocity(id) + boidList.getDirection(id);
-        //Real speed = velocity.norm();
-        //velocity = (speed > opt->maxVel ? velocity*opt->maxVel/speed : velocity);
-        //boidList.setVelocity(id, velocity);
-
-        //Update position
-        //Vector pos = boidList.getPosition(id) + opt->dt * boidList.getVelocity(id);
-
-        //Make sure the boid stays inside the domain
-        //Real modX = fmod(pos.x, opt->domainSize);
-        //Real modY = fmod(pos.y, opt->domainSize);
-        //Real modZ = fmod(pos.z, opt->domainSize);
-        //pos.x = modX > 0 ? modX : modX + opt->domainSize;
-        //pos.y = modY > 0 ? modY : modY + opt->domainSize;
-        //pos.z = modZ > 0 ? modZ : modZ + opt->domainSize;
-        //boidList.setPosition(id, pos);
-        //}
-
-        //void applyForcesKernel(Real*boidData, const int nBoids, const struct Options *opt) {
-        //dim3 gridDim(1024,1,1); // TODO: max threads/block in globals.hpp using cudaUtils
-        //dim3 blockDim(ceil((float)nBoids/1024),1,1); 
-
-        //applyForces<<<gridDim,blockDim,0,0>>>(boidData, nBoids, opt);
-
-        //cudaDeviceSynchronize();
-        //checkKernelExecution();
-        //}
-
     }
+
+    template <typename T> 
+        Domain<T> makeCudaDomain(Domain<T>::DomainType domainType, const BoundingBox<3u,T> &bbox, const Vec<3u,unsigned int> &size) {
+            return Domain<T>(
+                    domainType,
+                    bbox.min[0], bbox.min[1], bbox.min[2],
+                    bbox.max[0], bbox.max[1], bbox.max[2],
+                    size[0],     size[1],     size[2]);
+        }
+
 }
+
 
 template <typename T>
 struct ComputeCellFunctor
@@ -271,15 +255,15 @@ __host__ void initBoidGridThrustArrays(BoidGrid<T> &boidGrid) {
 
     //compute cell Id for each boid
     CHECK_THRUST_ERRORS(
-    thrust::for_each(
-            thrust::make_zip_iterator(thrust::make_tuple(agents_thrust_d.x, agents_thrust_d.y, agents_thrust_d.z, agents_thrust_d.id)),
-            thrust::make_zip_iterator(thrust::make_tuple(
-                    agents_thrust_d.x + nAgents, 
-                    agents_thrust_d.y + nAgents,
-                    agents_thrust_d.z + nAgents,
-                    agents_thrust_d.id + nAgents)),
-            ComputeCellFunctor<T>(boidGrid))
-    );
+            thrust::for_each(
+                thrust::make_zip_iterator(thrust::make_tuple(agents_thrust_d.x, agents_thrust_d.y, agents_thrust_d.z, agents_thrust_d.id)),
+                thrust::make_zip_iterator(thrust::make_tuple(
+                        agents_thrust_d.x + nAgents, 
+                        agents_thrust_d.y + nAgents,
+                        agents_thrust_d.z + nAgents,
+                        agents_thrust_d.id + nAgents)),
+                ComputeCellFunctor<T>(boidGrid))
+            );
 
     //find the permutation to sort everyone according to the cellIds
     thrust::device_vector<unsigned int> keys(nAgents);
@@ -308,11 +292,11 @@ __host__ void initBoidGridThrustArrays(BoidGrid<T> &boidGrid) {
     thrust::device_vector<int> validIds(nCells);
     CHECK_THRUST_ERRORS(thrust::fill(validIds.begin(), validIds.end(), -1));
     CHECK_THRUST_ERRORS(
-    thrust::scatter(
-            thrust::make_counting_iterator<int>(0), 
-            thrust::make_counting_iterator<int>(nUniqueIds),
-            uniqueIds.begin(), validIds.begin())
-    );
+            thrust::scatter(
+                thrust::make_counting_iterator<int>(0), 
+                thrust::make_counting_iterator<int>(nUniqueIds),
+                uniqueIds.begin(), validIds.begin())
+            );
 
     //sort the boids with precomputed permutation
     thrust::device_vector<T> buffer(BoidMemoryView<T>::N*nAgents);
@@ -321,11 +305,11 @@ __host__ void initBoidGridThrustArrays(BoidGrid<T> &boidGrid) {
 
     for(unsigned int i = 0u; i < BoidMemoryView<T>::N; i++) {
         CHECK_THRUST_ERRORS(
-        thrust::copy(
-                thrust::make_permutation_iterator(agents_thrust_d[i], keys.begin()),
-                thrust::make_permutation_iterator(agents_thrust_d[i], keys.end()),
-                buffer_view[i])
-        );
+                thrust::copy(
+                    thrust::make_permutation_iterator(agents_thrust_d[i], keys.begin()),
+                    thrust::make_permutation_iterator(agents_thrust_d[i], keys.end()),
+                    buffer_view[i])
+                );
         CHECK_THRUST_ERRORS(thrust::copy(buffer_view[i], buffer_view[i]+nAgents, agents_thrust_d[i]));
     }
 
@@ -391,13 +375,15 @@ __host__ BoidMemoryView<T> computeThrustStep(BoidGrid<T> &boidGrid) {
 
     ThrustBoidMemoryView<T> agents_thrust_d(boidGrid.getBoidDeviceMemoryView());
 
+    // Sort and find unique ids
+
     // Compute mean positions (only for filled cells)
-    thrust::device_vector<T>  means(3*nUniqueIds);
-    ThrustVectorMemoryView<T> means_v(means, nUniqueIds);
+    thrust::device_vector<T>  means(6*nUniqueIds);
+    ThrustBoidMemoryView<T> means_v(means, nUniqueIds);
     {
         thrust::device_vector<unsigned int> buffKeys(nUniqueIds);
 
-        for (unsigned int i = 0; i < 3u; i++) {
+        for (unsigned int i = 0; i < 6u; i++) {
             thrust::reduce_by_key(agents_thrust_d.id, agents_thrust_d.id + nAgents,
                     agents_thrust_d[i], buffKeys.begin(), means_v[i], 
                     thrust::equal_to<unsigned int>(), thrust::plus<float>());
@@ -407,11 +393,21 @@ __host__ BoidMemoryView<T> computeThrustStep(BoidGrid<T> &boidGrid) {
         }
     }
 
+    // Get neighbor mean position
+    
+    // Call kernel
+    
+  
     //Compute forces
-    kernel::boidgrid::computeForcesKernel(agents_d.data(), means_v.data(),
+    kernel::boidgrid::computeForcesKernel(agents_d.data(), nullptr, means_v.data(), nullptr,
             uniqueIds_d.data(), count_d.data(),
             offsets_d.data(), validIds_d.data(),
+            kernel::makeCudaDomain(kernel::Domain::DomainType::LOCAL_DOMAIN, boidGrid.getLocalDomain(),  boidGrid.getBoxSize()),
+            kernel::makeCudaDomain(kernel::Domain::DomainType::GLOBAL_DOMAIN, boidGrid.getGlobalDomain(), Globals::globalDomainSize),
             nAgents, nUniqueIds, nCells);
+
+    
+    // Check for bad elements
 
     //check for boids that went outside the domain
 

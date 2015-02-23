@@ -62,6 +62,19 @@ public:
             }
             cellId = thrust::device_ptr<unsigned int>(memView.id);
         }
+        
+    ThrustBoidMemoryView(thrust::device_vector<T> v, size_t nAgents) :
+        nAgents(nAgents), 
+         x(*(ptrs+0)),  y(*(ptrs+1)),  z(*(ptrs+2)), 
+        vx(*(ptrs+3)), vy(*(ptrs+4)), vz(*(ptrs+5)), 
+        //ax(acceleration.x), ay(acceleration.y), az(acceleration.z),
+        id(cellId), cellId() {
+            for (unsigned int i = 0; i < N-1; i++) {
+                ptrs[i] = thrust::device_ptr<T>(v.data().get() + i*nAgents);
+            }
+            cellId = thrust::device_ptr<unsigned int>(reinterpret_cast<unsigned int*>(v.data().get()) + (N-1)*nAgents);
+        }
+
 
     ThrustBoidMemoryView<T>& operator=(const ThrustBoidMemoryView<T> &other) {
         for (unsigned int i = 0; i < N-1; i++) {
@@ -70,6 +83,10 @@ public:
         this->cellId = other.cellId;
 
         return *this;
+    }
+    
+    T* data() const {
+        return ptrs[0].get();
     }
 
     thrust::device_ptr<T> operator[](unsigned int i) const {

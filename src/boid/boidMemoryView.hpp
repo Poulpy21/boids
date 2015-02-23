@@ -42,7 +42,7 @@ struct BoidMemoryView {
             //ax(acceleration.x), ay(acceleration.y), az(acceleration.z),
             id(cellId) {
             }
-
+        
         __HOST__ __DEVICE__ BoidMemoryView<T>& operator=(const BoidMemoryView<T> &other) {
             _size = other.size();
             position = other.pos();

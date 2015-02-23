@@ -31,11 +31,10 @@ namespace kernel {
 
     //float3 and double3 wrapper type (because nvidia you know...)
     template <typename T, unsigned int N> struct MakeCudaVec;
-    template <> struct MakeCudaVec<float,  3>;     
-    template <> struct MakeCudaVec<float,  3> { typedef float3 type;  };
+    template <> struct MakeCudaVec<float,  3> { typedef float3 type;  }; 
     template <> struct MakeCudaVec<double, 3> { typedef double3 type; };
     extern template struct MakeCudaVec<float,  3u>; //explicit instantiation of full specializations -- only in this compilation unit !
-    extern template struct MakeCudaVec<double, 3u>;
+    extern template struct MakeCudaVec<double, 3u>; //extern template is just magic (?v=xX0gtbLwbE8)
 
     template <typename T>  __inline__ __device__ 
         T distance(const typename MakeCudaVec<T,3>::type &v1, const typename MakeCudaVec<T,3>::type &v2) {
@@ -180,6 +179,76 @@ namespace kernel {
     __device__ __inline__ T distance2(const CudaVec<T> &a, const CudaVec<T> &b) {
         return distance2<T>(a.x,a.y,a.z, b.x,b.y,b.z);
     }
+    
+    
+    //other structs for kernels
+    template <typename T>
+    struct Domain {
+                
+        typedef typename MakeCudaVec<T,3>::type vec3; //either float3 or double3
+
+        enum DomainType {
+            DOMAIN_GLOBAL=0,
+            DOMAIN_LOCAL
+        };
+
+        vec3 xmin;
+        vec3 xmax;
+        vec3 step;
+        vec3 istep;
+        vec3 size;
+        uint3 dim;
+        DomainType type;
+
+        Domain( DomainType type_,
+                T xmin_, T ymin_, T zmin_,
+                T xmax_, T ymax_, T zmax_,
+                unsigned int width, unsigned int height, unsigned int length) : type(type_) {
+            xmin.x = xmin_; xmin.y = ymin_; xmin.z = zmin_;
+            xmax.x = xmax_; xmax.y = ymax_; xmax.z = zmax_;
+            size.x = xmax.x - xmin.x;
+            size.y = xmax.y - xmin.y;
+            size.z = xmax.z - xmin.z;
+            dim.x = width; dim.y = height; dim.z = length;
+            dim.x  = (dim.x == 0 ? 1u : dim.x);
+            dim.y  = (dim.y == 0 ? 1u : dim.y);
+            dim.z  = (dim.z == 0 ? 1u : dim.z);
+            step.x  = size.x / dim.x;
+            step.y  = size.y / dim.y;
+            step.z  = size.z / dim.z;
+            istep.x = T(1)/step.x  ; istep.y = T(1)/step.y  ; istep.z = T(1)/step.z  ;
+        }
+        
+        __host__ __device__ __inline__ unsigned int makeId(unsigned int ix, unsigned int iy, unsigned int iz) const {
+            //return fma(dim.x, fma(dim.y,iz,iy), ix);
+            return (dim.x*(dim.y*iz+iy)+ix);
+        }
+        
+        __host__ __device__ __inline__ unsigned int getCellId(T x, T y, T z) const {
+            return makeId(
+                    ceil((x - xmin.x)*istep.x), 
+                    ceil((y - xmin.y)*istep.y),
+                    ceil((z - xmin.z)*istep.z));
+        }
+        
+        __host__ __device__ __inline__ unsigned int getCellId(const vec3 &pos) const {
+            return getCellId(pos.x, pos.y, pos.z);
+        }
+
+        __host__ __device__ __inline__ unsigned char isInDomain(const vec3 &p) {
+            unsigned char C = 0;
+            C += 1*(p.x < xmin.x ? 1 : (p.x > xmax.x ? 2 : 0));
+            C += 3*(p.y < xmin.y ? 1 : (p.y > xmax.y ? 2 : 0));
+            C += 9*(p.z < xmin.z ? 1 : (p.z > xmax.z ? 2 : 0));
+            return C; //0 - 26 for the 27 surounding cases -- 0 <==> boid stays in domain
+        }
+        
+        __host__ __device__ __inline__ void moduloDomain(vec3 &p) {
+            p.x = fmod(p.x + xmax.x, size.x)*size.x + xmin.x; //xmax = + size - xmin
+            p.y = fmod(p.y + xmax.y, size.y)*size.y + xmin.y;
+            p.z = fmod(p.z + xmax.z, size.z)*size.z + xmin.z;
+        }
+    };
 }
 
 #endif /* end of include guard: KERNEL_UTILITIES_H */

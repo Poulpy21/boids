@@ -6,7 +6,7 @@
 
 #ifdef GUI_ENABLED
 
-#include "viewer.hpp"
+//#include "viewer.hpp"
 #include <ostream>
 #include <string>
 
@@ -44,18 +44,22 @@ class Globals {
         static float glPointSizeGranularity;
         static float glPointSize;
 
-        static Viewer *viewer;
+        //static Viewer *viewer;
         static unsigned int projectionViewUniformBlock;
 
         static float dt;
         static Vec3<double> pos;
         static Vec3<double> offset;
-
+                
         static bool wireframe;
         static int  minTreeLevelDisplay;
 
         static std::string shaderFolder;
-};
 
+        static Vec3<unsigned int> globalDomainSize;
+        void setGlobalDomainsize(const Vec3<unsigned int> &size);
+
+};
+        
 #endif
 #endif /* end of include guard: GLOBALS_H */

@@ -30,6 +30,7 @@ unsigned int Globals::projectionViewUniformBlock = 0;
 float Globals::dt = 0.1;
 Vec3<double> Globals::pos = Vec3<double>(0, 0, 0);
 Vec3<double> Globals::offset = Vec3<double>(0, 0, 0);
+Vec3<double> Globals::globalDomainSize = Vec3<unsigned int>(0,0,0);
         
 bool Globals::wireframe = true;
 int  Globals::minTreeLevelDisplay = 0;
@@ -85,6 +86,10 @@ void Globals::print(std::ostream &out) {
     out << "\n\tGL_MAX_FRAGMENT_UNIFORM_BLOCKS " << glMaxFragmentUniformBlocks;
     out << "\n\tGL_MAX_UNIFORM_BLOCKSIZE " << utils::toStringMemory(glMaxUniformBlockSize);
     out << "\n";
+}
+        
+void Globals::setGlobalDomainsize(const Vec3<unsigned int> &size) {
+    globalDomainSize = size;
 }
 
 #endif

@@ -77,6 +77,7 @@ void compute(int argc, char **argv) {
     //create simulation domain
     Real ds = options.domainSize;
     BoundingBox<3u, Real> domain(Vec3<Real>(0,0,0), Vec3<Real>(ds,ds,ds));
+    Globals::setGlobalDomainSize(Vec3<unsigned int>(1,1,1));
     
     // Set up bounds for boid initialization
     // format is XYZ  VX VY VZ  AX AY AZ

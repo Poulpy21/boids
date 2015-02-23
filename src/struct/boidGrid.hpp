@@ -31,8 +31,8 @@ class BoidGrid : public LocalBoidDataStructure<T> {
 
     public:
         BoidGrid(unsigned int globalId,
-                const BoundingBox<3u, Real> &localDomain,
                 const BoundingBox<3u, Real> &globalDomain,
+                const BoundingBox<3u, Real> &localDomain,
                 bool keepBoidsInGlobalDomain,
                 Real maxRadius);
         BoidGrid(const BoidGrid<T> &other);
@@ -60,8 +60,8 @@ class BoidGrid : public LocalBoidDataStructure<T> {
 
         T getMaxRadius() const;
         T getDomainWidth() const;
-        T getDomainLength() const;
         T getDomainHeight() const;
+        T getDomainLength() const;
         unsigned int getWidth() const;
         unsigned int getHeight() const;
         unsigned int getLength() const;
@@ -77,8 +77,8 @@ class BoidGrid : public LocalBoidDataStructure<T> {
     protected:
         const T maxRadius;
 
-        const T domainWidth, domainLength, domainHeight;
-        const unsigned int width, length, height;
+        const T domainWidth, domainHeight, domainLength;
+        const unsigned int width, height, length;
         const Vec3<unsigned int> boxSize;
 
         const unsigned int nCells;
@@ -153,13 +153,13 @@ BoidGrid<T>::BoidGrid(unsigned int globalId,
     LocalBoidDataStructure<T>(globalId, localDomain, globalDomain, keepBoidsInGlobalDomain),
     maxRadius(maxRadius),
     domainWidth (localDomain.max[0] - localDomain.min[0]),
-    domainLength(localDomain.max[1] - localDomain.min[1]),
-    domainHeight(localDomain.max[2] - localDomain.min[2]),
+    domainHeight(localDomain.max[1] - localDomain.min[1]),
+    domainLength(localDomain.max[2] - localDomain.min[2]),
     width (std::max(1,static_cast<int>(ceil(domainWidth /maxRadius)))),
-    length(std::max(1,static_cast<int>(ceil(domainLength/maxRadius)))),
     height(std::max(1,static_cast<int>(ceil(domainHeight/maxRadius)))),
-    boxSize(width, length, height),
-    nCells(width*length*height)
+    length(std::max(1,static_cast<int>(ceil(domainLength/maxRadius)))),
+    boxSize(width, height, length),
+    nCells(width*height*length)
 #ifdef CUDA_ENABLED 
         ,agents_d(0,0),
         agents_view_d(),
@@ -179,11 +179,11 @@ BoidGrid<T>::BoidGrid(const BoidGrid<T> &other) :
     LocalBoidDataStructure<T>(other),
     maxRadius(0),
     domainWidth (0),
-    domainLength(0),
     domainHeight(0),
+    domainLength(0),
     width (0),
-    length(0),
     height(0),
+    length(0),
     boxSize(0),
     nCells(0) {
         throw std::logic_error("Cannot copy a BoidGrid.");
@@ -222,15 +222,15 @@ NeighborIds& BoidGrid<T>::getGlobalNeighborCellIds(unsigned int globalCellId) co
 
 template <typename T>
 unsigned int BoidGrid<T>::makeLocalId(unsigned int x, unsigned int y, unsigned int z) const {
-    return (width*length*z + width*y + x);
+    return (width*height*z + width*y + x);
 }
 
 template <typename T>
 Vec3<T> BoidGrid<T>::relativePos(const Vec3<T> &pos) const {
     return Vec3<T>(
             (pos.x - this->localDomain.min[0])/domainWidth,
-            (pos.y - this->localDomain.min[1])/domainLength,
-            (pos.z - this->localDomain.min[2])/domainHeight
+            (pos.y - this->localDomain.min[1])/domainHeight,
+            (pos.z - this->localDomain.min[2])/domainLength
             );
 }
 

@@ -118,19 +118,19 @@
 
 #include "types.hpp"
 
-// Start NVCC proof
-#ifndef __CUDACC__
-
 #include "vec.hpp"
-#include "vec2.hpp"
 #include "vec3.hpp"
-#include "vecBool.hpp"
-#include "matrix.hpp"
-
-#include "consts.hpp"
 #include "globals.hpp"
 
+// Start NVCC proof (C++11 everywhere !)
+//
+#ifndef __CUDACC__
+#include "vec2.hpp"
+#include "vecBool.hpp"
+#include "matrix.hpp"
+#include "consts.hpp"
 #endif
+
 // end NVCC proof
 
 #include <exception> //for NOT_IMPLEMENTED_YET macro
