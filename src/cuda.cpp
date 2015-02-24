@@ -53,7 +53,7 @@ void compute(int argc, char **argv) {
 
     // Add options to parser
     ArgumentParser parser;
-    parser.addOption("agents", 1000000);
+    parser.addOption("agents", 100000);
     parser.addOption("steps", 100);
     parser.addOption("wc", 12);
     parser.addOption("wa", 15);
@@ -65,7 +65,7 @@ void compute(int argc, char **argv) {
     parser.addOption("dt", 0.05);
     parser.addOption("mv", 2.0);
     
-    parser.addOption("size", 100);
+    parser.addOption("size", 1);
 
     parser.addOption("save", false);
 
@@ -77,7 +77,7 @@ void compute(int argc, char **argv) {
     //create simulation domain
     Real ds = options.domainSize;
     BoundingBox<3u, Real> domain(Vec3<Real>(0,0,0), Vec3<Real>(ds,ds,ds));
-    Globals::setGlobalDomainSize(Vec3<unsigned int>(1,1,1));
+    globalDomainSize = Vec3<unsigned int>(1,1,1);
     
     // Set up bounds for boid initialization
     // format is XYZ  VX VY VZ  AX AY AZ

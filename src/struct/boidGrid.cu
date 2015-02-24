@@ -11,8 +11,17 @@
 #include "kernel_utilities.cuh"
   
 #ifdef THRUST_ENABLED
-
+   
 namespace kernel {
+
+    template <typename T> 
+        Domain<T> makeCudaDomain(const BoundingBox<3u,T> &bbox, const Vec<3u,unsigned int> &size) {
+            return Domain<T>(
+                    bbox.min[0], bbox.min[1], bbox.min[2],
+                    bbox.max[0], bbox.max[1], bbox.max[2],
+                    size[0],     size[1],     size[2]);
+        }
+
     namespace boidgrid {
 
         template <typename T>
@@ -192,16 +201,7 @@ namespace kernel {
                 CHECK_KERNEL_EXECUTION();
             }
     }
-
-    template <typename T> 
-        Domain<T> makeCudaDomain(Domain<T>::DomainType domainType, const BoundingBox<3u,T> &bbox, const Vec<3u,unsigned int> &size) {
-            return Domain<T>(
-                    domainType,
-                    bbox.min[0], bbox.min[1], bbox.min[2],
-                    bbox.max[0], bbox.max[1], bbox.max[2],
-                    size[0],     size[1],     size[2]);
-        }
-
+    
 }
 
 
@@ -379,31 +379,33 @@ __host__ BoidMemoryView<T> computeThrustStep(BoidGrid<T> &boidGrid) {
 
     // Compute mean positions (only for filled cells)
     thrust::device_vector<T>  means(6*nUniqueIds);
-    ThrustBoidMemoryView<T> means_v(means, nUniqueIds);
+    ThrustBoidMemoryView<T>   means_v(means, nUniqueIds);
     {
         thrust::device_vector<unsigned int> buffKeys(nUniqueIds);
 
         for (unsigned int i = 0; i < 6u; i++) {
-            thrust::reduce_by_key(agents_thrust_d.id, agents_thrust_d.id + nAgents,
-                    agents_thrust_d[i], buffKeys.begin(), means_v[i], 
-                    thrust::equal_to<unsigned int>(), thrust::plus<float>());
-
-            thrust::transform(means_v[i], means_v[i] + nUniqueIds,
-                    count_d.wrap(), means_v[i], thrust::divides<float>());
+            CHECK_THRUST_ERRORS(
+                    thrust::reduce_by_key(agents_thrust_d.id, agents_thrust_d.id + nAgents,
+                        agents_thrust_d[i], buffKeys.begin(), means_v[i], 
+                        thrust::equal_to<unsigned int>(), thrust::plus<float>())
+                    );
+            CHECK_THRUST_ERRORS(
+                    thrust::transform(means_v[i], means_v[i] + nUniqueIds,
+                        count_d.wrap(), means_v[i], thrust::divides<float>())
+                    );
         }
     }
 
     // Get neighbor mean position
+    int* outOfDomain = 0;
+    T* meanNeighborBoidData = 0;
     
     // Call kernel
-    
-  
-    //Compute forces
-    kernel::boidgrid::computeForcesKernel(agents_d.data(), nullptr, means_v.data(), nullptr,
+    kernel::boidgrid::computeForcesKernel(agents_d.data(), outOfDomain, means_v.data(), meanNeighborBoidData,
             uniqueIds_d.data(), count_d.data(),
             offsets_d.data(), validIds_d.data(),
-            kernel::makeCudaDomain(kernel::Domain::DomainType::LOCAL_DOMAIN, boidGrid.getLocalDomain(),  boidGrid.getBoxSize()),
-            kernel::makeCudaDomain(kernel::Domain::DomainType::GLOBAL_DOMAIN, boidGrid.getGlobalDomain(), Globals::globalDomainSize),
+            kernel::makeCudaDomain<T>(boidGrid.getLocalDomain(),  boidGrid.getBoxSize()),
+            kernel::makeCudaDomain<T>(boidGrid.getGlobalDomain(), globalDomainSize),
             nAgents, nUniqueIds, nCells);
 
     

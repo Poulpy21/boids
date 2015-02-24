@@ -2,11 +2,6 @@
 #include "headers.hpp"
 #ifdef GUI_ENABLED
 
-#include "globals.hpp"
-#include "utils.hpp"
-#include "log.hpp"
-
-
 int Globals::glMax3DTextureSize = 0;
 int Globals::glMaxTextureSize = 0;
 int Globals::glMaxVertexAttribs = 0;
@@ -30,7 +25,7 @@ unsigned int Globals::projectionViewUniformBlock = 0;
 float Globals::dt = 0.1;
 Vec3<double> Globals::pos = Vec3<double>(0, 0, 0);
 Vec3<double> Globals::offset = Vec3<double>(0, 0, 0);
-Vec3<double> Globals::globalDomainSize = Vec3<unsigned int>(0,0,0);
+Vec3<unsigned int> globalDomainSize = Vec3<unsigned int>(0,0,0);
         
 bool Globals::wireframe = true;
 int  Globals::minTreeLevelDisplay = 0;
@@ -87,9 +82,4 @@ void Globals::print(std::ostream &out) {
     out << "\n\tGL_MAX_UNIFORM_BLOCKSIZE " << utils::toStringMemory(glMaxUniformBlockSize);
     out << "\n";
 }
-        
-void Globals::setGlobalDomainsize(const Vec3<unsigned int> &size) {
-    globalDomainSize = size;
-}
-
 #endif

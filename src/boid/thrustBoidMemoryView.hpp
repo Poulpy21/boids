@@ -70,9 +70,9 @@ public:
         //ax(acceleration.x), ay(acceleration.y), az(acceleration.z),
         id(cellId), cellId() {
             for (unsigned int i = 0; i < N-1; i++) {
-                ptrs[i] = thrust::device_ptr<T>(v.data().get() + i*nAgents);
+                ptrs[i] = thrust::device_ptr<T>(thrust::raw_pointer_cast(v.data()) + i*nAgents);
             }
-            cellId = thrust::device_ptr<unsigned int>(reinterpret_cast<unsigned int*>(v.data().get()) + (N-1)*nAgents);
+            cellId = thrust::device_ptr<unsigned int>(reinterpret_cast<unsigned int*>(thrust::raw_pointer_cast(v.data())) + (N-1)*nAgents);
         }
 
 
@@ -86,7 +86,7 @@ public:
     }
     
     T* data() const {
-        return ptrs[0].get();
+        return thrust::raw_pointer_cast(ptrs[0]);
     }
 
     thrust::device_ptr<T> operator[](unsigned int i) const {

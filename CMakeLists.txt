@@ -241,7 +241,21 @@ add_library(
 # Link CUDA_KERNELS and CORE mutually dependent static libraries
 # more invocations can be needed (see cmake doc for target link libraries)
 target_link_libraries(${CORE_LIB} ${CUDA_KERNELS})
-target_link_libraries(${CUDA_KERNELS} ${CORE_LIB})
+target_link_libraries(
+        ${CUDA_KERNELS} 
+        ${CORE_LIB}
+        Qt4::QtGui           #QtGui
+        Qt4::QtCore          #QtCore
+        Qt4::QtXml           #QtXml
+        Qt4::QtOpenGL        #QtOpenGL
+        ${QGLVIEWER_LIBRARY} #QGlViewer
+        ${LOG4CPP_LIBRARIES} #Log4cpp
+        ${MPI_CXX_LIBRARIES} #MPI
+        ${CUDA_LIBRARIES}    #Cuda
+        ${OPENGL_LIBRARIES}  #OpenGl
+        ${GLEW_LIBRARIES}    #Glew
+        ${GLUT_glut_LIBRARY} #Glut
+        )
 
 #Executables
 foreach(main_source ${executable_sources})

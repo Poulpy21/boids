@@ -4,9 +4,10 @@
 
 #include "headers.hpp"
 
+#ifndef __CUDACC__
 #ifdef GUI_ENABLED
 
-//#include "viewer.hpp"
+#include "viewer.hpp"
 #include <ostream>
 #include <string>
 
@@ -44,7 +45,7 @@ class Globals {
         static float glPointSizeGranularity;
         static float glPointSize;
 
-        //static Viewer *viewer;
+        static Viewer *viewer;
         static unsigned int projectionViewUniformBlock;
 
         static float dt;
@@ -57,9 +58,9 @@ class Globals {
         static std::string shaderFolder;
 
         static Vec3<unsigned int> globalDomainSize;
-        void setGlobalDomainsize(const Vec3<unsigned int> &size);
-
 };
         
 #endif
+#endif
+extern Vec3<unsigned int> globalDomainSize;
 #endif /* end of include guard: GLOBALS_H */

@@ -180,6 +180,7 @@ namespace kernel {
         return distance2<T>(a.x,a.y,a.z, b.x,b.y,b.z);
     }
     
+        
     
     //other structs for kernels
     template <typename T>
@@ -187,23 +188,16 @@ namespace kernel {
                 
         typedef typename MakeCudaVec<T,3>::type vec3; //either float3 or double3
 
-        enum DomainType {
-            DOMAIN_GLOBAL=0,
-            DOMAIN_LOCAL
-        };
-
         vec3 xmin;
         vec3 xmax;
         vec3 step;
         vec3 istep;
         vec3 size;
         uint3 dim;
-        DomainType type;
 
-        Domain( DomainType type_,
-                T xmin_, T ymin_, T zmin_,
+        Domain( T xmin_, T ymin_, T zmin_,
                 T xmax_, T ymax_, T zmax_,
-                unsigned int width, unsigned int height, unsigned int length) : type(type_) {
+                unsigned int width, unsigned int height, unsigned int length) {
             xmin.x = xmin_; xmin.y = ymin_; xmin.z = zmin_;
             xmax.x = xmax_; xmax.y = ymax_; xmax.z = zmax_;
             size.x = xmax.x - xmin.x;
