@@ -22,6 +22,20 @@ namespace kernel {
                     size[0],     size[1],     size[2]);
         }
 
+    template <typename T>
+        struct ComputeCellFunctor
+        {
+            ComputeCellFunctor(const Domain<T> &localDomain) : _localDomain(localDomain) {}
+
+            Domain<T> _localDomain;
+
+            template <typename Tuple>
+                __host__ __device__ void operator()(Tuple t) //X Y Z C
+                {
+                    thrust::get<3>(t) = _localDomain.getCellId(thrust::get<0>(t), thrust::get<1>(t), thrust::get<2>(t)); 
+                }
+        };
+
     namespace boidgrid {
 
         template <typename T>
@@ -29,8 +43,8 @@ namespace kernel {
             __global__ void computeForces(
                     T                   *const __restrict__ boidData,              // with allocated id : x y z vx vy vz id
                     int                 *const __restrict__ outOfDomain,           // direction of output 0 -- 26 for the 27 cases (0==stayDomain)
-                    T            const  *const __restrict__ meanBoidData,          // no id !
-                    T            const  *const __restrict__ meanNeighborBoidData,  // no id !
+                    T            const  *const __restrict__ meanBoidData,          // local structure means
+                    T            const  *const __restrict__ meanNeighborBoidData,  // local structure neighbors (not in local domain)
                     unsigned int const  *const __restrict__ uniqueCellIds,
                     unsigned int const  *const __restrict__ uniqueCellCount, 
                     unsigned int const  *const __restrict__ uniqueCellOffsets,
@@ -39,7 +53,8 @@ namespace kernel {
                     const Domain<T> globalDomain, //to compute global id
                     unsigned int const nAgents, 
                     unsigned int const nUniqueIds,
-                    unsigned int const nCells) {
+                    unsigned int const nCells,
+                    bool         const keepInLocalDomain) {
 
                 typedef typename MakeCudaVec<T,3>::type vec3; //either float3 or double3
 
@@ -51,7 +66,7 @@ namespace kernel {
                 //Reconstruct memory views 
                 BoidMemoryView<T>       const boids(boidData, nAgents);
                 ConstBoidMemoryView<T>  const localMeanBoids   (meanBoidData, nUniqueIds);
-                ConstBoidMemoryView<T>  const neighborMeanBoids(meanNeighborBoidData, 3u*3u*3u);
+                ConstBoidMemoryView<T>  const neighborMeanBoids(meanNeighborBoidData, 3u*3u*3u); //TODO
 
                 //Get infos
                 unsigned int const  myCellId         = boids.id[boidId];
@@ -67,40 +82,114 @@ namespace kernel {
                 //Compute forces
                 unsigned int countSeparation=0u, countCohesion=0u, countAlignment=0u;
                 vec3 forceSeparation = {}, forceCohesion = {}, forceAlignment = {};
-                vec3 neighborPosition;
 
                 //Compute "internal forces"
-                for (unsigned int i = 0; i < localAgentsCount; i++) {
-                    unsigned int offset = boidArrayOffset + i;
-                    if(offset != boidId) {
-                        neighborPosition.x = boids.x[offset];
-                        neighborPosition.y = boids.y[offset];
-                        neighborPosition.z = boids.z[offset];
-                        T dist = distance<T>(myPosition, neighborPosition);
+                {
+                    vec3 neighborPosition;
+                    for (unsigned int i = 0; i < localAgentsCount; i++) {
+                        unsigned int offset = boidArrayOffset + i;
+                        if(offset != boidId) {
+                            neighborPosition.x = boids.x[offset];
+                            neighborPosition.y = boids.y[offset];
+                            neighborPosition.z = boids.z[offset];
+                            T dist = distance<T>(myPosition, neighborPosition);
 
-                        if(dist < kernel::rSeparation) {
-                            forceSeparation.x -= (myPosition.x - neighborPosition.x)/dist;
-                            forceSeparation.y -= (myPosition.y - neighborPosition.y)/dist;
-                            forceSeparation.z -= (myPosition.z - neighborPosition.z)/dist;
-                            countSeparation++;
-                        }
-                        if(dist < kernel::rCohesion) {
-                            forceCohesion.x += neighborPosition.x;
-                            forceCohesion.y += neighborPosition.y;
-                            forceCohesion.z += neighborPosition.z;
-                            countCohesion++;
-                        }
-                        if(dist < kernel::rAlignment) {
-                            forceAlignment.x += boids.vx[offset];
-                            forceAlignment.y += boids.vy[offset];
-                            forceAlignment.z += boids.vz[offset];
-                            countAlignment++;
+                            if(dist < kernel::rSeparation) {
+                                forceSeparation.x -= (myPosition.x - neighborPosition.x)/dist;
+                                forceSeparation.y -= (myPosition.y - neighborPosition.y)/dist;
+                                forceSeparation.z -= (myPosition.z - neighborPosition.z)/dist;
+                                countSeparation++;
+                            }
+                            if(dist < kernel::rCohesion) {
+                                forceCohesion.x += neighborPosition.x;
+                                forceCohesion.y += neighborPosition.y;
+                                forceCohesion.z += neighborPosition.z;
+                                countCohesion++;
+                            }
+                            if(dist < kernel::rAlignment) {
+                                forceAlignment.x += boids.vx[offset];
+                                forceAlignment.y += boids.vy[offset];
+                                forceAlignment.z += boids.vz[offset];
+                                countAlignment++;
+                            }
                         }
                     }
                 }
 
                 //Compute "external forces" -- SOOO MUCH BRANCHING
-                //TODO TODO TODO 
+                {
+                    unsigned int targetCellId;
+                    const uint3 &dim = localDomain.dim;
+                    unsigned int idx, idy, idz;
+                    int iix, iiy, iiz;
+
+                    //Extract local domain offsets of current cell
+                    idx = myCellId % dim.x; 
+                    idy = (myCellId/dim.x) % dim.y; 
+                    idz = myCellId/(dim.x*dim.y); 
+                    
+                    for (int k = -1; k <= 1; k++) {
+                        iiz = idz + k;
+                        for (int j = -1; j <= 1; j++) {
+                            iiy = idy + j;
+                            for (int i = -1; i <= 1; i++) {
+                                iix = idx + i;
+                               
+                                //Compute target neighbor cell id
+                                targetCellId = localDomain.makeId(idx+i, idy+j, idz+k);
+
+                                //Skip my cell
+                                if(k == 0 && j == 0 && i == 0)
+                                    continue;
+
+                                //Handle global domain borders
+                                //Already done on the host side, seen as classical local domain border
+
+                                //Handle local domain borders
+                                if(iix < 0 || iiy < 0 || iiz < 0 
+                                        || iix >= dim.x || iiy >= dim.y || iiz >= dim.z) {
+                                    ; //TODO
+                                }
+
+                                //Handle internal external interactions, checks if there is any boids in the target cell
+                                else if (validCells[targetCellId] != -1) {
+                                    vec3 neighborMeanPosition, neighborMeanVelocity;
+                                    unsigned int cellUniqueIdOffset, count;
+                                    
+                                    cellUniqueIdOffset = validCells     [targetCellId];
+                                    count              = uniqueCellCount[targetCellId];
+                                    neighborMeanPosition.x = localMeanBoids.x [cellUniqueIdOffset];
+                                    neighborMeanPosition.y = localMeanBoids.y [cellUniqueIdOffset];
+                                    neighborMeanPosition.z = localMeanBoids.z [cellUniqueIdOffset];
+                                    neighborMeanVelocity.x = localMeanBoids.vx[cellUniqueIdOffset];
+                                    neighborMeanVelocity.y = localMeanBoids.vy[cellUniqueIdOffset];
+                                    neighborMeanVelocity.z = localMeanBoids.vz[cellUniqueIdOffset];
+                        
+                                    T dist = distance<T>(myPosition, neighborMeanPosition);
+
+                                    if(dist < kernel::rSeparation) {
+                                        forceSeparation.x -= count*(myPosition.x - neighborMeanPosition.x)/dist;
+                                        forceSeparation.y -= count*(myPosition.y - neighborMeanPosition.y)/dist;
+                                        forceSeparation.z -= count*(myPosition.z - neighborMeanPosition.z)/dist;
+                                        countSeparation++;
+                                    }
+                                    if(dist < kernel::rCohesion) {
+                                        forceCohesion.x += count*neighborMeanPosition.x;
+                                        forceCohesion.y += count*neighborMeanPosition.y;
+                                        forceCohesion.z += count*neighborMeanPosition.z;
+                                        countCohesion++;
+                                    }
+                                    if(dist < kernel::rAlignment) {
+                                        forceAlignment.x += count*neighborMeanVelocity.x;
+                                        forceAlignment.y += count*neighborMeanVelocity.y;
+                                        forceAlignment.z += count*neighborMeanVelocity.z;
+                                        countAlignment++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
 
                 //Update forces
                 vec3 force = {};
@@ -138,13 +227,21 @@ namespace kernel {
                 myPosition.x += kernel::dt * myVelocity.x;
                 myPosition.y += kernel::dt * myVelocity.y;
                 myPosition.z += kernel::dt * myVelocity.z;
+        
+                if(keepInLocalDomain) { //Here in theory localDomain == globalDomain, or you are weird.
+                    //Clamp positions to global domain
+                    localDomain.moduloDomain(myPosition);
+                }
+                else { 
+                    //Clamp positions to global domain
+                    globalDomain.moduloDomain(myPosition);
+                
+                    //Handle boids that went outside of local domain 
+                    outOfDomain[boidId] = localDomain.isInDomain(myPosition); //0 if it stays inside the local domain
+                }
 
-                //Compute new id
-                //TODO TODO TODO 
-
-                //Handle out of domain
-                //TODO TODO TODO
-                unsigned int myNewCellId = myCellId;
+                //Compute new cell id
+                unsigned int myNewCellId = localDomain.getCellId(myPosition);
 
                 //Write back data to memory
                 boids.x[boidId]  = myPosition.x;
@@ -196,7 +293,8 @@ namespace kernel {
                         globalDomain,
                         nAgents, 
                         nUniqueIds,
-                        nCells);
+                        nCells,
+                        true);
 
                 CHECK_KERNEL_EXECUTION();
             }
@@ -205,34 +303,7 @@ namespace kernel {
 }
 
 
-template <typename T>
-struct ComputeCellFunctor
-{
-    unsigned int width, length, height;
-    T xmin, ymin, zmin, xmax, ymax, zmax, radius;
 
-    ComputeCellFunctor(const BoidGrid<T> &boidGrid) :
-        width(boidGrid.getWidth()), length(boidGrid.getLength()), height(boidGrid.getHeight()),
-        xmin(boidGrid.getLocalDomain().min[0]), ymin(boidGrid.getLocalDomain().min[1]), zmin(boidGrid.getLocalDomain().min[2]),
-        xmax(boidGrid.getLocalDomain().max[0]), ymax(boidGrid.getLocalDomain().max[2]), zmax(boidGrid.getLocalDomain().max[2]),
-        radius(boidGrid.getMaxRadius()) {
-        }
-
-    template <typename Tuple>
-        __host__ __device__ void operator()(Tuple t) //X Y Z C
-        {
-            thrust::get<3>(t) = makeId(
-                    static_cast<unsigned int>(floor(relativeX(thrust::get<0>(t)) * width)), 
-                    static_cast<unsigned int>(floor(relativeY(thrust::get<1>(t)) * length)), 
-                    static_cast<unsigned int>(floor(relativeZ(thrust::get<2>(t)) * height))
-                    );
-        }
-
-    __host__ __device__ T relativeX(T x) { return (x - xmin)/(xmax - xmin);}
-    __host__ __device__ T relativeY(T y) { return (y - ymin)/(ymax - ymin);}
-    __host__ __device__ T relativeZ(T z) { return (z - zmin)/(zmax - zmin);}
-    __host__ __device__ unsigned int makeId(unsigned int x, unsigned int y, unsigned int z) { return (width*length*z + width*y + x); }
-};
 
 /*template <typename T>*/
 /*using thrust::device_vector<T>::iterator = deviceIterator;*/
@@ -262,7 +333,7 @@ __host__ void initBoidGridThrustArrays(BoidGrid<T> &boidGrid) {
                         agents_thrust_d.y + nAgents,
                         agents_thrust_d.z + nAgents,
                         agents_thrust_d.id + nAgents)),
-                ComputeCellFunctor<T>(boidGrid))
+                kernel::ComputeCellFunctor<T>(kernel::makeCudaDomain<T>(boidGrid.getLocalDomain(), boidGrid.getBoxSize())))
             );
 
     //find the permutation to sort everyone according to the cellIds
@@ -299,11 +370,11 @@ __host__ void initBoidGridThrustArrays(BoidGrid<T> &boidGrid) {
             );
 
     //sort the boids with precomputed permutation
-    thrust::device_vector<T> buffer(BoidMemoryView<T>::N*nAgents);
+    thrust::device_vector<T> buffer((BoidMemoryView<T>::N-1)*nAgents);
     BoidMemoryView<T> buf_view(buffer.data().get(), nAgents);
     ThrustBoidMemoryView<T> buffer_view(buf_view);
 
-    for(unsigned int i = 0u; i < BoidMemoryView<T>::N; i++) {
+    for(unsigned int i = 0u; i < BoidMemoryView<T>::N-1; i++) {
         CHECK_THRUST_ERRORS(
                 thrust::copy(
                     thrust::make_permutation_iterator(agents_thrust_d[i], keys.begin()),
@@ -396,7 +467,7 @@ __host__ BoidMemoryView<T> computeThrustStep(BoidGrid<T> &boidGrid) {
         }
     }
 
-    // Get neighbor mean position
+    // Get globals neighbors mean position and velocity
     int* outOfDomain = 0;
     T* meanNeighborBoidData = 0;
     
@@ -408,10 +479,14 @@ __host__ BoidMemoryView<T> computeThrustStep(BoidGrid<T> &boidGrid) {
             kernel::makeCudaDomain<T>(boidGrid.getGlobalDomain(), globalDomainSize),
             nAgents, nUniqueIds, nCells);
 
-    
     // Check for bad elements
 
     //check for boids that went outside the domain
+    
+    std::cout << "Unique IDs:\t";
+    for(int i = 0; i < nUniqueIds; i++)
+        std::cout << thrust::device_ptr<unsigned int>(uniqueIds_d.data())[i] << " ";
+    std::cout << std::endl;
 
     BoidMemoryView<T> outOfDomainBoids;
     return outOfDomainBoids;

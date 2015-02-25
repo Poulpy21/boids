@@ -53,8 +53,8 @@ void compute(int argc, char **argv) {
 
     // Add options to parser
     ArgumentParser parser;
-    parser.addOption("agents", 100000);
-    parser.addOption("steps", 100);
+    parser.addOption("agents", 1000);
+    parser.addOption("steps", 10);
     parser.addOption("wc", 12);
     parser.addOption("wa", 15);
     parser.addOption("ws", 35);

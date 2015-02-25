@@ -328,6 +328,7 @@ std::string BoidGrid<T>::toString() const {
     ss << "\n\tBox   : " << getBoxSize();
     ss << "\n\tCells : " << getCellsCount();
     ss << "\n\tMax radius : " << getMaxRadius();
+    ss << "\n\tKeep boids in local domain : " << this->keepBoidsInLocalDomain;
 
     return ss.str();
 }

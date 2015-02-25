@@ -220,16 +220,16 @@ namespace kernel {
         
         __host__ __device__ __inline__ unsigned int getCellId(T x, T y, T z) const {
             return makeId(
-                    ceil((x - xmin.x)*istep.x), 
-                    ceil((y - xmin.y)*istep.y),
-                    ceil((z - xmin.z)*istep.z));
+                    floor((x - xmin.x)*istep.x), 
+                    floor((y - xmin.y)*istep.y),
+                    floor((z - xmin.z)*istep.z));
         }
         
         __host__ __device__ __inline__ unsigned int getCellId(const vec3 &pos) const {
             return getCellId(pos.x, pos.y, pos.z);
         }
 
-        __host__ __device__ __inline__ unsigned char isInDomain(const vec3 &p) {
+        __host__ __device__ __inline__ unsigned char isInDomain(const vec3 &p) const {
             unsigned char C = 0;
             C += 1*(p.x < xmin.x ? 1 : (p.x > xmax.x ? 2 : 0));
             C += 3*(p.y < xmin.y ? 1 : (p.y > xmax.y ? 2 : 0));
@@ -237,7 +237,7 @@ namespace kernel {
             return C; //0 - 26 for the 27 surounding cases -- 0 <==> boid stays in domain
         }
         
-        __host__ __device__ __inline__ void moduloDomain(vec3 &p) {
+        __host__ __device__ __inline__ void moduloDomain(vec3 &p) const {
             p.x = fmod(p.x + xmax.x, size.x)*size.x + xmin.x; //xmax = + size - xmin
             p.y = fmod(p.y + xmax.y, size.y)*size.y + xmin.y;
             p.z = fmod(p.z + xmax.z, size.z)*size.z + xmin.z;
