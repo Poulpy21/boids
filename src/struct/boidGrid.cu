@@ -9,9 +9,9 @@
 #include "thrustVectorMemoryView.hpp"
 #include "thrustBoidMemoryView.hpp"
 #include "kernel_utilities.cuh"
-  
+
 #ifdef THRUST_ENABLED
-   
+
 namespace kernel {
 
     template <typename T> 
@@ -83,6 +83,7 @@ namespace kernel {
                 unsigned int countSeparation=0u, countCohesion=0u, countAlignment=0u;
                 vec3 forceSeparation = {}, forceCohesion = {}, forceAlignment = {};
 
+
                 //Compute "internal forces"
                 {
                     vec3 neighborPosition;
@@ -116,6 +117,7 @@ namespace kernel {
                     }
                 }
 
+
                 //Compute "external forces" -- SOOO MUCH BRANCHING
                 {
                     unsigned int targetCellId;
@@ -127,14 +129,14 @@ namespace kernel {
                     idx = myCellId % dim.x; 
                     idy = (myCellId/dim.x) % dim.y; 
                     idz = myCellId/(dim.x*dim.y); 
-                    
+
                     for (int k = -1; k <= 1; k++) {
                         iiz = idz + k;
                         for (int j = -1; j <= 1; j++) {
                             iiy = idy + j;
                             for (int i = -1; i <= 1; i++) {
                                 iix = idx + i;
-                               
+
                                 //Compute target neighbor cell id
                                 targetCellId = localDomain.makeId(idx+i, idy+j, idz+k);
 
@@ -155,7 +157,7 @@ namespace kernel {
                                 else if (validCells[targetCellId] != -1) {
                                     vec3 neighborMeanPosition, neighborMeanVelocity;
                                     unsigned int cellUniqueIdOffset, count;
-                                    
+
                                     cellUniqueIdOffset = validCells     [targetCellId];
                                     count              = uniqueCellCount[targetCellId];
                                     neighborMeanPosition.x = localMeanBoids.x [cellUniqueIdOffset];
@@ -164,9 +166,10 @@ namespace kernel {
                                     neighborMeanVelocity.x = localMeanBoids.vx[cellUniqueIdOffset];
                                     neighborMeanVelocity.y = localMeanBoids.vy[cellUniqueIdOffset];
                                     neighborMeanVelocity.z = localMeanBoids.vz[cellUniqueIdOffset];
-                        
+
                                     T dist = distance<T>(myPosition, neighborMeanPosition);
 
+                                    //TODO change conditions
                                     if(dist < kernel::rSeparation) {
                                         forceSeparation.x -= count*(myPosition.x - neighborMeanPosition.x)/dist;
                                         forceSeparation.y -= count*(myPosition.y - neighborMeanPosition.y)/dist;
@@ -191,66 +194,73 @@ namespace kernel {
                     }
                 }
 
+
                 //Update forces
                 vec3 force = {};
+                {
+                    if(countSeparation > 0) {
+                        force.x += kernel::wSeparation*forceSeparation.x/countSeparation;
+                        force.y += kernel::wSeparation*forceSeparation.y/countSeparation;
+                        force.z += kernel::wSeparation*forceSeparation.z/countSeparation;
+                    }
+                    if(countCohesion > 0) {
+                        force.x += kernel::wCohesion*forceCohesion.x/countCohesion;
+                        force.y += kernel::wCohesion*forceCohesion.y/countCohesion;
+                        force.z += kernel::wCohesion*forceCohesion.z/countCohesion;
+                    }
+                    if(countCohesion > 0) {
+                        force.x += kernel::wAlignment*forceAlignment.x/countAlignment;
+                        force.y += kernel::wAlignment*forceAlignment.y/countAlignment;
+                        force.z += kernel::wAlignment*forceAlignment.z/countAlignment;
+                    }
+                }
+                    
 
-                if(countSeparation > 0) {
-                    force.x += kernel::wSeparation*forceSeparation.x/countSeparation;
-                    force.y += kernel::wSeparation*forceSeparation.y/countSeparation;
-                    force.z += kernel::wSeparation*forceSeparation.z/countSeparation;
-                }
-                if(countCohesion > 0) {
-                    force.x += kernel::wCohesion*forceCohesion.x/countCohesion;
-                    force.y += kernel::wCohesion*forceCohesion.y/countCohesion;
-                    force.z += kernel::wCohesion*forceCohesion.z/countCohesion;
-                }
-                if(countCohesion > 0) {
-                    force.x += kernel::wAlignment*forceAlignment.x/countAlignment;
-                    force.y += kernel::wAlignment*forceAlignment.y/countAlignment;
-                    force.z += kernel::wAlignment*forceAlignment.z/countAlignment;
-                }
-
-                //Integrate in time
+                //Integrate in time and clamp positions to domain
                 vec3 myVelocity;
-                myVelocity.x = boids.vx[boidId] + force.x;
-                myVelocity.y = boids.vy[boidId] + force.y;
-                myVelocity.z = boids.vz[boidId] + force.z;
+                {
+                    myVelocity.x = boids.vx[boidId] + force.x;
+                    myVelocity.y = boids.vy[boidId] + force.y;
+                    myVelocity.z = boids.vz[boidId] + force.z;
 
-                T speed = kernel::norm<T>(myVelocity);
+                    T speed = kernel::norm<T>(myVelocity);
 
-                if(speed > kernel::maxVelocity) {
-                    myVelocity.x *= kernel::maxVelocity/speed;
-                    myVelocity.y *= kernel::maxVelocity/speed;
-                    myVelocity.z *= kernel::maxVelocity/speed;
+                    if(speed > kernel::maxVelocity) {
+                        myVelocity.x *= kernel::maxVelocity/speed;
+                        myVelocity.y *= kernel::maxVelocity/speed;
+                        myVelocity.z *= kernel::maxVelocity/speed;
+                    }
+
+                    myPosition.x += kernel::dt * myVelocity.x;
+                    myPosition.y += kernel::dt * myVelocity.y;
+                    myPosition.z += kernel::dt * myVelocity.z;
+
+                    if(keepInLocalDomain) { //Here in theory localDomain == globalDomain, or you are weird.
+                        //Clamp positions to local domain
+                        localDomain.moduloDomain(myPosition);
+                    }
+                    else { 
+                        //Clamp positions to global domain
+                        globalDomain.moduloDomain(myPosition);
+
+                        //Handle boids that went outside of local domain 
+                        outOfDomain[boidId] = localDomain.isInDomain(myPosition); //0 if it stays inside the local domain
+                    }
                 }
 
-                myPosition.x += kernel::dt * myVelocity.x;
-                myPosition.y += kernel::dt * myVelocity.y;
-                myPosition.z += kernel::dt * myVelocity.z;
-        
-                if(keepInLocalDomain) { //Here in theory localDomain == globalDomain, or you are weird.
-                    //Clamp positions to global domain
-                    localDomain.moduloDomain(myPosition);
-                }
-                else { 
-                    //Clamp positions to global domain
-                    globalDomain.moduloDomain(myPosition);
-                
-                    //Handle boids that went outside of local domain 
-                    outOfDomain[boidId] = localDomain.isInDomain(myPosition); //0 if it stays inside the local domain
-                }
 
-                //Compute new cell id
-                unsigned int myNewCellId = localDomain.getCellId(myPosition);
+                //Compute new cell id and write data back to memory
+                { 
+                    unsigned int myNewCellId = localDomain.getCellId(myPosition);
 
-                //Write back data to memory
-                boids.x[boidId]  = myPosition.x;
-                boids.y[boidId]  = myPosition.y;
-                boids.z[boidId]  = myPosition.z;
-                boids.vx[boidId] = myVelocity.x;
-                boids.vy[boidId] = myVelocity.y;
-                boids.vz[boidId] = myVelocity.z;
-                boids.id[boidId] = myNewCellId;
+                    boids.x[boidId]  = myPosition.x;
+                    boids.y[boidId]  = myPosition.y;
+                    boids.z[boidId]  = myPosition.z;
+                    boids.vx[boidId] = myVelocity.x;
+                    boids.vy[boidId] = myVelocity.y;
+                    boids.vz[boidId] = myVelocity.z;
+                    boids.id[boidId] = myNewCellId;
+                }
             }
 
 
@@ -299,7 +309,7 @@ namespace kernel {
                 CHECK_KERNEL_EXECUTION();
             }
     }
-    
+
 }
 
 
@@ -434,6 +444,7 @@ __host__ void initBoidGridThrustArrays(BoidGrid<T> &boidGrid) {
 template <typename T>
 __host__ BoidMemoryView<T> computeThrustStep(BoidGrid<T> &boidGrid) {
 
+    
     unsigned int nAgents    = boidGrid.getTotalLocalAgentCount();
     unsigned int nUniqueIds = boidGrid.getDeviceUniqueIds().size();
     unsigned int nCells     = boidGrid.getCellsCount();
@@ -445,8 +456,6 @@ __host__ BoidMemoryView<T> computeThrustStep(BoidGrid<T> &boidGrid) {
     GPUResource<int>          &validIds_d  = boidGrid.getDeviceValidIds(); 
 
     ThrustBoidMemoryView<T> agents_thrust_d(boidGrid.getBoidDeviceMemoryView());
-
-    // Sort and find unique ids
 
     // Compute mean positions (only for filled cells)
     thrust::device_vector<T>  means(6*nUniqueIds);
@@ -467,11 +476,15 @@ __host__ BoidMemoryView<T> computeThrustStep(BoidGrid<T> &boidGrid) {
         }
     }
 
+
+
     // Get globals neighbors mean position and velocity
+    // TODO 
     int* outOfDomain = 0;
     T* meanNeighborBoidData = 0;
-    
-    // Call kernel
+
+
+    // Compute forces and integrate
     kernel::boidgrid::computeForcesKernel(agents_d.data(), outOfDomain, means_v.data(), meanNeighborBoidData,
             uniqueIds_d.data(), count_d.data(),
             offsets_d.data(), validIds_d.data(),
@@ -479,15 +492,91 @@ __host__ BoidMemoryView<T> computeThrustStep(BoidGrid<T> &boidGrid) {
             kernel::makeCudaDomain<T>(boidGrid.getGlobalDomain(), globalDomainSize),
             nAgents, nUniqueIds, nCells);
 
-    // Check for bad elements
+    CHECK_CUDA_ERRORS(cudaDeviceSynchronize());
 
-    //check for boids that went outside the domain
-    
-    std::cout << "Unique IDs:\t";
-    for(int i = 0; i < nUniqueIds; i++)
-        std::cout << thrust::device_ptr<unsigned int>(uniqueIds_d.data())[i] << " ";
-    std::cout << std::endl;
 
+    // Check for boids that went outside local domain and xchange, update boids size
+    // TODO
+
+    // Sort and find unique ids
+    {
+        //find the permutation to sort everyone according to the cellIds
+        thrust::device_vector<unsigned int> keys(nAgents);
+        CHECK_THRUST_ERRORS(thrust::sequence(keys.begin(), keys.end()));
+        CHECK_THRUST_ERRORS(thrust::stable_sort_by_key(agents_thrust_d.id, agents_thrust_d.id + nAgents, keys.begin()));
+
+        //find the cells that contains at least one agent
+        //and find coresponding array offsets to be copied from the cells
+        thrust::device_vector<unsigned int> uniqueIds(agents_thrust_d.id, agents_thrust_d.id + nAgents);
+        thrust::device_vector<unsigned int> offsets(nAgents);
+        CHECK_THRUST_ERRORS(thrust::sequence(offsets.begin(), offsets.end()));
+
+        thrust::pair<deviceIterator_ui, deviceIterator_ui> end =
+            thrust::unique_by_key(uniqueIds.begin(), uniqueIds.end(), offsets.begin());
+
+        unsigned int nUniqueIds = thrust::distance(uniqueIds.begin(), end.first);
+        uniqueIds.resize(nUniqueIds);
+        offsets.resize(nUniqueIds);
+
+        //count number of boids per key using computed offsets
+        thrust::device_vector<unsigned int> count(nUniqueIds);
+        CHECK_THRUST_ERRORS(thrust::transform(offsets.begin()+1, offsets.end(), offsets.begin(), count.begin(), thrust::minus<unsigned int>()));
+        count[nUniqueIds-1] = nAgents - offsets[nUniqueIds-1];
+
+        //std::cout << nCells << std::endl;
+        //std::cout << nUniqueIds << std::endl;
+        //for (unsigned int i = 0; i < nUniqueIds; i++) {
+            //std::cout << uniqueIds[i] << std::endl;
+        //}
+
+        //keep filled cells for neighborlookup
+        thrust::device_vector<int> validIds(nCells);
+        CHECK_THRUST_ERRORS(thrust::fill(validIds.begin(), validIds.end(), -1));
+        CHECK_THRUST_ERRORS(
+                thrust::scatter(
+                    thrust::make_counting_iterator<int>(0), 
+                    thrust::make_counting_iterator<int>(nUniqueIds),
+                    uniqueIds.begin(), validIds.begin())
+                );
+
+        //sort the boids with precomputed permutation
+        thrust::device_vector<T> buffer((BoidMemoryView<T>::N-1)*nAgents);
+        BoidMemoryView<T> buf_view(buffer.data().get(), nAgents);
+        ThrustBoidMemoryView<T> buffer_view(buf_view);
+
+        for(unsigned int i = 0u; i < BoidMemoryView<T>::N-1; i++) {
+            CHECK_THRUST_ERRORS(
+                    thrust::copy(
+                        thrust::make_permutation_iterator(agents_thrust_d[i], keys.begin()),
+                        thrust::make_permutation_iterator(agents_thrust_d[i], keys.end()),
+                        buffer_view[i])
+                    );
+            CHECK_THRUST_ERRORS(thrust::copy(buffer_view[i], buffer_view[i]+nAgents, agents_thrust_d[i]));
+        }
+
+        //allocate and store additional data
+        GPUResource<int> &validIds_d = boidGrid.getDeviceValidIds(); 
+        GPUResource<unsigned int> &uniqueIds_d = boidGrid.getDeviceUniqueIds(); 
+        GPUResource<unsigned int> &offsets_d = boidGrid.getDeviceOffsets(); 
+        GPUResource<unsigned int> &count_d = boidGrid.getDeviceCount(); 
+
+        uniqueIds_d.reallocate(nUniqueIds);
+        offsets_d.reallocate(nUniqueIds);
+        count_d.reallocate(nUniqueIds);
+
+        CHECK_THRUST_ERRORS(thrust::copy(uniqueIds.begin(), uniqueIds.end(), uniqueIds_d.wrap()));
+        CHECK_THRUST_ERRORS(thrust::copy(offsets.begin(), offsets.end(), offsets_d.wrap()));
+        CHECK_THRUST_ERRORS(thrust::copy(count.begin(), count.end(), count_d.wrap()));
+        CHECK_THRUST_ERRORS(thrust::copy(validIds.begin(), validIds.end(), validIds_d.wrap()));
+    }
+
+
+    //std::cout << "Unique IDs:\t";
+    //for(int i = 0; i < nUniqueIds; i++)
+        //std::cout << thrust::device_ptr<unsigned int>(uniqueIds_d.data())[i] << " ";
+    //std::cout << std::endl;
+
+    //return out of domain ?
     BoidMemoryView<T> outOfDomainBoids;
     return outOfDomainBoids;
 }

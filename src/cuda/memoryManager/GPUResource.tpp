@@ -114,6 +114,14 @@ void GPUResource<T>::setSize(unsigned long size) {
 	this->_size = size;
 }
 
+template <typename T>
+void GPUResource<T>::reallocate(unsigned long size) {
+    this->free();
+    this->setSize(size);
+    this->allocate();
+}
+	
+
 #ifdef THRUST_ENABLED
 template <typename T>
     thrust::device_ptr<T> GPUResource<T>::wrap() {

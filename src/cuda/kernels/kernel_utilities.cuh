@@ -238,9 +238,12 @@ namespace kernel {
         }
         
         __host__ __device__ __inline__ void moduloDomain(vec3 &p) const {
-            p.x = fmod(p.x + xmax.x, size.x)*size.x + xmin.x; //xmax = + size - xmin
-            p.y = fmod(p.y + xmax.y, size.y)*size.y + xmin.y;
-            p.z = fmod(p.z + xmax.z, size.z)*size.z + xmin.z;
+            p.x = fmod(p.x - xmin.x, size.x) + xmin.x; //xmax = + size - xmin
+            p.y = fmod(p.y - xmin.y, size.y) + xmin.y;
+            p.z = fmod(p.z - xmin.z, size.z) + xmin.z;
+            p.x = (p.x >= 0 ? p.x : size.x + p.x);
+            p.y = (p.y >= 0 ? p.y : size.y + p.y);
+            p.z = (p.z >= 0 ? p.z : size.z + p.z);
         }
     };
 }

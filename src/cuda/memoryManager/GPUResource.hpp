@@ -16,6 +16,7 @@ public:
 	void setData(T* data, int deviceId, unsigned int size, bool isOwner);
 	void free();
 	void allocate();
+	void reallocate(unsigned long size);
 
 	void setSize(unsigned long size);
 
