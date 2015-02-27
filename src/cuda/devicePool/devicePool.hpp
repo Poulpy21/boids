@@ -5,6 +5,7 @@
 #include "headers.hpp"
 #include "device.hpp"
 #include <iostream>
+#include <pthread.h>
 
 #ifdef CUDA_ENABLED
 
@@ -24,6 +25,8 @@ class DevicePool {
     private: 
         DevicePool();
         
+        static pthread_mutex_t mtx;
+        static bool _init;
 
 };
 

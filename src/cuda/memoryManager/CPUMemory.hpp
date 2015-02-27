@@ -33,6 +33,9 @@ class CPUMemory {
 		static const volatile unsigned long _memoryRuntime;
 		static unsigned long _memoryLeft;
 		static bool _verbose;
+
+        static pthread_mutex_t _mtx;
+        static bool _init;
 };
 
 #include "CPUMemory.tpp"

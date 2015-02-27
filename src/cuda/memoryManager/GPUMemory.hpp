@@ -41,6 +41,9 @@ class GPUMemory {
 		static int _nDevice;
 		static unsigned long * _memoryLeft;
 		static bool _verbose;
+        
+        static pthread_mutex_t _mtx;
+        static bool _init;
 };
 
 #include "GPUMemory.tpp"

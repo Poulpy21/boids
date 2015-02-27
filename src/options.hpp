@@ -17,6 +17,8 @@ struct Options {
     Real maxVel;
     Real domainSize;
 
+    static const unsigned int nData = 11u;
+
     Options() : nAgents(0l), nSteps(0l), 
         wCohesion(0.0), wAlignment(0.0), wSeparation(0.0),
         rCohesion(0.0), rAlignment(0.0), rSeparation(0.0),
@@ -36,6 +38,40 @@ struct Options {
         domainSize  = parser("size").asDouble(1.0);
     }
 
+    Options(double *data) {
+        assert(sizeof(double) == sizeof(unsigned long int));
+        unsigned int i = 0;
+        nAgents = static_cast<unsigned long int>(data[i++]);
+        nSteps = static_cast<unsigned long int>(data[i++]);
+        wCohesion = data[i++];
+        wAlignment = data[i++];
+        wSeparation = data[i++];
+        rCohesion = data[i++];
+        rAlignment = data[i++];
+        rSeparation = data[i++];
+        dt = data[i++];
+        maxVel = data[i++];
+        domainSize = data[i++];
+    }
+
+    double* serialize() {
+        assert(sizeof(double) == sizeof(unsigned long int));
+        unsigned int i = 0;
+        double *data = new double[Options::nData];
+        data[i++] = static_cast<double>(nAgents);
+        data[i++] = static_cast<double>(nSteps);
+        data[i++] = wCohesion;
+        data[i++] = wAlignment;
+        data[i++] = wSeparation;
+        data[i++] = rCohesion;
+        data[i++] = rAlignment;
+        data[i++] = rSeparation;
+        data[i++] = dt;
+        data[i++] = maxVel;
+        data[i++] = domainSize;
+        return data;
+    }
+
     friend std::ostream& operator<<(std::ostream &stream, const Options &opt) {
         return stream <<"The simulation will be executed with the following parameters " << std::endl
                       << "[ nAgents : "     << opt.nAgents      << " ] "
@@ -49,6 +85,8 @@ struct Options {
                       << "[ dt : "          << opt.dt           << " ]"
                       << "[ maxVelocity : " << opt.maxVel       << " ]";
     }
+
+
 };
 
 #endif

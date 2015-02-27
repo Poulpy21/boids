@@ -4,17 +4,16 @@ cmake_minimum_required(VERSION 2.8)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/modules/")
 set(LIBRARY_OUTPUT_PATH "${CMAKE_SOURCE_DIR}/lib/${CMAKE_BUILD_TYPE}")
 
+set(MIN_COMPUTE_CAPABILITY "20")        
+set(ENABLE_GUI "1")                      
+set(CMAKE_THREAD_PREFER_PTHREAD "1")
+
 project(Boids C CXX)
 set(BOIDS_MAJOR_VERSION 1)
-set(BOIDS_MINOR_VERSION 3)
+set(BOIDS_MINOR_VERSION 4)
 set(BOIDS_PATCH_VERSION 2)
 set(BOIDS_VERSION ${BOIDS_MAJOR_VERSION}.${BOIDS_MINOR_VERSION}.${BOIDS_PATCH_VERSION})
 get_filename_component(SHADER_FOLDER "${CMAKE_SOURCE_DIR}/shaders" ABSOLUTE)
-
-# TODO # TODO # TODO # TODO # TODO # TODO ###
-set(MIN_COMPUTE_CAPABILITY "30")          #T#
-set(ENABLE_GUI "1")                       ###
-# TODO # TODO # TODO # TODO # TODO # TODO ###
 
 find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
@@ -29,6 +28,7 @@ else()
 endif()
 
 find_package(MPI REQUIRED)
+find_package(Threads REQUIRED)
 find_package(OpenMP)
 find_package(CUDA 5.5)
 find_package(Thrust)
@@ -142,6 +142,7 @@ list(APPEND executable_sources "${CMAKE_SOURCE_DIR}/src/sequential.cpp")
 list(APPEND executable_sources "${CMAKE_SOURCE_DIR}/src/tree.cpp")
 if(${ENABLE_CUDA})
     list(APPEND executable_sources "${CMAKE_SOURCE_DIR}/src/cuda.cpp")
+    list(APPEND executable_sources "${CMAKE_SOURCE_DIR}/src/barbecue.cpp")
 endif()
 if(${ENABLE_GUI})
     list(APPEND executable_sources "${CMAKE_SOURCE_DIR}/src/display.cpp")
@@ -250,6 +251,7 @@ target_link_libraries(
         Qt4::QtOpenGL        #QtOpenGL
         ${QGLVIEWER_LIBRARY} #QGlViewer
         ${LOG4CPP_LIBRARIES} #Log4cpp
+        ${CMAKE_THREAD_LIBS_INIT} #Pthread
         ${MPI_CXX_LIBRARIES} #MPI
         ${CUDA_LIBRARIES}    #Cuda
         ${OPENGL_LIBRARIES}  #OpenGl
