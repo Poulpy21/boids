@@ -51,7 +51,7 @@ class GlobalBoidDataStructure {
         virtual unsigned int getGlobalAgentCount(unsigned int globalCellId) const = 0;
 
         //return neighbors cells in the computing grid
-        virtual NeighborIds<unsigned int> getGlobalNeighborCellIds(unsigned int globalCellId) const = 0;
+        virtual std::vector<unsigned int> getGlobalNeighborCellIds(unsigned int globalCellId) const = 0;
 
         //return true if the structure is in the global domain corners
         virtual bool isAtCorner(unsigned int globalCellId) = 0;

@@ -22,6 +22,9 @@ template <typename T>
      explicit Vec3(const T data[]);
      explicit Vec3(T x, T y, T z);
     
+     template <typename S>
+     explicit Vec3(const Vec3<S> &other);
+    
 
      ~Vec3();
 
@@ -47,6 +50,14 @@ template <typename T>
 
 template <typename T>
  Vec3<T>::Vec3(const Vec<3u,T> &v) : Vec<3u,T>(v), x(this->data[0]), y(this->data[1]), z(this->data[2])  {
+}
+
+template <typename T>
+template <typename S>
+ Vec3<T>::Vec3(const Vec3<S> &v) : Vec<3u,T>(), x(this->data[0]), y(this->data[1]), z(this->data[2])  {
+     this->x = static_cast<T>(v.x);
+     this->y = static_cast<T>(v.y);
+     this->z = static_cast<T>(v.z);
 }
     
 template <typename T>

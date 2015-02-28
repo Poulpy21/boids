@@ -1,0 +1,205 @@
+
+#include "cudaDistributedWorkspace.hpp"
+
+#ifdef CUDA_ENABLED
+
+#include "agent.hpp"
+#include "GPUMemory.hpp"
+#include "GPUResource.hpp"
+#include "rand.hpp"
+#include "initBounds.hpp"
+#include "kernel.hpp"
+
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+
+
+CudaDistributedWorkspace::CudaDistributedWorkspace(const BoundingBox<3u,Real> &globalDomain, bool keepBoidsInGlobalDomain, 
+        const Options &opt,
+        unsigned int rank, unsigned int size, unsigned int masterRank, 
+        const MPI_Comm &comm, const std::string &name) :
+    options(opt),
+    computeGrid(globalDomain, opt, size, rank, masterRank),
+    localBoidGrid(rank, globalDomain, computeGrid.getSubdomain(rank), false, 
+            std::max<Real>(options.rCohesion, std::max<Real>(options.rAlignment, options.rSeparation))),
+    rank(rank), size(size), masterRank(masterRank), comm(comm), name(name),
+    nGlobalAgents(0u), nLocalAgents(0u), stepId(1u)
+{
+    initSymbols();
+    
+    //initBoids();
+    //nLocalAgents = options.nLocalAgents;
+    //boidDataStructure->init(agents_view_h, nLocalAgents);
+}
+
+
+void CudaDistributedWorkspace::initSymbols() {
+
+    // Upload options to devices
+    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&kernel::dt, &options.dt, sizeof(Real)));
+
+    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&kernel::wCohesion, &options.wCohesion, sizeof(Real)));
+    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&kernel::wAlignment, &options.wAlignment, sizeof(Real)));
+    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&kernel::wSeparation, &options.wSeparation, sizeof(Real)));
+
+    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&kernel::rCohesion, &options.rCohesion, sizeof(Real)));
+    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&kernel::rAlignment, &options.rAlignment, sizeof(Real)));
+    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&kernel::rSeparation, &options.rSeparation, sizeof(Real)));
+
+    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&kernel::maxVelocity, &options.maxVel, sizeof(Real)));
+    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(&kernel::domainSize, &options.domainSize, sizeof(Real)));
+
+    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(kernel::minInitValues, initBounds.minValues, 9u*sizeof(Real)));
+    CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(kernel::maxInitValues, initBounds.maxValues, 9u*sizeof(Real)));
+
+    CHECK_CUDA_ERRORS(cudaDeviceSynchronize());
+}
+
+
+
+void CudaDistributedWorkspace::initBoids() {
+
+    //init agents
+
+    agents_h = PinnedCPUResource<Real>(BoidMemoryView<Real>::N*nLocalAgents); 
+    agents_h.allocate();
+    agents_view_h = BoidMemoryView<Real>(agents_h.data(), nLocalAgents);
+
+#ifdef CURAND_ENABLED
+    std::cout << std::endl;
+    std::cout << ":: Initializing " << nLocalAgents << " boids with Curand !";
+    std::cout << std::endl;
+    std::cout << std::endl;
+
+    unsigned int agentsToInitialize = nLocalAgents;
+    unsigned int deviceId = 0u, devAgents = 0u, i = 0u, offset = 0u; 
+    unsigned int devMaxAgents;
+    GPUResource<float> *random_d;
+    GPUResource<Real>  *agents_d;
+
+    while(agentsToInitialize > 0) {
+        if(i == 0) {
+            devMaxAgents = computeMaxAgentsAtInit(deviceId);
+            devAgents = std::min(devMaxAgents, agentsToInitialize);
+        }
+
+        random_d = new GPUResource<float>(deviceId, (devAgents*BoidMemoryView<Real>::N-1u));
+        agents_d = new GPUResource<Real> (deviceId, (devAgents*BoidMemoryView<Real>::N-1u));
+        random_d->allocate();
+        agents_d->allocate();
+
+        devAgents = std::min(devMaxAgents, agentsToInitialize);
+
+        log4cpp::log_console->infoStream() << "\tDevice " << deviceId << " allocating " << devAgents << " boids !";
+
+        curandGenerator_t generator;
+        unsigned long long int seed = Random::randl();
+        CHECK_CURAND_ERRORS(curandCreateGenerator(&generator, CURAND_RNG_PSEUDO_MRG32K3A));
+        CHECK_CURAND_ERRORS(curandSetPseudoRandomGeneratorSeed(generator, seed));
+        CHECK_CURAND_ERRORS(curandGenerateUniform(generator, random_d->data(), (BoidMemoryView<Real>::N-1u)*devAgents));
+        CHECK_CURAND_ERRORS(curandDestroyGenerator(generator));
+
+        kernel::initializeBoidsKernel(devAgents, random_d->data(), agents_d->data());
+
+        //Copy data back
+        cudaMemcpy(agents_h.data() + (BoidMemoryView<Real>::N-1u)*offset, agents_d->data(), (BoidMemoryView<Real>::N-1u)*devAgents*sizeof(Real), cudaMemcpyDeviceToHost);
+
+        offset += devAgents;
+        agentsToInitialize -= devAgents;
+        i++;
+    }
+
+    delete agents_d;
+    delete random_d;
+
+#else
+    //TODO CURAND NOT PRESENT - CPU GENERATION
+    std::cout << std::endl;
+    std::cout << "Initializing " << nLocalAgents << " boids with CPU !";
+    std::cout << std::endl;
+    std::cout << std::endl;
+    NOT_IMPLEMENTED_YET;
+#endif
+}
+
+#ifdef CURAND_ENABLED
+unsigned int CudaDistributedWorkspace::computeMaxAgentsAtInit(unsigned int deviceId) {
+    float safeCoef = 0.5f;
+    return static_cast<unsigned int>(safeCoef*GPUMemory::memoryLeft(deviceId)/((BoidMemoryView<Real>::N-1)*(sizeof(Real) + sizeof(float))));
+}
+#endif
+
+void CudaDistributedWorkspace::update() {
+    if(rank == masterRank)
+        log4cpp::log_console->debugStream() << "Computing step " << stepId;
+    //boidDataStructure->computeLocalStep();
+    stepId++;
+}
+
+void CudaDistributedWorkspace::computeAndApplyForces(Container &receivedMeanLocalAgents, std::vector<int> &receivedMeanLocalAgentsWeights) {
+#if FALSE
+    for (size_t k = 0; k < agents.size(); k++) {
+        int countSeparation = 0, countCohesion = 0, countAlignment = 0;
+        Vec3<Real> forceSeparation, forceCohesion, forceAlignment;
+        Compute "internal forces"
+            for (size_t i = 0; i < agents.size(); i++) {
+                if (i != k) {
+                    Real dist = (agents[k].position - agents[i].position).norm();
+                    if (dist < opt.rSeparation) {
+                        forceSeparation -= (agents[k].position - agents[i].position).normalized();
+                        ++countSeparation;
+                    }
+                    if (dist < opt.rCohesion) {
+                        forceCohesion += agents[i].position;
+                        ++countCohesion;
+                    }
+                    if (dist < opt.rAlignment) {
+                        forceAlignment += agents[i].velocity;
+                        ++countAlignment;
+                    }
+                }
+            }
+        Compute "external forces"
+            for (size_t i = 0; i < receivedMeanLocalAgents.size(); i++) {
+                Real dist = (agents[k].position - receivedMeanLocalAgents[i].position).norm();
+                Real weight = receivedMeanLocalAgentsWeights[i]; 
+                if (dist < opt.rSeparation) {
+                    forceSeparation -= weight * (agents[k].position - receivedMeanLocalAgents[i].position).normalized();
+                    countSeparation += weight;
+                }
+                if (dist < opt.rCohesion) {
+                    forceCohesion += weight * receivedMeanLocalAgents[i].position;
+                    countCohesion += weight;
+                }
+                if (dist < opt.rAlignment) {
+                    forceAlignment += weight * receivedMeanLocalAgents[i].velocity;
+                    countAlignment += weight;
+                }
+            }   
+        agents[k].direction = opt.wSeparation * ( countSeparation>0 ? forceSeparation/static_cast<Real>(countSeparation) : forceSeparation) +
+            opt.wCohesion   * ( countCohesion  >0 ? forceCohesion  /static_cast<Real>(countCohesion)   : forceCohesion  ) +
+            opt.wAlignment  * ( countAlignment >0 ? forceAlignment /static_cast<Real>(countAlignment)  : forceAlignment );
+    }
+
+    Integration in time using euler method
+        for(size_t k = 0; k < agents.size(); k++){
+            agents[k].velocity += agents[k].direction;
+
+            Real speed = agents[k].velocity.norm();
+            if (speed > opt.maxVel) {
+                agents[k].velocity *= opt.maxVel/speed;
+            }
+            agents[k].position += opt.dt*agents[k].velocity;
+
+            Real modX = fmod(agents[k].position.x, opt.domainSize);
+            Real modY = fmod(agents[k].position.y, opt.domainSize);
+            Real modZ = fmod(agents[k].position.z, opt.domainSize);
+            agents[k].position.x = modX > 0 ? modX : modX + opt.domainSize;
+            agents[k].position.y = modY > 0 ? modY : modY + opt.domainSize;
+            agents[k].position.z = modZ > 0 ? modZ : modZ + opt.domainSize;
+        }
+#endif
+}
+
+#endif

@@ -33,6 +33,7 @@ struct BoundingBox {
     
      BoundingBox<D,A>& operator= (const BoundingBox<D,A> &v);
 
+     Vec<D,A> size() const;
      Vec<D,A> center() const;
      Vec<D,A> corner(unsigned long id) const;
 
@@ -86,6 +87,11 @@ template <typename S>
  BoundingBox<D,A>::BoundingBox(const BoundingBox<D,S> &v) {
     this->min = Vec<D,A>(v.min);
     this->max = Vec<D,A>(v.max);
+}
+     
+template <unsigned int D, typename A>
+Vec<D,A> BoundingBox<D,A>::size() const {
+    return max-min;
 }
 
 template <unsigned int D, typename A>
