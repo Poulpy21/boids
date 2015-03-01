@@ -11,7 +11,7 @@
 \usepackage{float}
 
 \hyphenpenalty=10000
- \frenchbsetup{StandardItemLabels=true}
+\frenchbsetup{StandardItemLabels=true}
 
 \title{Simulation d'essaims particulaires}
 \author{Keck Jean-Baptiste - Zirnhelt Gauthier}
@@ -63,7 +63,6 @@ Dans le cas où vous n'auriez pas un compilateur supportant C++11, nous fourniss
 % différents éxecutables (sequential / tree???? / main(TODO rename it?) / display)
 % différents tests (test_vec : vecteurs<T>           test_messenger : envoi/réception des messages MPI)
 % les arbres utilisés
-
 Nous avons opté pour un programme hybride permettant d'utiliser à la fois la performance du calcul distribué avec MPI et également celle du GPGPU avec CUDA. Il est toutefois toujours possible de tester notre programme avec seulement MPI ou seulement CUDA, respectivement en lançant un seul processus ou en désactivant CUDA dans les paramètres au début de $CMakeLists.txt$.\\\\
 
 Les exécutables générés sont les suivants :
@@ -83,8 +82,9 @@ Nous fournissons en outre gracieusement des scripts utilitaires pour paramétrer
 \subsection{MPI}
 % Architecture centralisée seulement pour le load balancing
 % Init par racine, puis scatter en fonction de la densité des agents et de leurs coordonnées.
-% Réception des messages bloquante
 % Chaque processus connait ses voisins et leur échange son agent moyen, ses agents "sortants". Il envoie aussi périodiquement sa charge d'agents à simuler au processus racine qui peut prendre la décision de rééquilibrer l'affectation des domaines aux processus.
+% Réception des messages bloquante
+% possibilité simu cpu bruteforce ou gpu
 
 \subsection{CUDA}
 % mémoire coalescente
@@ -112,23 +112,34 @@ Celui-ci se lance avec la commande $./display$ et va par défaut lire le fichier
 
 Le progamme affiche chaque agent sous la forme d'une sprite faisant face à la caméra. Cette sprite contient un cercle coloré représentant le type d'agent affiché. Cette technique de rendu très simple permet d'afficher beaucoup plus d'agents simultanément que si l'on représentait chaque agent par un volume texturé par exemple, ce qui permet de conserver une visualisation fluide pour grand nombre d'agents.\\
 
-L'étape de la simulation en cours de visualisation est affichée en bas à gauche de l'écran. La lecture est pausable avec la touche $entr\acute{e}e$. Il est possible de rembobiner la simulation au démarrage en appuyant sur la touche $r$.
+L'étape de la simulation en cours de visualisation est affichée en bas à gauche de l'écran. 
+La lecture est pausable avec la touche $entr\acute{e}e$. 
+Il est possible de rembobiner la simulation au démarrage en appuyant sur la touche $r$.
+Les axes (utilisés pour avoir un repère fixe) sont affichables en utilisant la touche $a$.
 
 
 
 \section{Résultats}
 % En gros, surtout des images commentées
 
-% C'est pas mal ça
-%\begin{minipage}{0.33\textwidth}
-%	\begin{flushright}
-%		\begin{figure}[H]
-%			\centering
-%			\includegraphics[width=\textwidth]{image.png}
-%			\caption{Image}
-%		\end{figure}
-%	\end{flushright}
-%\end{minipage}\\
+\begin{minipage}{0.33\textwidth}
+	\begin{flushleft}
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=\textwidth]{img/visu0.png}
+			\caption{Début d'une simulation avec des agents aux positions, vitesses, et directions aléatoires}
+		\end{figure}
+	\end{flushleft}
+\end{minipage}
+\begin{minipage}{0.33\textwidth}
+	\begin{flushright}
+		\begin{figure}[H]
+			\centering
+			\includegraphics[width=\textwidth]{img/visu.png}
+			\caption{Visualisation d'un essaim de particules formé durant la simulation}
+		\end{figure}
+	\end{flushright}
+\end{minipage}\\
 
 
 
