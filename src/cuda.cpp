@@ -53,13 +53,13 @@ void compute(int argc, char **argv) {
 
     // Add options to parser
     ArgumentParser parser;
-    parser.addOption("agents", 10000);
+    parser.addOption("agents", 100000);
     parser.addOption("steps", 1000);
     parser.addOption("wc", 12);
     parser.addOption("wa", 15);
     parser.addOption("ws", 35);
 
-    parser.addOption("rc", 0.11);
+    parser.addOption("rc", 0.05);
     parser.addOption("ra", 0.15);
     parser.addOption("rs", 0.01);
     parser.addOption("dt", 0.05);
@@ -126,6 +126,7 @@ void initDevices() {
         CHECK_CUDA_ERRORS(cudaSetDevice(i));
         CHECK_CUDA_ERRORS(cudaFree(0));
     }
+    CHECK_CUDA_ERRORS(cudaSetDevice(0));
     std::cout << std::endl;
 }
 

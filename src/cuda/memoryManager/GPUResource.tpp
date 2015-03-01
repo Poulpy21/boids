@@ -3,21 +3,22 @@
 #include <iostream>
 
 template <typename T>
-GPUResource<T>::GPUResource(int device, unsigned long size) :
-_data(0), _deviceId(device), _size(size), _isOwner(false), _isGPUResource(false)
-{
+GPUResource<T>::GPUResource(int device, unsigned long size, unsigned long realSize) :
+    _data(0), _deviceId(device), _size(size), _realSize(realSize), _isOwner(false), _isGPUResource(false) {
+    assert(realSize >= size);
 }
 	
 template <typename T>
 GPUResource<T>::GPUResource(const GPUResource<T> &original) :
-_data(original.data()), _deviceId(original.deviceId()), _size(original.size()), 
+_data(original.data()), _deviceId(original.deviceId()), _size(original.size()), _realSize(original.realSize()), 
 _isOwner(false), _isGPUResource(original.isGPUResource()) {
 }
 
 template <typename T>
-GPUResource<T>::GPUResource(T *data, int deviceId, unsigned int size, bool owner) :
-_data(data), _deviceId(deviceId), _size(size), _isOwner(owner), _isGPUResource(true) {
-	assert((data == 0 && size == 0) || (data != 0 && size != 0));
+GPUResource<T>::GPUResource(T *data, int deviceId, unsigned long size, unsigned long realSize, bool owner) :
+_data(data), _deviceId(deviceId), _size(size), _realSize(realSize), _isOwner(owner), _isGPUResource(true) {
+	assert((data == 0 && size == 0 && realSize == 0) || (data != 0 && size != 0 && realSize != 0));
+    assert(realSize >= size);
 }
 
 template <typename T>
@@ -33,6 +34,11 @@ T* GPUResource<T>::data() const {
 template <typename T>
 unsigned long GPUResource<T>::size() const {
 	return _size;
+}
+	
+template <typename T>
+unsigned long GPUResource<T>::realSize() const {
+    return _realSize;
 }
 
 template <typename T>
@@ -62,13 +68,15 @@ const std::string GPUResource<T>::getResourceType() const {
 }
 
 template <typename T>
-void GPUResource<T>::setData(T* data, int deviceId, unsigned int size, bool isOwner) {
-	assert((data == 0 && size == 0) || (data != 0 && size != 0));
+void GPUResource<T>::setData(T* data, int deviceId, unsigned long size, unsigned long realSize, bool isOwner) {
+	assert((data == 0 && size == 0 && realSize == 0) || (data != 0 && size != 0 && realSize != 0));
+    assert(realSize >= size);
 	assert(_isOwner != true);
 
 	_data = data;
 	_deviceId = deviceId;
 	_size = size;
+    _realSize = realSize;
 	_isOwner = isOwner;
 	_isGPUResource = true;
 }
@@ -90,7 +98,7 @@ template <typename T>
 void GPUResource<T>::free() {
 
 	if(_isGPUResource && _isOwner) {
-		GPUMemory::free<T>(_data, _size, _deviceId);
+		GPUMemory::free<T>(_data, _realSize, _deviceId);
 	}
 
 	_data = 0;
@@ -103,22 +111,30 @@ void GPUResource<T>::free() {
 template <typename T>
 void GPUResource<T>::allocate() {
 	assert(!(_isGPUResource && _isOwner));
-	_data = GPUMemory::malloc<T>(_size, _deviceId);
+	_data = GPUMemory::malloc<T>(_realSize, _deviceId);
 
 	_isOwner = true;
 	_isGPUResource = true;
 }
 	
 template <typename T>
-void GPUResource<T>::setSize(unsigned long size) {
+void GPUResource<T>::setSize(unsigned long size, unsigned long realsize) {
+    assert(realsize >= size);
 	this->_size = size;
+    this->_realSize = realsize;
 }
 
 template <typename T>
-void GPUResource<T>::reallocate(unsigned long size) {
-    this->free();
-    this->setSize(size);
-    this->allocate();
+void GPUResource<T>::reallocate(unsigned long size, unsigned long realsize) {
+    assert(realsize >= size);
+    if(size <= _realSize && realsize == _realSize) {
+        _size = size; 
+    }
+    else {
+        this->free();
+        this->setSize(size, realsize);
+        this->allocate();
+    }
 }
 	
 

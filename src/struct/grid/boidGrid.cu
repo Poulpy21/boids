@@ -213,14 +213,55 @@ namespace kernel {
                         force.z += kernel::wAlignment*forceAlignment.z/countAlignment;
                     }
                 }
-                    
+                
+                
+                
+                //Store force into memory
+                {
+                    boids.fx[boidId]  = force.x;
+                    boids.fy[boidId]  = force.y;
+                    boids.fz[boidId]  = force.z;
+                }
+            }
+           
+        
+        template <typename T>
+            __launch_bounds__(MAX_THREAD_PER_BLOCK)
+            __global__ void integrateScheme(
+                    T                   *const __restrict__ boidData,              // boids with allocated and precomputed cell id : x y z vx vy vz id, sorted by cell id, contains all the nBoids boids !
+                    int                 *const __restrict__ outOfDomain,           // direction of output 0 -- 26 for the 27 cases (0==stay in its local domain), contains nBoids elements
+                    T            const  *const __restrict__ meanBoidData,          // local structure means of non void cells : x y z vx vy vz, contains nUniqueIds elements 
+                    T            const  *const __restrict__ meanNeighborBoidData,  // local structure neighbors (not in local domain), contains 2*(wh + wd + hd) + 4(h+w+l) + 8 elements
+                    unsigned int const  *const __restrict__ uniqueCellIds,         // increasing sequence of non void cell ids, contains nUniqueIds elements
+                    unsigned int const  *const __restrict__ uniqueCellCount,       // count of boids present in non void cells, contains nUniqueIds elements
+                    unsigned int const  *const __restrict__ uniqueCellOffsets,     // offset of in the boid array, 
+                    int          const  *const __restrict__ validCells,            // array to check if the cell is empty or not (empty == -1, else int value is the offset in all unique* arrays), contains nCells elements
+                    const Domain<T> localDomain,                                   // to compute local id (and clamp boid positions to local domain if enabled, see keepInLocalDomain parameter)
+                    const Domain<T> globalDomain,                                  // to compute global id and clamp boif positions to global domain
+                    unsigned int const nAgents,                                    // boid count in the current computed local domain
+                    unsigned int const nUniqueIds,                                 // non void cell count (ie. cells that contains at least 1 boid)
+                    unsigned int const nCells,                                     // cell count in the current computed local domain
+                    bool         const keepInLocalDomain) {                        // should the boids be clamped to local domain instead of global domain ?
+
+                typedef typename MakeCudaVec<T,3>::type vec3; //either float3 or double3
+
+                const unsigned int boidId = blockIdx.y*65535ul*512ul + blockIdx.x*512ul + threadIdx.x;
+
+                if(boidId >= nAgents)
+                    return;
+                
+                //Reconstruct memory views 
+                BoidMemoryView<T>       const boids(boidData, nAgents);
 
                 //Integrate in time and clamp positions to domain
-                vec3 myVelocity;
+                vec3 myPosition, myVelocity;
                 {
-                    myVelocity.x = boids.vx[boidId] + force.x;
-                    myVelocity.y = boids.vy[boidId] + force.y;
-                    myVelocity.z = boids.vz[boidId] + force.z;
+                    myPosition.x = boids.x[boidId];
+                    myPosition.y = boids.y[boidId];
+                    myPosition.z = boids.z[boidId];
+                    myVelocity.x = boids.vx[boidId] + boids.fx[boidId];
+                    myVelocity.y = boids.vy[boidId] + boids.fy[boidId];
+                    myVelocity.z = boids.vz[boidId] + boids.fz[boidId];
 
                     T speed = kernel::norm<T>(myVelocity);
 
@@ -247,11 +288,10 @@ namespace kernel {
                     }
                 }
 
-
                 //Compute new cell id and write data back to memory
                 { 
                     unsigned int myNewCellId = localDomain.getCellId(myPosition);
-
+    
                     boids.x[boidId]  = myPosition.x;
                     boids.y[boidId]  = myPosition.y;
                     boids.z[boidId]  = myPosition.z;
@@ -290,6 +330,51 @@ namespace kernel {
                     << ">>>";
 
                 computeForces<T><<<dimGrid,dimBlock>>>(
+                        boidData,
+                        outOfDomain,
+                        meanBoidData, 
+                        meanNeighborBoidData,
+                        uniqueCellIds,
+                        uniqueCellCount, 
+                        uniqueCellOffsets,
+                        validCells,
+                        localDomain,
+                        globalDomain,
+                        nAgents, 
+                        nUniqueIds,
+                        nCells,
+                        true);
+
+                CHECK_KERNEL_EXECUTION();
+            }
+        
+        template <typename T>
+            void integrateSchemeKernel(
+                    T                   *const boidData,              // with allocated id : x y z vx vy vz id
+                    int                 *const outOfDomain,           // direction of output 0 -- 26 for the 27 cases (0==stayDomain)
+                    T            const  *const meanBoidData,          // no id !
+                    T            const  *const meanNeighborBoidData,  // no id !
+                    unsigned int const  *const uniqueCellIds,
+                    unsigned int const  *const uniqueCellCount, 
+                    unsigned int const  *const uniqueCellOffsets,
+                    int          const  *const validCells,
+                    const Domain<T> localDomain,  //to compute local  id
+                    const Domain<T> globalDomain, //to compute global id
+                    unsigned int const nAgents, 
+                    unsigned int const nUniqueIds,
+                    unsigned int const nCells) {
+
+                float nAgents_f = nAgents;
+
+                dim3 dimBlock(MAX_THREAD_PER_BLOCK);
+                dim3 dimGrid((unsigned int)ceil(nAgents_f/MAX_THREAD_PER_BLOCK) % 65535, ceil(nAgents_f/(MAX_THREAD_PER_BLOCK*65535.0f)));
+
+                log4cpp::log_console->infoStream() << "[KERNEL::BoidGrid::integrateScheme] <<<" 
+                    << utils::toStringDim(dimBlock) << ", " 
+                    << utils::toStringDim(dimGrid)
+                    << ">>>";
+
+                integrateScheme<T><<<dimGrid,dimBlock>>>(
                         boidData,
                         outOfDomain,
                         meanBoidData, 
@@ -398,14 +483,19 @@ __host__ void initBoidGridThrustArrays(BoidGrid<T,HostMemoryType> &boidGrid) {
     GPUResource<unsigned int> &uniqueIds_d = boidGrid.getDeviceUniqueIds(); 
     GPUResource<unsigned int> &offsets_d = boidGrid.getDeviceOffsets(); 
     GPUResource<unsigned int> &count_d = boidGrid.getDeviceCount(); 
+    GPUResource<T>            &means_d    =  boidGrid.getMeanBoids(); 
 
-    uniqueIds_d.setSize(nUniqueIds);
+    unsigned int np2 = NEXT_POW_2(nUniqueIds);
+
+    uniqueIds_d.setSize(nUniqueIds, np2);
     uniqueIds_d.allocate();
-    offsets_d.setSize(nUniqueIds);
+    offsets_d.setSize(nUniqueIds, np2);
     offsets_d.allocate();
-    count_d.setSize(nUniqueIds);
+    count_d.setSize(nUniqueIds, np2);
     count_d.allocate();
-    validIds_d.setSize(nCells);
+    means_d.setSize(nUniqueIds, np2);
+    means_d.allocate();
+    validIds_d.setSize(nCells, nCells);
     validIds_d.allocate();
 
     CHECK_THRUST_ERRORS(thrust::copy(uniqueIds.begin(), uniqueIds.end(), uniqueIds_d.wrap()));
@@ -449,6 +539,7 @@ __host__ BoidMemoryView<T> computeThrustStep(BoidGrid<T, HostMemoryType> &boidGr
     unsigned int nCells     = boidGrid.getCellsCount();
 
     GPUResource<T>            &agents_d    = boidGrid.getDeviceBoids(); 
+    GPUResource<T>            &means_d    =  boidGrid.getMeanBoids(); 
     GPUResource<unsigned int> &count_d     = boidGrid.getDeviceCount(); 
     GPUResource<unsigned int> &offsets_d   = boidGrid.getDeviceOffsets(); 
     GPUResource<unsigned int> &uniqueIds_d = boidGrid.getDeviceUniqueIds(); 
@@ -457,8 +548,8 @@ __host__ BoidMemoryView<T> computeThrustStep(BoidGrid<T, HostMemoryType> &boidGr
     ThrustBoidMemoryView<T> agents_thrust_d(boidGrid.getBoidDeviceMemoryView());
 
     // Compute mean positions (only for filled cells)
-    GPUResource<T> means_d(boidGrid.getDeviceId(), 6*nUniqueIds);
-    means_d.allocate();
+    means_d.reallocate(6u*nUniqueIds, NEXT_POW_2(6u*nUniqueIds));
+
     ThrustBoidMemoryView<T>   means_v(means_d.data(), nUniqueIds);
     {
         thrust::device_vector<unsigned int> buffKeys(nUniqueIds);
@@ -482,7 +573,8 @@ __host__ BoidMemoryView<T> computeThrustStep(BoidGrid<T, HostMemoryType> &boidGr
     // TODO 
     int* outOfDomain = 0;
     T* meanNeighborBoidData = 0;
-
+    
+    CHECK_CUDA_ERRORS(cudaDeviceSynchronize());
 
     // Compute forces and integrate
     kernel::boidgrid::computeForcesKernel(agents_d.data(), outOfDomain, means_v.data(), meanNeighborBoidData,
@@ -492,11 +584,14 @@ __host__ BoidMemoryView<T> computeThrustStep(BoidGrid<T, HostMemoryType> &boidGr
             kernel::makeCudaDomain<T>(boidGrid.getGlobalDomain(), globalDomainSize),
             nAgents, nUniqueIds, nCells);
 
-    CHECK_CUDA_ERRORS(cudaDeviceSynchronize());
-
+    kernel::boidgrid::integrateSchemeKernel(agents_d.data(), outOfDomain, means_v.data(), meanNeighborBoidData,
+            uniqueIds_d.data(), count_d.data(),
+            offsets_d.data(), validIds_d.data(),
+            kernel::makeCudaDomain<T>(boidGrid.getLocalDomain(),  boidGrid.getBoxSize()),
+            kernel::makeCudaDomain<T>(boidGrid.getGlobalDomain(), globalDomainSize),
+            nAgents, nUniqueIds, nCells);
 
     // Check for boids that went outside local domain and xchange, update boids size
-    // TODO
 
     // Sort and find unique ids
     {
@@ -554,14 +649,27 @@ __host__ BoidMemoryView<T> computeThrustStep(BoidGrid<T, HostMemoryType> &boidGr
         GPUResource<unsigned int> &offsets_d = boidGrid.getDeviceOffsets(); 
         GPUResource<unsigned int> &count_d = boidGrid.getDeviceCount(); 
 
-        uniqueIds_d.reallocate(nUniqueIds);
-        offsets_d.reallocate(nUniqueIds);
-        count_d.reallocate(nUniqueIds);
+        unsigned int np2 = NEXT_POW_2(nUniqueIds);
+        uniqueIds_d.reallocate(nUniqueIds, np2);
+        offsets_d.reallocate(nUniqueIds, np2);
+        count_d.reallocate(nUniqueIds, np2);
 
         CHECK_THRUST_ERRORS(thrust::copy(uniqueIds.begin(), uniqueIds.end(), uniqueIds_d.wrap()));
         CHECK_THRUST_ERRORS(thrust::copy(offsets.begin(), offsets.end(), offsets_d.wrap()));
         CHECK_THRUST_ERRORS(thrust::copy(count.begin(), count.end(), count_d.wrap()));
         CHECK_THRUST_ERRORS(thrust::copy(validIds.begin(), validIds.end(), validIds_d.wrap()));
+
+        //DEBUG
+        //std::cout << "Unique IDs:\t";
+        //for(int i = 0; i < uniqueIds.size(); i++)
+            //std::cout << uniqueIds[i] << " ";
+        //std::cout << std::endl;
+    
+        //std::cout << "Count:\t\t";
+        //for(int i = 0; i < uniqueIds.size(); i++)
+            //std::cout << count[i] << " ";
+        //std::cout << std::endl;
+
     }
 
     BoidMemoryView<T> outOfDomainBoids;

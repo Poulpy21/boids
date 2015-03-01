@@ -103,6 +103,7 @@ class BoidGrid : public LocalBoidDataStructure<T,HostMemoryType> {
     protected:
         GPUResource<T> agents_d;
         BoidMemoryView<T> agents_view_d;
+        GPUResource<T> means_d;
 
         GPUResource<unsigned int> uniqueIds_d;
         GPUResource<unsigned int> count_d;
@@ -112,6 +113,7 @@ class BoidGrid : public LocalBoidDataStructure<T,HostMemoryType> {
     public:
         BoidMemoryView<T>& getBoidDeviceMemoryView();
         GPUResource<T>& getDeviceBoids();
+        GPUResource<T>& getMeanBoids();
         GPUResource<unsigned int>& getDeviceUniqueIds();
         GPUResource<unsigned int>& getDeviceCount();
         GPUResource<unsigned int>& getDeviceOffsets();
@@ -129,7 +131,7 @@ void BoidGrid<T,HostMemoryType>::init(const BoidMemoryView<T> &agent_h, unsigned
 #ifdef CUDA_ENABLED
     this->agentCount = agentCount;
 
-    agents_d = GPUResource<T>(deviceId, BoidMemoryView<T>::N*agentCount);
+    agents_d = GPUResource<T>(deviceId, BoidMemoryView<T>::N*agentCount, BoidMemoryView<T>::N*agentCount);
     agents_d.allocate();
     agents_view_d = BoidMemoryView<T>(agents_d.data(), agentCount);
 
@@ -178,12 +180,13 @@ BoidGrid<T,HostMemoryType>::BoidGrid(unsigned int globalId,
     boxSize(width, height, length),
     nCells(width*height*length)
 #ifdef CUDA_ENABLED 
-        ,agents_d(deviceId),
+        ,agents_d(deviceId,0,0),
         agents_view_d(),
-        uniqueIds_d(deviceId),
-        count_d(deviceId),
-        offsets_d(deviceId),
-        validIds_d(deviceId)
+        means_d(deviceId,0,0),
+        uniqueIds_d(deviceId,0,0),
+        count_d(deviceId,0,0),
+        offsets_d(deviceId,0,0),
+        validIds_d(deviceId,0,0)
 #endif
 {
 }
@@ -206,12 +209,13 @@ BoidGrid<T,HostMemoryType>::BoidGrid(const BoidGrid<T,HostMemoryType> &other) :
     boxSize(0),
     nCells(0)
 #ifdef CUDA_ENABLED 
-        ,agents_d(deviceId),
+        ,agents_d(deviceId,0,0),
         agents_view_d(),
-        uniqueIds_d(deviceId),
-        count_d(deviceId),
-        offsets_d(deviceId),
-        validIds_d(deviceId)
+        means_d(deviceId,0,0),
+        uniqueIds_d(deviceId,0,0),
+        count_d(deviceId,0,0),
+        offsets_d(deviceId,0,0),
+        validIds_d(deviceId,0,0)
 #endif
 {
         throw std::logic_error("Cannot copy a BoidGrid.");
@@ -295,6 +299,10 @@ BoidMemoryView<T>& BoidGrid<T,HostMemoryType>::getBoidDeviceMemoryView() {
 template <typename T, typename HostMemoryType>
 GPUResource<T>& BoidGrid<T,HostMemoryType>::getDeviceBoids() {
     return this->agents_d;
+}
+template <typename T, typename HostMemoryType>
+GPUResource<T>& BoidGrid<T,HostMemoryType>::getMeanBoids() {
+    return this->means_d;
 }
 #endif
 

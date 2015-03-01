@@ -103,8 +103,9 @@ void CudaDistributedWorkspace::initBoids() {
             devAgents = std::min(devMaxAgents, agentsToInitialize);
         }
 
-        random_d = new GPUResource<float>(deviceId, (devAgents*BoidMemoryView<Real>::N-1u));
-        agents_d = new GPUResource<Real> (deviceId, (devAgents*BoidMemoryView<Real>::N-1u));
+        unsigned int size = devAgents*(BoidMemoryView<Real>::N-1u);
+        random_d = new GPUResource<float>(deviceId, size, NEXT_POW_2(size));
+        agents_d = new GPUResource<Real> (deviceId, size, NEXT_POW_2(size));
         random_d->allocate();
         agents_d->allocate();
 

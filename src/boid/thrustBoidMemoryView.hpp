@@ -15,10 +15,10 @@ struct ThrustBoidMemoryView {
 public:
     thrust::device_ptr<T> &x,  &y,  &z;
     thrust::device_ptr<T> &vx,  &vy, &vz;
-    //thrust::device_ptr<T> &ax,  &ay, &az;
+    thrust::device_ptr<T> &fx,  &fy, &fz;
     thrust::device_ptr<unsigned int> &id;
     
-    static const unsigned int N = 7;
+    static const unsigned int N = 10;
 private:
     size_t nAgents;
     thrust::device_ptr<T> ptrs[N-1];
@@ -30,7 +30,7 @@ public:
         nAgents(0),
          x(*(ptrs+0)),  y(*(ptrs+1)),  z(*(ptrs+2)), 
         vx(*(ptrs+3)), vy(*(ptrs+4)), vz(*(ptrs+5)), 
-        //ax(*(ptrs+6)), ay(*(ptrs+7)), az(*(ptrs+8)),
+        fx(*(ptrs+6)), fy(*(ptrs+7)), fz(*(ptrs+8)),
         id(cellId), cellId() {
             for (unsigned int i = 0; i < N-1; i++) {
                 ptrs[i] = thrust::device_ptr<T>(nullptr);
@@ -41,7 +41,7 @@ public:
         nAgents(nAgents),
          x(*(ptrs+0)),  y(*(ptrs+1)),  z(*(ptrs+2)), 
         vx(*(ptrs+3)), vy(*(ptrs+4)), vz(*(ptrs+5)), 
-        //ax(*(ptrs+6)), ay(*(ptrs+7)), az(*(ptrs+8)),
+        fx(*(ptrs+6)), fy(*(ptrs+7)), fz(*(ptrs+8)),
         id(cellId), cellId() {
             
             for (unsigned int i = 0; i < N-1; i++) {
@@ -54,7 +54,7 @@ public:
         nAgents(memView.size()),
          x(*(ptrs+0)),  y(*(ptrs+1)),  z(*(ptrs+2)), 
         vx(*(ptrs+3)), vy(*(ptrs+4)), vz(*(ptrs+5)), 
-        //ax(*(ptrs+6)), ay(*(ptrs+7)), az(*(ptrs+8)),
+        fx(*(ptrs+6)), fy(*(ptrs+7)), fz(*(ptrs+8)),
         id(cellId), cellId() {
             
             for (unsigned int i = 0; i < N-1; i++) {
@@ -67,7 +67,7 @@ public:
         nAgents(nAgents), 
          x(*(ptrs+0)),  y(*(ptrs+1)),  z(*(ptrs+2)), 
         vx(*(ptrs+3)), vy(*(ptrs+4)), vz(*(ptrs+5)), 
-        //ax(acceleration.x), ay(acceleration.y), az(acceleration.z),
+        fx(*(ptrs+6)), fy(*(ptrs+7)), fz(*(ptrs+8)),
         id(cellId), cellId() {
             for (unsigned int i = 0; i < N-1; i++) {
                 ptrs[i] = thrust::device_ptr<T>(thrust::raw_pointer_cast(v.data()) + i*nAgents);
