@@ -13,7 +13,7 @@
 \hyphenpenalty=10000
 
 \title{Simulation d'essaims particulaires}
-\author{Keck Jean-Baptiste - Gauthier Zirnhelt}
+\author{Keck Jean-Baptiste - Zirnhelt Gauthier}
 
 \begin{document}
 
@@ -80,6 +80,7 @@ Nous fournissons en outre gracieusement des scripts utilitaires pour paramétrer
 \subsection{CUDA}
 % mémoire coalescente
 % optimisations diverses...
+% thrust
 
 \subsection{Scripts utilitaires}
 % Donner leur fonction
@@ -130,11 +131,20 @@ Le progamme affiche chaque agent sous la forme d'une sprite faisant face à la c
 % formation d'esseims avec la force de cohésion : ok
 % force de séparation => esseims assez étalés : ok
 % alignement dans un direction commune qui sera conservée sauf collisions : ok 
+Nous avons fait des essais de simulation en modifiant les paramètres de la simulation et observé un comportement cohérent des agents lorsqu'une force était prépondérante sur les autres.
+\begin{itemize}
+    \item La force de cohésion permet la création d'essaims d'agents.
+    \item La force de séparation sépare les agents afin de ne pas avoir d'essaims d'une densité trop élevée, mais peut aussi rendre impossible la formation de ces essaims si elle est trop grande.
+    \item La force d'alignement force les agents à tous aller dans la même direction, ce qui permet globalement de conserver un essaim dans le temps tant qu'il n'entre pas en collision avec un autre.
+\end{itemize}
 
 
 
 \section{Perspectives d'amélioration}
+\subsection{Tolérance à la faute pour MPI}
 % timeout sur les messages MPI au lieu de bloquer indéfiniment.
+Nous utilisons des messages MPI bloquants en réception, ce qui fait que notre système ne tolère aucune perte de message. Normalement, aucun message n'est perdu par MPI, mais dans le cas où une machine subit une défaillance, tout notre système se trouvera bloqué et il faudra recommencer la simulation.\\
+Une amélioration consisterait ici à implanter un système tolérant à la faute en utilisant un système de timeout pour détecter les fautes, ainsi qu'un système de réplication des données des agents entre les différentes machines pour réaffecter les tâches de calcul.
 % A voir à la fin
 
 
