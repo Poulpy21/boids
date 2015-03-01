@@ -6,37 +6,49 @@
 #include "headers.hpp"
 #include "localBoidDataStructure.hpp"
 #include "boidMemoryView.hpp"
+#include "CPUResource.hpp"
+#include "UnpagedCPUResource.hpp"
 #include "PinnedCPUResource.hpp"
 #include "vec3.hpp"
+
 #include <vector>
+
+#if __cplusplus >= 201103L
+#include <type_traits>
+#endif
 
 #ifdef CUDA_ENABLED
 #include "GPUResource.hpp"
 #endif
 
 #ifdef THRUST_ENABLED
-template <typename T>
+template <typename T, typename HostMemoryType>
 class BoidGrid;
 
-template <typename T>
-__HOST__ void initBoidGridThrustArrays(BoidGrid<T> &boidGrid);
+template <typename T, typename HostMemoryType>
+__HOST__ void initBoidGridThrustArrays(BoidGrid<T,HostMemoryType> &boidGrid);
 
-template <typename T>
-__HOST__ BoidMemoryView<T> computeThrustStep(BoidGrid<T> &boidGrid);
+template <typename T, typename HostMemoryType>
+__HOST__ BoidMemoryView<T> computeThrustStep(BoidGrid<T,HostMemoryType> &boidGrid);
 
 #endif
 
-template <typename T>
-class BoidGrid : public LocalBoidDataStructure<T> {
+template <typename T, typename HostMemoryType>
+class BoidGrid : public LocalBoidDataStructure<T,HostMemoryType> {
+            
+#if __cplusplus >= 201103L
+    static_assert(std::is_base_of<CPUResource<T>,HostMemoryType>(), "HostMemoryType should inherit CPUResource<T> !");
+#endif
 
     public:
         BoidGrid(unsigned int globalId,
                 const BoundingBox<3u, Real> &globalDomain,
                 const BoundingBox<3u, Real> &localDomain,
                 bool keepBoidsInGlobalDomain,
-                Real maxRadius);
-        BoidGrid(const BoidGrid<T> &other);
-        BoidGrid<T>& operator=(const BoidGrid<T> &other);
+                Real maxRadius,
+                const unsigned int deviceId);
+        BoidGrid(const BoidGrid<T,HostMemoryType> &other);
+        BoidGrid<T,HostMemoryType>& operator=(const BoidGrid<T,HostMemoryType> &other);
         ~BoidGrid();
       
     //Interface
@@ -47,6 +59,7 @@ class BoidGrid : public LocalBoidDataStructure<T> {
 
         unsigned int getLocalAgentCount(unsigned int localCellId) const override;
         bool isLocalCellAtCorner(unsigned int localCellId) const override;
+
 
     protected:
         unsigned int getLocalCellId(const Vec3<T> &pos) const override;
@@ -62,6 +75,7 @@ class BoidGrid : public LocalBoidDataStructure<T> {
         T getDomainWidth() const;
         T getDomainHeight() const;
         T getDomainLength() const;
+        int getDeviceId() const;
         unsigned int getWidth() const;
         unsigned int getHeight() const;
         unsigned int getLength() const;
@@ -76,6 +90,7 @@ class BoidGrid : public LocalBoidDataStructure<T> {
 
     protected:
         const T maxRadius;
+        const unsigned int deviceId;
 
         const T domainWidth, domainHeight, domainLength;
         const unsigned int width, height, length;
@@ -106,15 +121,15 @@ class BoidGrid : public LocalBoidDataStructure<T> {
 };
 
         
-template <typename T>
-void BoidGrid<T>::init(const BoidMemoryView<T> &agent_h, unsigned int agentCount) {
-    this->agents_h = PinnedCPUResource<T>(agent_h.data(), BoidMemoryView<T>::N*agentCount, false);
+template <typename T, typename HostMemoryType>
+void BoidGrid<T,HostMemoryType>::init(const BoidMemoryView<T> &agent_h, unsigned int agentCount) {
+    this->agents_h = HostMemoryType(agent_h.data(), BoidMemoryView<T>::N*agentCount, false);
     this->agents_view_h = agent_h;
 
 #ifdef CUDA_ENABLED
     this->agentCount = agentCount;
-   
-    agents_d = GPUResource<T>(0, BoidMemoryView<T>::N*agentCount);
+
+    agents_d = GPUResource<T>(deviceId, BoidMemoryView<T>::N*agentCount);
     agents_d.allocate();
     agents_view_d = BoidMemoryView<T>(agents_d.data(), agentCount);
 
@@ -124,8 +139,8 @@ void BoidGrid<T>::init(const BoidMemoryView<T> &agent_h, unsigned int agentCount
 #endif
 }
         
-template <typename T>
-void BoidGrid<T>::feed(const BoidMemoryView<T> &agent_h, unsigned int agentCount) {
+template <typename T, typename HostMemoryType>
+void BoidGrid<T,HostMemoryType>::feed(const BoidMemoryView<T> &agent_h, unsigned int agentCount) {
 #ifdef CUDA_ENABLED
     NOT_IMPLEMENTED_YET;
 #else
@@ -135,8 +150,8 @@ void BoidGrid<T>::feed(const BoidMemoryView<T> &agent_h, unsigned int agentCount
         
 //compute one step and return boids that went out the domain 
 //if keepBoidsInDomain is set to true, no boids are returned
-template <typename T>
-BoidMemoryView<T> BoidGrid<T>::computeLocalStep() {
+template <typename T, typename HostMemoryType>
+BoidMemoryView<T> BoidGrid<T,HostMemoryType>::computeLocalStep() {
 #ifdef CUDA_ENABLED
     return computeThrustStep(*this);
 #else
@@ -144,14 +159,16 @@ BoidMemoryView<T> BoidGrid<T>::computeLocalStep() {
 #endif
 }
 
-template <typename T>
-BoidGrid<T>::BoidGrid(unsigned int globalId,
+template <typename T, typename HostMemoryType>
+BoidGrid<T,HostMemoryType>::BoidGrid(unsigned int globalId,
                 const BoundingBox<3u, Real> &localDomain,
                 const BoundingBox<3u, Real> &globalDomain,
                 bool keepBoidsInGlobalDomain,
-                Real maxRadius) :
-    LocalBoidDataStructure<T>(globalId, localDomain, globalDomain, keepBoidsInGlobalDomain),
+                Real maxRadius,
+                unsigned int deviceId_) :
+    LocalBoidDataStructure<T,HostMemoryType>(globalId, localDomain, globalDomain, keepBoidsInGlobalDomain),
     maxRadius(maxRadius),
+    deviceId(deviceId_),
     domainWidth (localDomain.max[0] - localDomain.min[0]),
     domainHeight(localDomain.max[1] - localDomain.min[1]),
     domainLength(localDomain.max[2] - localDomain.min[2]),
@@ -161,23 +178,25 @@ BoidGrid<T>::BoidGrid(unsigned int globalId,
     boxSize(width, height, length),
     nCells(width*height*length)
 #ifdef CUDA_ENABLED 
-        ,agents_d(0,0),
+        ,agents_d(deviceId),
         agents_view_d(),
-        uniqueIds_d(0,0),
-        count_d(0,0),
-        offsets_d(0,0),
-        validIds_d(0,0)
+        uniqueIds_d(deviceId),
+        count_d(deviceId),
+        offsets_d(deviceId),
+        validIds_d(deviceId)
 #endif
-{}
-
-template <typename T>
-BoidGrid<T>::~BoidGrid() {
+{
 }
 
-template <typename T>
-BoidGrid<T>::BoidGrid(const BoidGrid<T> &other) :
-    LocalBoidDataStructure<T>(other),
+template <typename T, typename HostMemoryType>
+BoidGrid<T,HostMemoryType>::~BoidGrid() {
+}
+
+template <typename T, typename HostMemoryType>
+BoidGrid<T,HostMemoryType>::BoidGrid(const BoidGrid<T,HostMemoryType> &other) :
+    LocalBoidDataStructure<T,HostMemoryType>(other),
     maxRadius(0),
+    deviceId(0),
     domainWidth (0),
     domainHeight(0),
     domainLength(0),
@@ -185,48 +204,57 @@ BoidGrid<T>::BoidGrid(const BoidGrid<T> &other) :
     height(0),
     length(0),
     boxSize(0),
-    nCells(0) {
+    nCells(0)
+#ifdef CUDA_ENABLED 
+        ,agents_d(deviceId),
+        agents_view_d(),
+        uniqueIds_d(deviceId),
+        count_d(deviceId),
+        offsets_d(deviceId),
+        validIds_d(deviceId)
+#endif
+{
         throw std::logic_error("Cannot copy a BoidGrid.");
     }
 
-template <typename T>
-BoidGrid<T>& BoidGrid<T>::operator=(const BoidGrid<T> &other) {
+template <typename T, typename HostMemoryType>
+BoidGrid<T,HostMemoryType>& BoidGrid<T,HostMemoryType>::operator=(const BoidGrid<T,HostMemoryType> &other) {
     throw std::logic_error("Cannot copy a BoidGrid.");
 }
 
-template <typename T>
-unsigned int BoidGrid<T>::getLocalAgentCount(unsigned int cellId) const {
+template <typename T, typename HostMemoryType>
+unsigned int BoidGrid<T,HostMemoryType>::getLocalAgentCount(unsigned int cellId) const {
     NOT_IMPLEMENTED_YET;
 }
         
-template <typename T>
-bool BoidGrid<T>::isLocalCellAtCorner(unsigned int localCellId) const {
+template <typename T, typename HostMemoryType>
+bool BoidGrid<T,HostMemoryType>::isLocalCellAtCorner(unsigned int localCellId) const {
     NOT_IMPLEMENTED_YET;
 }
 
-template <typename T>
-BoidMemoryView<T> BoidGrid<T>::getLocalHostAgentsArray(unsigned int cellId) const {
+template <typename T, typename HostMemoryType>
+BoidMemoryView<T> BoidGrid<T,HostMemoryType>::getLocalHostAgentsArray(unsigned int cellId) const {
     NOT_IMPLEMENTED_YET;
 }
 
-template <typename T>
-unsigned int BoidGrid<T>::getLocalCellId(const Vec3<T> &pos) const {
+template <typename T, typename HostMemoryType>
+unsigned int BoidGrid<T,HostMemoryType>::getLocalCellId(const Vec3<T> &pos) const {
     Vec3<float> relPos = relativePos(pos);
     return makeLocalId(relPos.x * boxSize.x, relPos.y * boxSize.y, relPos.z * boxSize.z);
 }
         
-template <typename T>
-NeighborIds& BoidGrid<T>::getGlobalNeighborCellIds(unsigned int globalCellId) const {
+template <typename T, typename HostMemoryType>
+NeighborIds& BoidGrid<T,HostMemoryType>::getGlobalNeighborCellIds(unsigned int globalCellId) const {
     NOT_IMPLEMENTED_YET;
 }
 
-template <typename T>
-unsigned int BoidGrid<T>::makeLocalId(unsigned int x, unsigned int y, unsigned int z) const {
+template <typename T, typename HostMemoryType>
+unsigned int BoidGrid<T,HostMemoryType>::makeLocalId(unsigned int x, unsigned int y, unsigned int z) const {
     return (width*height*z + width*y + x);
 }
 
-template <typename T>
-Vec3<T> BoidGrid<T>::relativePos(const Vec3<T> &pos) const {
+template <typename T, typename HostMemoryType>
+Vec3<T> BoidGrid<T,HostMemoryType>::relativePos(const Vec3<T> &pos) const {
     return Vec3<T>(
             (pos.x - this->localDomain.min[0])/domainWidth,
             (pos.y - this->localDomain.min[1])/domainHeight,
@@ -234,87 +262,91 @@ Vec3<T> BoidGrid<T>::relativePos(const Vec3<T> &pos) const {
             );
 }
 
-template <typename T>
-BoidMemoryView<T>& BoidGrid<T>::getBoidHostMemoryView() {
+template <typename T, typename HostMemoryType>
+BoidMemoryView<T>& BoidGrid<T,HostMemoryType>::getBoidHostMemoryView() {
     return this->agents_view_h;
 }
         
 #ifdef CUDA_ENABLED
-template <typename T>
-GPUResource<unsigned int>& BoidGrid<T>::getDeviceOffsets() {
+template <typename T, typename HostMemoryType>
+GPUResource<unsigned int>& BoidGrid<T,HostMemoryType>::getDeviceOffsets() {
     return this->offsets_d;
 }
 
-template <typename T>
-GPUResource<unsigned int>& BoidGrid<T>::getDeviceUniqueIds() {
+template <typename T, typename HostMemoryType>
+GPUResource<unsigned int>& BoidGrid<T,HostMemoryType>::getDeviceUniqueIds() {
     return this->uniqueIds_d;
 }
     
-template <typename T>
-GPUResource<int>& BoidGrid<T>::getDeviceValidIds() {
+template <typename T, typename HostMemoryType>
+GPUResource<int>& BoidGrid<T,HostMemoryType>::getDeviceValidIds() {
     return this->validIds_d;
 }
         
-template <typename T>
-GPUResource<unsigned int>& BoidGrid<T>::getDeviceCount() {
+template <typename T, typename HostMemoryType>
+GPUResource<unsigned int>& BoidGrid<T,HostMemoryType>::getDeviceCount() {
     return this->count_d;
 }
        
-template <typename T>
-BoidMemoryView<T>& BoidGrid<T>::getBoidDeviceMemoryView() {
+template <typename T, typename HostMemoryType>
+BoidMemoryView<T>& BoidGrid<T,HostMemoryType>::getBoidDeviceMemoryView() {
     return agents_view_d;
 }
-template <typename T>
-GPUResource<T>& BoidGrid<T>::getDeviceBoids() {
+template <typename T, typename HostMemoryType>
+GPUResource<T>& BoidGrid<T,HostMemoryType>::getDeviceBoids() {
     return this->agents_d;
 }
 #endif
 
-template <typename T>
-T BoidGrid<T>::getMaxRadius() const {
+template <typename T, typename HostMemoryType>
+T BoidGrid<T,HostMemoryType>::getMaxRadius() const {
     return maxRadius;
 }
-template <typename T>
-T BoidGrid<T>::getDomainWidth() const {
+template <typename T, typename HostMemoryType>
+T BoidGrid<T,HostMemoryType>::getDomainWidth() const {
     return domainWidth;
 }
-template <typename T>
-T BoidGrid<T>::getDomainLength() const {
+template <typename T, typename HostMemoryType>
+T BoidGrid<T,HostMemoryType>::getDomainLength() const {
     return domainLength;
 }
-template <typename T>
-T BoidGrid<T>::getDomainHeight() const {
+template <typename T, typename HostMemoryType>
+T BoidGrid<T,HostMemoryType>::getDomainHeight() const {
     return domainHeight;
 }
-template <typename T>
-unsigned int BoidGrid<T>::getWidth() const {
+template <typename T, typename HostMemoryType>
+int BoidGrid<T,HostMemoryType>::getDeviceId() const {
+    return deviceId;
+}
+template <typename T, typename HostMemoryType>
+unsigned int BoidGrid<T,HostMemoryType>::getWidth() const {
     return width;
 }
-template <typename T>
-unsigned int BoidGrid<T>::getHeight() const {
+template <typename T, typename HostMemoryType>
+unsigned int BoidGrid<T,HostMemoryType>::getHeight() const {
     return height;
 }
-template <typename T>
-unsigned int BoidGrid<T>::getLength() const {
+template <typename T, typename HostMemoryType>
+unsigned int BoidGrid<T,HostMemoryType>::getLength() const {
     return length;
 }
-template <typename T>
-unsigned int BoidGrid<T>::getCellsCount() const {
+template <typename T, typename HostMemoryType>
+unsigned int BoidGrid<T,HostMemoryType>::getCellsCount() const {
     return nCells;
 }
-template <typename T>
-Vec3<unsigned int> BoidGrid<T>::getBoxSize() const {
+template <typename T, typename HostMemoryType>
+Vec3<unsigned int> BoidGrid<T,HostMemoryType>::getBoxSize() const {
     return boxSize;
 }
 
-template <typename T>
-std::ostream& operator<<(std::ostream &os, const BoidGrid<T> &grid) {
+template <typename T, typename HostMemoryType>
+std::ostream& operator<<(std::ostream &os, const BoidGrid<T,HostMemoryType> &grid) {
     os << grid.toString();
     return os;
 }
         
-template <typename T>
-std::string BoidGrid<T>::toString() const {
+template <typename T, typename HostMemoryType>
+std::string BoidGrid<T,HostMemoryType>::toString() const {
     std::stringstream ss;
 
     ss << "BoidGrid<";

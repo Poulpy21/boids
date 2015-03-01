@@ -8,6 +8,9 @@
 #include "boidMemoryView.hpp"
 #include "thrustVectorMemoryView.hpp"
 #include "thrustBoidMemoryView.hpp"
+#include "UnpagedCPUResource.hpp"
+#include "PinnedCPUResource.hpp"
+
 #include "kernel_utilities.cuh"
 
 #ifdef THRUST_ENABLED
@@ -41,20 +44,20 @@ namespace kernel {
         template <typename T>
             __launch_bounds__(MAX_THREAD_PER_BLOCK)
             __global__ void computeForces(
-                    T                   *const __restrict__ boidData,              // with allocated id : x y z vx vy vz id
-                    int                 *const __restrict__ outOfDomain,           // direction of output 0 -- 26 for the 27 cases (0==stayDomain)
-                    T            const  *const __restrict__ meanBoidData,          // local structure means
-                    T            const  *const __restrict__ meanNeighborBoidData,  // local structure neighbors (not in local domain)
-                    unsigned int const  *const __restrict__ uniqueCellIds,
-                    unsigned int const  *const __restrict__ uniqueCellCount, 
-                    unsigned int const  *const __restrict__ uniqueCellOffsets,
-                    int          const  *const __restrict__ validCells,
-                    const Domain<T> localDomain,  //to compute local  id
-                    const Domain<T> globalDomain, //to compute global id
-                    unsigned int const nAgents, 
-                    unsigned int const nUniqueIds,
-                    unsigned int const nCells,
-                    bool         const keepInLocalDomain) {
+                    T                   *const __restrict__ boidData,              // boids with allocated and precomputed cell id : x y z vx vy vz id, sorted by cell id, contains all the nBoids boids !
+                    int                 *const __restrict__ outOfDomain,           // direction of output 0 -- 26 for the 27 cases (0==stay in its local domain), contains nBoids elements
+                    T            const  *const __restrict__ meanBoidData,          // local structure means of non void cells : x y z vx vy vz, contains nUniqueIds elements 
+                    T            const  *const __restrict__ meanNeighborBoidData,  // local structure neighbors (not in local domain), contains 2*(wh + wd + hd) + 4(h+w+l) + 8 elements
+                    unsigned int const  *const __restrict__ uniqueCellIds,         // increasing sequence of non void cell ids, contains nUniqueIds elements
+                    unsigned int const  *const __restrict__ uniqueCellCount,       // count of boids present in non void cells, contains nUniqueIds elements
+                    unsigned int const  *const __restrict__ uniqueCellOffsets,     // offset of in the boid array, 
+                    int          const  *const __restrict__ validCells,            // array to check if the cell is empty or not (empty == -1, else int value is the offset in all unique* arrays), contains nCells elements
+                    const Domain<T> localDomain,                                   // to compute local id (and clamp boid positions to local domain if enabled, see keepInLocalDomain parameter)
+                    const Domain<T> globalDomain,                                  // to compute global id and clamp boif positions to global domain
+                    unsigned int const nAgents,                                    // boid count in the current computed local domain
+                    unsigned int const nUniqueIds,                                 // non void cell count (ie. cells that contains at least 1 boid)
+                    unsigned int const nCells,                                     // cell count in the current computed local domain
+                    bool         const keepInLocalDomain) {                        // should the boids be clamped to local domain instead of global domain ?
 
                 typedef typename MakeCudaVec<T,3>::type vec3; //either float3 or double3
 
@@ -153,7 +156,8 @@ namespace kernel {
                                     ; //TODO
                                 }
 
-                                //Handle internal external interactions, checks if there is any boids in the target cell
+                                //Handle internal external interactions, first checks if there is any boids in the neighbor target cell
+                                //Weight with distance to mean boid and respective radius
                                 else if (validCells[targetCellId] != -1) {
                                     vec3 neighborMeanPosition, neighborMeanVelocity;
                                     unsigned int cellUniqueIdOffset, count;
@@ -169,25 +173,20 @@ namespace kernel {
 
                                     T dist = distance<T>(myPosition, neighborMeanPosition);
 
-                                    //TODO change conditions
-                                    if(dist < kernel::rSeparation) {
-                                        forceSeparation.x -= count*(myPosition.x - neighborMeanPosition.x)/dist;
-                                        forceSeparation.y -= count*(myPosition.y - neighborMeanPosition.y)/dist;
-                                        forceSeparation.z -= count*(myPosition.z - neighborMeanPosition.z)/dist;
-                                        countSeparation++;
-                                    }
-                                    if(dist < kernel::rCohesion) {
-                                        forceCohesion.x += count*neighborMeanPosition.x;
-                                        forceCohesion.y += count*neighborMeanPosition.y;
-                                        forceCohesion.z += count*neighborMeanPosition.z;
-                                        countCohesion++;
-                                    }
-                                    if(dist < kernel::rAlignment) {
-                                        forceAlignment.x += count*neighborMeanVelocity.x;
-                                        forceAlignment.y += count*neighborMeanVelocity.y;
-                                        forceAlignment.z += count*neighborMeanVelocity.z;
-                                        countAlignment++;
-                                    }
+                                    forceSeparation.x -= count*(myPosition.x - neighborMeanPosition.x)/dist * kernel::rSeparation/dist;
+                                    forceSeparation.y -= count*(myPosition.y - neighborMeanPosition.y)/dist * kernel::rSeparation/dist;
+                                    forceSeparation.z -= count*(myPosition.z - neighborMeanPosition.z)/dist * kernel::rSeparation/dist;
+                                    countSeparation++;
+                                    
+                                    forceCohesion.x += count*neighborMeanPosition.x * kernel::rCohesion/dist;
+                                    forceCohesion.y += count*neighborMeanPosition.y * kernel::rCohesion/dist;
+                                    forceCohesion.z += count*neighborMeanPosition.z * kernel::rCohesion/dist;
+                                    countCohesion++;
+
+                                    forceAlignment.x += count*neighborMeanVelocity.x * kernel::rAlignment/dist;
+                                    forceAlignment.y += count*neighborMeanVelocity.y * kernel::rAlignment/dist;
+                                    forceAlignment.z += count*neighborMeanVelocity.z * kernel::rAlignment/dist;
+                                    countAlignment++;
                                 }
                             }
                         }
@@ -320,8 +319,8 @@ namespace kernel {
 typedef thrust::device_vector<Real>::iterator  deviceIterator_real;
 typedef thrust::device_vector<unsigned int>::iterator  deviceIterator_ui;
 
-template <typename T>
-__host__ void initBoidGridThrustArrays(BoidGrid<T> &boidGrid) {
+template <typename T, typename HostMemoryType>
+__host__ void initBoidGridThrustArrays(BoidGrid<T,HostMemoryType> &boidGrid) {
 
     unsigned int nAgents = boidGrid.getTotalLocalAgentCount();
     unsigned int nCells = boidGrid.getCellsCount();
@@ -441,8 +440,8 @@ __host__ void initBoidGridThrustArrays(BoidGrid<T> &boidGrid) {
     //std::cout << std::endl;
 }
 
-template <typename T>
-__host__ BoidMemoryView<T> computeThrustStep(BoidGrid<T> &boidGrid) {
+template <typename T, typename HostMemoryType>
+__host__ BoidMemoryView<T> computeThrustStep(BoidGrid<T, HostMemoryType> &boidGrid) {
 
     
     unsigned int nAgents    = boidGrid.getTotalLocalAgentCount();
@@ -458,8 +457,9 @@ __host__ BoidMemoryView<T> computeThrustStep(BoidGrid<T> &boidGrid) {
     ThrustBoidMemoryView<T> agents_thrust_d(boidGrid.getBoidDeviceMemoryView());
 
     // Compute mean positions (only for filled cells)
-    thrust::device_vector<T>  means(6*nUniqueIds);
-    ThrustBoidMemoryView<T>   means_v(means, nUniqueIds);
+    GPUResource<T> means_d(boidGrid.getDeviceId(), 6*nUniqueIds);
+    means_d.allocate();
+    ThrustBoidMemoryView<T>   means_v(means_d.data(), nUniqueIds);
     {
         thrust::device_vector<unsigned int> buffKeys(nUniqueIds);
 
@@ -523,12 +523,6 @@ __host__ BoidMemoryView<T> computeThrustStep(BoidGrid<T> &boidGrid) {
         CHECK_THRUST_ERRORS(thrust::transform(offsets.begin()+1, offsets.end(), offsets.begin(), count.begin(), thrust::minus<unsigned int>()));
         count[nUniqueIds-1] = nAgents - offsets[nUniqueIds-1];
 
-        //std::cout << nCells << std::endl;
-        //std::cout << nUniqueIds << std::endl;
-        //for (unsigned int i = 0; i < nUniqueIds; i++) {
-            //std::cout << uniqueIds[i] << std::endl;
-        //}
-
         //keep filled cells for neighborlookup
         thrust::device_vector<int> validIds(nCells);
         CHECK_THRUST_ERRORS(thrust::fill(validIds.begin(), validIds.end(), -1));
@@ -570,24 +564,24 @@ __host__ BoidMemoryView<T> computeThrustStep(BoidGrid<T> &boidGrid) {
         CHECK_THRUST_ERRORS(thrust::copy(validIds.begin(), validIds.end(), validIds_d.wrap()));
     }
 
-
-    //std::cout << "Unique IDs:\t";
-    //for(int i = 0; i < nUniqueIds; i++)
-        //std::cout << thrust::device_ptr<unsigned int>(uniqueIds_d.data())[i] << " ";
-    //std::cout << std::endl;
-
-    //return out of domain ?
     BoidMemoryView<T> outOfDomainBoids;
     return outOfDomainBoids;
 }
 
 
 // full specializations
-template __host__ void initBoidGridThrustArrays<float> (BoidGrid<float > &boidGrid);
-template __host__ void initBoidGridThrustArrays<double>(BoidGrid<double> &boidGrid);
+template __host__ void initBoidGridThrustArrays<float> (BoidGrid<float, PinnedCPUResource<float> > &boidGrid);
+template __host__ void initBoidGridThrustArrays<float> (BoidGrid<float, UnpagedCPUResource<float> > &boidGrid);
 
-template __host__ BoidMemoryView<float> computeThrustStep<float>(BoidGrid<float> &boidGrid);
-template __host__ BoidMemoryView<double> computeThrustStep<double>(BoidGrid<double> &boidGrid);
+template __host__ BoidMemoryView<float> computeThrustStep<float>(BoidGrid<float, PinnedCPUResource<float> > &boidGrid);
+template __host__ BoidMemoryView<float> computeThrustStep<float>(BoidGrid<float, UnpagedCPUResource<float> > &boidGrid);
+
+
+template __host__ void initBoidGridThrustArrays<double> (BoidGrid<double, PinnedCPUResource<double> > &boidGrid);
+template __host__ void initBoidGridThrustArrays<double> (BoidGrid<double, UnpagedCPUResource<double> > &boidGrid);
+
+template __host__ BoidMemoryView<double> computeThrustStep<double>(BoidGrid<double, PinnedCPUResource<double> > &boidGrid);
+template __host__ BoidMemoryView<double> computeThrustStep<double>(BoidGrid<double, UnpagedCPUResource<double> > &boidGrid);
 
 #endif
 

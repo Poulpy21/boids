@@ -1,6 +1,0 @@
-
-[Module] Create project folder on each separate filesystem, update PATH and LD_LIBRARY_PATH with priority to project folders
-[Module] Install/Copy GCC (4.8.2)
-[Module] Install/Copy up to date MPI (1.83)
-[Module] Install/Copy up to date Cuda (6.5)
-[Module] Copy source on each filesystem and compile from source  

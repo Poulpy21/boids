@@ -62,7 +62,7 @@ class ComputeGrid {
                 subdomainSize.z = l;
 
                 if(workerId == masterWorkerId)
-                    log_console->infoStream() << "Splitted the simulation domain in " << nDomains << " !";
+                    log_console->infoStream() << "Splitted the simulation domain in " << nDomains << " !\n";
         }
 
     public:

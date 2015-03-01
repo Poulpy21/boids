@@ -96,25 +96,32 @@ int main(int argc, char **argv) {
     BoundingBox<3u, Real> globalDomain(Vec3<Real>(0,0,0), Vec3<Real>(ds,ds,ds));
 
 
-    // Create workspace
-    PRINT("\n:: Initializing workspace...\n\n");
 
-    CudaDistributedWorkspace workspace(globalDomain, true, opt,
-            rank, size, MASTER_RANK, comm, name);
+    // Block scope to free workspace GPU memory before MPI_Finalize
+    // (the number of processes running after MPI_Finalize is called is undefined) 
+    {
+        // Create workspace
+        PRINT("\n:: Initializing workspace...\n\n");
 
+        CudaDistributedWorkspace workspace(globalDomain, true, opt,
+                rank, size, MASTER_RANK, comm, name, myGPU);
 
-    // Launch simulation
-    PRINT("\n:: Computing...\n\n");
+        MPI_Barrier(comm);
 
-    unsigned int nSteps = opt.nSteps;
-    for (unsigned int step = 1; step <= nSteps; step++) {
-        if(rank == MASTER_RANK)
-            printStep(step, nSteps);
+        // Launch simulation
+        PRINT("\n:: Computing...\n\n");
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-        workspace.update();
+        unsigned int nSteps = opt.nSteps;
+        for (unsigned int step = 1; step <= nSteps; step++) {
+            if(rank == MASTER_RANK)
+                printStep(step, nSteps);
+
+            workspace.update();
+        }
+        PRINT("\n:: Computing done !\n");
+        MPI_Barrier(comm);
     }
-    PRINT("\n:: Computing done !\n");
-    MPI_Barrier(comm);
 
 
     // Reset GPUs
@@ -124,7 +131,6 @@ int main(int argc, char **argv) {
     // Finalize MPI
     MPI_Barrier(comm);
     MPI_Finalize();
-
 
     //Print footer
     footer(rank, MASTER_RANK);
@@ -230,7 +236,7 @@ void broadcastOptions(int argc, char **argv, int rank, int masterrank, const MPI
 
         // Add options to parser
         parser.addOption("agents", 10000);
-        parser.addOption("steps", 1);
+        parser.addOption("steps", 5);
         parser.addOption("wc", 12);
         parser.addOption("wa", 15);
         parser.addOption("ws", 35);
@@ -267,3 +273,5 @@ void broadcastOptions(int argc, char **argv, int rank, int masterrank, const MPI
     options = nullptr;
 }
 
+#undef PRINT
+#undef JUMP_LINE

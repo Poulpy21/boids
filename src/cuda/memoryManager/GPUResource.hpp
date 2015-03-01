@@ -8,7 +8,7 @@ template <typename T>
 class GPUResource {
 public:
 	
-	GPUResource(int device = 0, unsigned long size = 0);
+	GPUResource(int device, unsigned long size = 0);
 	GPUResource(const GPUResource<T> &original);
 	explicit GPUResource(T *data, int deviceId, unsigned int size, bool owner);
 	~GPUResource();

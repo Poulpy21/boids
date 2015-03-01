@@ -10,8 +10,17 @@
 #include "vec3.hpp"
 #include <vector>
 
-template <typename T>
+#if __cplusplus >= 201103L
+#include <type_traits>
+#endif
+
+template <typename T, typename HostMemoryType>
 class LocalBoidDataStructure {
+
+#if __cplusplus >= 201103L
+    static_assert(std::is_base_of<CPUResource<T>,HostMemoryType>(), "HostMemoryType should inherit CPUResource<T> !");
+#endif
+
 
     public:
         virtual ~LocalBoidDataStructure() {}
@@ -72,7 +81,7 @@ class LocalBoidDataStructure {
                 const BoundingBox<3u,T> &localDomain, 
                 const BoundingBox<3u,T> &globalDomain,
                 bool keepBoidsInGlobalDomain) :
-        globalDomainId(globalDomainId),
+            globalDomainId(globalDomainId),
             localDomain(localDomain),
             globalDomain(globalDomain),
             keepBoidsInGlobalDomain(keepBoidsInGlobalDomain),
@@ -85,7 +94,7 @@ class LocalBoidDataStructure {
 
     protected:
         unsigned int agentCount;
-        PinnedCPUResource<T> agents_h;
+        HostMemoryType agents_h;
         BoidMemoryView<T> agents_view_h;
 };
 

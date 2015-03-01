@@ -20,7 +20,7 @@ class CudaWorkspace {
 
     public:
         CudaWorkspace(const Options &options, const InitBounds<Real> &initBounds, 
-                LocalBoidDataStructure<Real> *boidDataStructure, 
+                LocalBoidDataStructure<Real,PinnedCPUResource<Real> > *boidDataStructure, 
                 unsigned int nStreamsPerDevice = 2u);
 
         void update();
@@ -40,7 +40,7 @@ class CudaWorkspace {
         
         const Options options;
         const InitBounds<Real> initBounds;
-        LocalBoidDataStructure<Real>* const boidDataStructure;
+        LocalBoidDataStructure<Real, PinnedCPUResource<Real> >* const boidDataStructure;
         const unsigned int nStreamsPerDevice;
 
         unsigned int nAgents;

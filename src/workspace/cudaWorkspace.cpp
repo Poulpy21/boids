@@ -16,7 +16,7 @@
 
 
 CudaWorkspace::CudaWorkspace(const Options &options, const InitBounds<Real> &initBounds, 
-                LocalBoidDataStructure<Real> *boidDataStructure, unsigned int nStreamsPerDevice) :
+                LocalBoidDataStructure<Real, PinnedCPUResource<Real> > *boidDataStructure, unsigned int nStreamsPerDevice) :
     options(options), initBounds(initBounds), 
     boidDataStructure(boidDataStructure), nStreamsPerDevice(nStreamsPerDevice),
     nAgents(0u), stepId(1u)

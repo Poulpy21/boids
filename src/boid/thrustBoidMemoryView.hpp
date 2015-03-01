@@ -37,7 +37,7 @@ public:
             }
     }
     
-    ThrustBoidMemoryView(const T* a, size_t nAgents) :
+    ThrustBoidMemoryView(T* a, size_t nAgents) :
         nAgents(nAgents),
          x(*(ptrs+0)),  y(*(ptrs+1)),  z(*(ptrs+2)), 
         vx(*(ptrs+3)), vy(*(ptrs+4)), vz(*(ptrs+5)), 
@@ -47,11 +47,11 @@ public:
             for (unsigned int i = 0; i < N-1; i++) {
                 ptrs[i] = thrust::device_ptr<T>(a + i*nAgents);
             }
-            cellId = thrust::device_ptr<unsigned int>(a + (N-1)*nAgents);
+            cellId = thrust::device_ptr<unsigned int>(reinterpret_cast<unsigned int*>(a + (N-2)*nAgents));
         }
     
     ThrustBoidMemoryView(const BoidMemoryView<T> &memView) :
-        nAgents(nAgents),
+        nAgents(memView.size()),
          x(*(ptrs+0)),  y(*(ptrs+1)),  z(*(ptrs+2)), 
         vx(*(ptrs+3)), vy(*(ptrs+4)), vz(*(ptrs+5)), 
         //ax(*(ptrs+6)), ay(*(ptrs+7)), az(*(ptrs+8)),

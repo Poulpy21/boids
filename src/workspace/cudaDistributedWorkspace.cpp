@@ -13,26 +13,45 @@
 #include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <thread>
+#include <chrono>
 
+#define PRINT(s)    { MPI_Barrier(comm); if (rank == masterRank) { std::cout << s; } }
+#define PAUSE()     { MPI_Barrier(comm); std::this_thread::sleep_for(std::chrono::milliseconds(500)); }
+#define JUMP_LINE() { PRINT("\n") }
 
 CudaDistributedWorkspace::CudaDistributedWorkspace(const BoundingBox<3u,Real> &globalDomain, bool keepBoidsInGlobalDomain, 
         const Options &opt,
-        unsigned int rank, unsigned int size, unsigned int masterRank, 
-        const MPI_Comm &comm, const std::string &name) :
+        unsigned int rank, unsigned int size, unsigned int masterRank,
+        const MPI_Comm &comm, const std::string &name, unsigned int deviceId_) :
     options(opt),
     computeGrid(globalDomain, opt, size, rank, masterRank),
-    localBoidGrid(rank, globalDomain, computeGrid.getSubdomain(rank), false, 
-            std::max<Real>(options.rCohesion, std::max<Real>(options.rAlignment, options.rSeparation))),
+    localBoidGrid(rank, computeGrid.getSubdomain(rank), globalDomain, false, 
+            std::max<Real>(options.rCohesion, std::max<Real>(options.rAlignment, options.rSeparation)),
+            deviceId_),
     rank(rank), size(size), masterRank(masterRank), comm(comm), name(name),
-    nGlobalAgents(0u), nLocalAgents(0u), stepId(1u)
+    deviceId(deviceId_),
+    nGlobalAgents(opt.nAgents), 
+    nLocalAgents((((rank == size) - 1 && (nGlobalAgents % size != 0)) ? nGlobalAgents % size : nGlobalAgents/size)), 
+    stepId(1u)
 {
-    initSymbols();
-    
-    //initBoids();
-    //nLocalAgents = options.nLocalAgents;
-    //boidDataStructure->init(agents_view_h, nLocalAgents);
-}
 
+    log_console->infoStream() << "Rank " << rank << "/" << size << " choosed domain " << localBoidGrid.getLocalDomain();
+    PAUSE();
+    JUMP_LINE();
+
+    //Initialize init bounds
+    const Vec3<Real> &xmin = localBoidGrid.getLocalDomain().min;
+    const Vec3<Real> &xmax = localBoidGrid.getLocalDomain().max;
+    Real minValues[9] = {xmin.x, xmin.y, xmin.z,  0,0,0,  0,0,0};
+    Real maxValues[9] = {xmax.x, xmax.y, xmax.z,  0,0,0,  0,0,0};
+    initBounds = InitBounds<Real>(minValues, maxValues);
+    
+    initSymbols();
+    initBoids();
+    
+    localBoidGrid.init(agents_view_h, nLocalAgents);
+}
 
 void CudaDistributedWorkspace::initSymbols() {
 
@@ -54,6 +73,7 @@ void CudaDistributedWorkspace::initSymbols() {
     CHECK_CUDA_ERRORS(cudaMemcpyToSymbol(kernel::maxInitValues, initBounds.maxValues, 9u*sizeof(Real)));
 
     CHECK_CUDA_ERRORS(cudaDeviceSynchronize());
+    MPI_Barrier(comm);
 }
 
 
@@ -61,8 +81,7 @@ void CudaDistributedWorkspace::initSymbols() {
 void CudaDistributedWorkspace::initBoids() {
 
     //init agents
-
-    agents_h = PinnedCPUResource<Real>(BoidMemoryView<Real>::N*nLocalAgents); 
+    agents_h = UnpagedCPUResource<Real>(BoidMemoryView<Real>::N*nLocalAgents); 
     agents_h.allocate();
     agents_view_h = BoidMemoryView<Real>(agents_h.data(), nLocalAgents);
 
@@ -73,7 +92,7 @@ void CudaDistributedWorkspace::initBoids() {
     std::cout << std::endl;
 
     unsigned int agentsToInitialize = nLocalAgents;
-    unsigned int deviceId = 0u, devAgents = 0u, i = 0u, offset = 0u; 
+    unsigned int devAgents = 0u, i = 0u, offset = 0u; 
     unsigned int devMaxAgents;
     GPUResource<float> *random_d;
     GPUResource<Real>  *agents_d;
@@ -101,6 +120,7 @@ void CudaDistributedWorkspace::initBoids() {
         CHECK_CURAND_ERRORS(curandDestroyGenerator(generator));
 
         kernel::initializeBoidsKernel(devAgents, random_d->data(), agents_d->data());
+        CHECK_CUDA_ERRORS(cudaDeviceSynchronize());
 
         //Copy data back
         cudaMemcpy(agents_h.data() + (BoidMemoryView<Real>::N-1u)*offset, agents_d->data(), (BoidMemoryView<Real>::N-1u)*devAgents*sizeof(Real), cudaMemcpyDeviceToHost);
@@ -109,7 +129,7 @@ void CudaDistributedWorkspace::initBoids() {
         agentsToInitialize -= devAgents;
         i++;
     }
-
+    
     delete agents_d;
     delete random_d;
 
@@ -121,20 +141,27 @@ void CudaDistributedWorkspace::initBoids() {
     std::cout << std::endl;
     NOT_IMPLEMENTED_YET;
 #endif
+    
+    MPI_Barrier(comm);
 }
 
 #ifdef CURAND_ENABLED
 unsigned int CudaDistributedWorkspace::computeMaxAgentsAtInit(unsigned int deviceId) {
-    float safeCoef = 0.5f;
+    float safeCoef = 0.25f;
     return static_cast<unsigned int>(safeCoef*GPUMemory::memoryLeft(deviceId)/((BoidMemoryView<Real>::N-1)*(sizeof(Real) + sizeof(float))));
 }
 #endif
 
 void CudaDistributedWorkspace::update() {
-    if(rank == masterRank)
+    if(rank == masterRank) {
         log4cpp::log_console->debugStream() << "Computing step " << stepId;
-    //boidDataStructure->computeLocalStep();
+    }
+    
+    localBoidGrid.computeLocalStep();
+    
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     stepId++;
+    MPI_Barrier(comm);
 }
 
 void CudaDistributedWorkspace::computeAndApplyForces(Container &receivedMeanLocalAgents, std::vector<int> &receivedMeanLocalAgentsWeights) {
@@ -201,5 +228,9 @@ void CudaDistributedWorkspace::computeAndApplyForces(Container &receivedMeanLoca
         }
 #endif
 }
+
+#undef PRINT
+#undef PAUSE
+#undef JUMP_LINE
 
 #endif

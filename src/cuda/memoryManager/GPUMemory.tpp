@@ -20,9 +20,11 @@ T* GPUMemory::malloc(unsigned long nData, int deviceId) {
             exit(1);
         }
 
+        int currentDevice;
+        CHECK_CUDA_ERRORS(cudaGetDevice(&currentDevice));
         CHECK_CUDA_ERRORS(cudaSetDevice(deviceId));
-
         CHECK_CUDA_ERRORS(cudaMalloc((void**) &data, nData * sizeof(T)));
+        CHECK_CUDA_ERRORS(cudaSetDevice(currentDevice));
 
         GPUMemory::_memoryLeft[deviceId] -= nData*sizeof(T);
     }
@@ -48,7 +50,6 @@ void GPUMemory::free(T* data, unsigned long nData, int deviceId) {
 
         int currentDevice;
         CHECK_CUDA_ERRORS(cudaGetDevice(&currentDevice));
-
         CHECK_CUDA_ERRORS(cudaSetDevice(deviceId));
         CHECK_CUDA_ERRORS(cudaFree(data));
         CHECK_CUDA_ERRORS(cudaSetDevice(currentDevice));

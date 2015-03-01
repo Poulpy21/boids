@@ -89,7 +89,7 @@ void compute(int argc, char **argv) {
     //Create data structure
     Real maxRadius = std::max<Real>(options.rCohesion, std::max<Real>(options.rAlignment, options.rSeparation));
 
-    BoidGrid<Real> *grid = new BoidGrid<Real>(0u, domain, domain, true, maxRadius);
+    BoidGrid<Real, PinnedCPUResource<Real>> *grid = new BoidGrid<Real, PinnedCPUResource<Real>>(0u, domain, domain, true, maxRadius, 0u);
     std::cout << ":: Data structure used ::" <<std::endl;
     std::cout << *grid << std::endl;
     std::cout << std::endl;
