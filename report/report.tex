@@ -48,12 +48,17 @@ Nous avons donc dû privilégier l'accélération de l'étape de calcul des forc
 % building the solution = cmake + sm_20 pour cuda à cause de compil séparée
 Notre base de code requiert :
 \begin{itemize}
-    \item un compilateur supportant le standard C++11
-    \item une carte graphique Nvidia avec l'architecture $sm\_20$ au minimum (pour la compilation séparée des kernels CUDA)
-    \item CMake 2.8.12 ou plus (CMake 3.x.x fortement conseillé à cause d'un bug connu dans la compilation des kernels CUDA)
-    \item mpi? nvcc? thrust TODO 
-    \item OpenGL 3.3 ou plus pour les programme effectuant un rendu 3D
+    \item Un compilateur supportant le standard C++11 pour la partie CPU.
+    \item Une version de nvcc qui compile le standard C++0x minimum pour la partie GPU.
+    \item Une carte graphique Nvidia avec l'architecture $sm\_20$ au minimum (pour la compilation et le link séparé des kernels CUDA).
+    \item CMake 2.8.12 ou plus (CMake 3.x.x fortement conseillé à cause d'un bug connu dans la compilation des kernels CUDA).
+    \item Thrust et Curand pour l'implémentation la plus performante sur GPU.
+    \item OpenGL 3.3 ou plus pour les programmes effectuant un rendu 3D.
 \end{itemize}
+
+
+Si vous ne possedez pas de GPU ou si l'architecture CUDA détectée est trop basse, les executables basés sur CUDA ne sont pas compilés.
+Il y a donc possibilité de compiler pour CPU seul. L'affichage s'active directement dans le cmake.
 
 Dans le cas où vous n'auriez pas un compilateur supportant C++11, nous fournissons un script qui permet de télécharger et installer GCC 4.8.2 sur votre machine (voir dans la sous-section Scripts utilitaires).\\\\
 
@@ -67,14 +72,14 @@ Nous avons opté pour un programme hybride permettant d'utiliser à la fois la p
 
 Les exécutables générés sont les suivants :
 \begin{itemize}
-    \item $sequential$ : Programme de simulation de base (sur CPU, un seul processus)
-    \item $main$ : Programme de simulation hybride MPI / CUDA (TODO rename???)
-    \item $display$ : Programme d'affichage des positions des agents simulés
-    \item $tree$ : TODO
-    \item $cuda tree$ : FAPFAPFAP TODO
-    \item $barbecue$ : J'aime ta sauce Poulpy :D TODO
+    \item $sequential$ : Programme de simulation de base (bruteforce $N^2$ sur CPU, un seul processus)
+    \item $main$ : Programme de simulation hybride MPI / CPU / CUDA (bruteforce $N^2$ sur CPU ou GPU)
+    \item $display$ : Programme d'affichage des positions des agents simulés 
+    \item $tree$ : Programme de démonstration affichant des octtree se faisant remplir.
+    \item $cuda$ : Implementation GPU efficace utilisant une grille. Utilise CuRand et Thrust.
+    \item $barbecue$ : La même chose que cuda mais avec MPI et un GPU affecté à chaque rank.
     \item $test\_vec$ : Programme de test des classes de vecteurs
-    \item $test\_messenger$ : Programme de test de l'interface de communication construite sur MPI
+    \item $test\_messenger$ : Programme de test de l'interface de communication construite sur MPI.
 \end{itemize}
 
 Nous fournissons en outre gracieusement des scripts utilitaires pour paramétrer l'utilisation de MPI ou de préparer les données à la visualisation.
