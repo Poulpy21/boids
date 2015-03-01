@@ -11,6 +11,7 @@
 \usepackage{float}
 
 \hyphenpenalty=10000
+ \frenchbsetup{StandardItemLabels=true}
 
 \title{Simulation d'essaims particulaires}
 \author{Keck Jean-Baptiste - Zirnhelt Gauthier}
@@ -42,31 +43,39 @@ Nous avons donc dû privilégier l'accélération de l'étape de calcul des forc
 \newpage
 \section{Solution implémentée}
 
-\subsection{Architecture générale}
+\subsection{Dépendances}
 % C++11 MANDATORY [insert perrier référence]
 % building the solution = cmake + sm_20 pour cuda à cause de compil séparée
+Notre base de code requiert :
+\begin{itemize}
+    \item un compilateur supportant le standard C++11
+    \item une carte graphique Nvidia avec l'architecture $sm\_20$ au minimum (pour la compilation séparée des kernels CUDA)
+    \item CMake 2.8.12 ou plus (CMake 3.x.x fortement conseillé à cause d'un bug connu dans la compilation des kernels CUDA)
+    \item mpi? nvcc? thrust TODO 
+    \item OpenGL 3.3 ou plus pour les programme effectuant un rendu 3D
+\end{itemize}
+
+Dans le cas où vous n'auriez pas un compilateur supportant C++11, nous fournissons un script qui permet de télécharger et installer GCC 4.8.2 sur votre machine (voir dans la sous-section Scripts utilitaires).\\\\
+
+\subsection{Architecture générale}
 % MPI / CUDA merged => mpirun -n 1 ou disable CUDA dans CMakeLists.txt
 % les scripts (listés plus bas, pas détailler ici)
 % différents éxecutables (sequential / tree???? / main(TODO rename it?) / display)
 % différents tests (test_vec : vecteurs<T>           test_messenger : envoi/réception des messages MPI)
 % les arbres utilisés
-Notre base de code requiert :
-\begin{itemize}
-    \item un compilateur supportant le standard C++11
-    \item une carte graphique Nvidia avec l'architecture $sm\_20$ au minimum (pour la compilation séparée des kernels)
-    \item CMake 2.8(.12???TODO) ou plus
-    \item mpi? nvcc? TODO 
-\end{itemize}
-
-Dans le cas où vous n'auriez pas un compilateur supportant C++11, nous fournissons un script qui permet de télécharger et installer GCC 4.8.2 sur votre machine (voir dans la sous-section Scripts utilitaires).\\\\
 
 Nous avons opté pour un programme hybride permettant d'utiliser à la fois la performance du calcul distribué avec MPI et également celle du GPGPU avec CUDA. Il est toutefois toujours possible de tester notre programme avec seulement MPI ou seulement CUDA, respectivement en lançant un seul processus ou en désactivant CUDA dans les paramètres au début de $CMakeLists.txt$.\\\\
 
-Les exécutables générés sont les suivants : (TODO description)
+Les exécutables générés sont les suivants :
 \begin{itemize}
-    \item sequential
-    \item main (TODO rename???)
-    \item display
+    \item $sequential$ : Programme de simulation de base (sur CPU, un seul processus)
+    \item $main$ : Programme de simulation hybride MPI / CUDA (TODO rename???)
+    \item $display$ : Programme d'affichage des positions des agents simulés
+    \item $tree$ : TODO
+    \item $cuda tree$ : FAPFAPFAP TODO
+    \item $barbecue$ : J'aime ta sauce Poulpy :D TODO
+    \item $test\_vec$ : Programme de test des classes de vecteurs
+    \item $test\_messenger$ : Programme de test de l'interface de communication construite sur MPI
 \end{itemize}
 
 Nous fournissons en outre gracieusement des scripts utilitaires pour paramétrer l'utilisation de MPI ou de préparer les données à la visualisation.
@@ -99,8 +108,11 @@ Les scripts utilitaires fournis avec nos sources sont les suivants :
 \subsection{Visualisation}
 % Expliquer comment marche le viewer (merge fichiers, parsing fichier, sprites)
 Nous fournissons un programme permettant de visualiser les agents simulés dans de meilleures conditions qu'avec gnuplot.
-Celui-ci se lance avec la commande $./display$ et va par défaut lire le fichier résultant de l'opération de fusion réalisée par le script $merge\_files.py$. Il est possible de modifier le fichier lu par défaut en en spécifiant un autre à l'aide de l'option $-f$ du programme.\\\\
-Le progamme affiche chaque agent sous la forme d'une sprite faisant face à la caméra. Cette sprite contient un cercle coloré représentant le type d'agent affiché. Cette technique de rendu très simple permet d'afficher beaucoup plus d'agents simultanément que si l'on représentait chaque agent par un volume texturé par exemple, ce qui permet de conserver une visualisation fluide pour grand nombre d'agents.
+Celui-ci se lance avec la commande $./display$ et va par défaut lire le fichier résultant de l'opération de fusion réalisée par le script $merge\_files.py$. Il est possible de modifier le fichier lu par défaut en en spécifiant un autre à l'aide de l'option $-f$ du programme.\\
+
+Le progamme affiche chaque agent sous la forme d'une sprite faisant face à la caméra. Cette sprite contient un cercle coloré représentant le type d'agent affiché. Cette technique de rendu très simple permet d'afficher beaucoup plus d'agents simultanément que si l'on représentait chaque agent par un volume texturé par exemple, ce qui permet de conserver une visualisation fluide pour grand nombre d'agents.\\
+
+L'étape de la simulation en cours de visualisation est affichée en bas à gauche de l'écran. La lecture est pausable avec la touche $entr\acute{e}e$. Il est possible de rembobiner la simulation au démarrage en appuyant sur la touche $r$.
 
 
 
@@ -141,11 +153,25 @@ Nous avons fait des essais de simulation en modifiant les paramètres de la simu
 
 
 \section{Perspectives d'amélioration}
+
 \subsection{Tolérance à la faute pour MPI}
 % timeout sur les messages MPI au lieu de bloquer indéfiniment.
 Nous utilisons des messages MPI bloquants en réception, ce qui fait que notre système ne tolère aucune perte de message. Normalement, aucun message n'est perdu par MPI, mais dans le cas où une machine subit une défaillance, tout notre système se trouvera bloqué et il faudra recommencer la simulation.\\
 Une amélioration consisterait ici à implanter un système tolérant à la faute en utilisant un système de timeout pour détecter les fautes, ainsi qu'un système de réplication des données des agents entre les différentes machines pour réaffecter les tâches de calcul.
-% A voir à la fin
+
+\subsection{Visualisation de la simulation}
+Nous aurions aimé avoir le temps nécessaire à l'amélioration de notre programme de visualisation. Les améliorations envisagées sont les suivantes :
+\begin{itemize}
+    \item Affichage à l'aide d'un triangle orienté de la direction d'un agent
+    \item Sélection du numéro de l'étape à visualiser pendant le mode pause
+\end{itemize}
+
+\subsection{Différents types d'agents}
+Nous avons réfléchi à l'ajout de surfaces non traversables par les agents normaux à base d'un type d'agent à position fixée dont l'unique rôle aurait été de repousser les autres agents.\\
+Nous avons également pensé ajouter des agents prédateurs qui produiraient une force de répulsion importante à l'encontre des autres agents qui seraient ses proies.
+
+
+% TODO: Poulpy t'as des idées? 
 
 
 
