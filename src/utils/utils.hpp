@@ -86,6 +86,7 @@ namespace utils {
    
 #ifndef CUDA_ENABLED
 //integral and floating point equality (SFINAE)
+//
     template <typename I, typename std::enable_if<std::is_integral<I>::value>::type* = nullptr>
         bool areEqual(I a, I b) {
             return a == b;

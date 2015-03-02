@@ -1,26 +1,14 @@
-\documentclass[12pt,a4paper,sans]{article}
 
-\RequirePackage[utf8]{inputenc}
-\usepackage[french]{babel}
-\usepackage{amsmath} 
-\usepackage{amsfonts} 
-\usepackage{amssymb} 
-\usepackage{graphicx} 
-\usepackage[margin=0.8in]{geometry}
-\usepackage{stackrel}
-\usepackage{float}
-
-\hyphenpenalty=10000
-\frenchbsetup{StandardItemLabels=true}
-
-\title{Simulation d'essaims particulaires}
-\author{Keck Jean-Baptiste - Zirnhelt Gauthier}
+\include{header}
+\include{commands}
 
 \begin{document}
+\pagestyle{fancy}
 
 \maketitle
 
-
+\tableofcontents
+\clearpage
 
 \section{Présentation du problème}
 
@@ -41,7 +29,7 @@ Nous avons donc dû privilégier l'accélération de l'étape de calcul des forc
 
 
 \newpage
-\section{Solution implémentée}
+\section{Implémentation}
 
 \subsection{Dépendances}
 % C++11 MANDATORY [insert perrier référence]
@@ -77,24 +65,117 @@ Les exécutables générés sont les suivants :
     \item $display$ : Programme d'affichage des positions des agents simulés 
     \item $tree$ : Programme de démonstration affichant des octtree se faisant remplir.
     \item $cuda$ : Implementation GPU efficace utilisant une grille. Utilise CuRand et Thrust.
-    \item $barbecue$ : La même chose que cuda mais avec MPI et un GPU affecté à chaque rank.
+    \item $barbecue$ : La même chose que cuda mais avec MPI et un GPU affecté à chaque noeud.
     \item $test\_vec$ : Programme de test des classes de vecteurs
     \item $test\_messenger$ : Programme de test de l'interface de communication construite sur MPI.
 \end{itemize}
 
 Nous fournissons en outre gracieusement des scripts utilitaires pour paramétrer l'utilisation de MPI ou de préparer les données à la visualisation.
 
+\subsection{Repartition du code}
+
+Voici la repartition des 13k lignes de code :
+    
+\begin{figure}[h]
+    \begin{center}
+            \includegraphics[width=5in]{code} \\
+    \end{center}
+\end{figure}
+
+
+
+
+
 \subsection{MPI}
-% Architecture centralisée seulement pour le load balancing
-% Init par racine, puis scatter en fonction de la densité des agents et de leurs coordonnées.
-% Chaque processus connait ses voisins et leur échange son agent moyen, ses agents "sortants". Il envoie aussi périodiquement sa charge d'agents à simuler au processus racine qui peut prendre la décision de rééquilibrer l'affectation des domaines aux processus.
-% Réception des messages bloquante
-% possibilité simu cpu bruteforce ou gpu
+Nous avons opté pour une architecture centralisée pour l'équilibrage de charge . Cette structure peut être un arbre ou une grille classique.
+Celle-ci est orchestrée pas le noeud maître, qui envoie des commandes d'initialisation d'agents aux esclaves au tout début de la simulation.
+Cette structure, appelée aussi structure globale de simulation, permet de monitorer et distribuer la charge sur tout les noeuds esclaves. Elle situe également spatialement les noeuds esclaves dans le domaine de simulation.
+A chaque noeud esclave est affecté un ou plusieurs sous-domaines qui ont eux mêmes leur propre structure de simulation. 
+Cette structure locale peut également être un arbre ou une simple grille.
+
+Chaque noeud connait les voisins de ses structures locales ce qui permet un échange de ses agents moyennés localement, ainsi que de trouver à qui envoyer ses agents "sortants". Il envoie aussi périodiquement sa charge d'agents à simuler au processus racine qui peut prendre la décision de rééquilibrer l'affectation des domaines aux processus.
 
 \subsection{CUDA}
-% mémoire coalescente
-% optimisations diverses...
-% thrust
+
+Il y a deux implémentation Cuda. L'une plus brute, ne fait qu'un bruteforce sauvage de la simulation en $N^2$ mais en profitant de la douceur des coeurs d'une carte graphique.
+L'autre plus élégante permet de simuler les agents sur une structure acceleratrice afin de passer en $n^2$ local avec $n << N$. Voici un appercu rapide de l'algorithme sans initialisation :
+
+\vskip 0.5cm
+
+\begin{algorithm}[H]
+    \KwData{Agents^t (position + vitesses + forces)}
+    \KwResult{Agents^{t+1}}
+
+    \While{Simulation not ended}{
+        ComputeCellId$<<<>>>$()     //kernel to compute id of the boid in the local structure\;
+
+        Sort boids in place according to computed cell id.
+
+        Find non empty cell ids with conditional reduction.
+
+        Find filled cells agent count with conditional reduction.
+
+        Deduce offsets in the boid array with prefix sum.
+
+        Generate an array that contains cell status (either filled or not), usefull for neighbors lookup
+
+        ComputeMeanagent$<<<>>>$ //Compute per non empty cell mean position and mean velocity
+
+        ComputeForces$<<>>>$() //Compute internal and external forces and store it in temporary array
+
+        IntegrateScheme$<<<>>>$() //Simple Euler integration
+    }
+    \caption{Algorithme élégant}
+\end{algorithm}
+
+\vskip 1cm
+Toute les réductions et sommes cumulatives sont réalisées avec la librairie $Thrust$.
+L'initialisation est réalisée avec la librairie $CuRand$. Ceci permet d'initialiser confortablement 250 millions d'agents (position + vitesse) en moins d'une seconde sur deux GTX670 4Go.
+
+\begin{figure}[h]
+    \begin{center}
+            \includegraphics[width=6in]{kernel} \\
+            \caption{Petit kernel}
+    \end{center}
+\end{figure}
+
+\vskip 0.2cm
+Nous utilisons également un seul bloc de mémoire coalescente pour les gents. Pour plus d'information voir dans $src/boids/$ les sources [const]vectorMemoryView.hpp thrustVectorMemoryView.hpp, [const]boidMemoryView.hpp, thrustBoidMemoryView.hpp.
+
+\subsection{CUDA-MPI}
+
+L'algorithme précédent à été adapté pour MPI. A chaque noeud (rank), on affecte un GPU sur la machine (le rank modulo le nombre de GPUs). 
+L'initialisation a été adaptée pour ne se faire que sur un seul GPU. Quelle fut notre tristesse quand nous apprîmes que Thrust ne gérait apparemment pas la mémoire de plusieurs GPUs (nous en sommes pas sures par manque de documentation disponible, mais après moultes essais cela semble être effectivement le cas). Nous n'avions malheuresement plus le temps de wrapper les vecteurs Thrust avec notre gestionnaire de mémoire maison (voir $src/cuda/memoryManager/$).
+
+
+\subsection{Structures}
+\subsubsection{Grilles}
+    
+    Structure de grille basé sur le rayon d'effect maximum des forces. 
+    Voir $src/struct/grid$.
+
+\subsubsection{Arbres}
+    
+    Structure d'arbre de type octtree ou kd-tree. 
+    Voir $src/struct/tree$.
+
+    Petite appercu des arbres avec l'executable $tree$ :
+
+    \begin{figure}[h]
+    \begin{center}$
+        \begin{array}{ccc}
+            \includegraphics[width=1.75in, height=1.75in]{tree_1} &
+            \includegraphics[width=1.75in, height=1.75in]{tree_2} &
+            \includegraphics[width=1.75in, height=1.75in]{tree_4} \\
+            \includegraphics[width=1.75in, height=1.75in]{tree_5} &
+            \includegraphics[width=1.75in, height=1.75in]{tree_6} &
+            \includegraphics[width=1.75in, height=1.75in]{tree_10} \\
+            \includegraphics[width=1.75in, height=1.75in]{tree_7} &
+            \includegraphics[width=1.75in, height=1.75in]{tree_8} &
+            \includegraphics[width=1.75in, height=1.75in]{tree_9} \\
+        \end{array}$
+    \end{center}
+\end{figure}
 
 \subsection{Scripts utilitaires}
 % Donner leur fonction
@@ -109,6 +190,7 @@ Les scripts utilitaires fournis avec nos sources sont les suivants :
     \item $utils.sh$        : Contient des fonctions utilitaires utilisées par $gcc.sh$.
     \item $visu.sh$         : Script permettant de visualiser les résultats avec $gnuplot$ sur une machine ne permettant pas de compiler et/ou eexécuter le programme de visualisation d'agents fourni.
 \end{itemize}
+
 
 \subsection{Visualisation}
 % Expliquer comment marche le viewer (merge fichiers, parsing fichier, sprites)
@@ -127,28 +209,21 @@ Les axes (utilisés pour avoir un repère fixe) sont affichables en utilisant la
 \section{Résultats}
 % En gros, surtout des images commentées
 
-\begin{minipage}{0.33\textwidth}
-	\begin{flushleft}
-		\begin{figure}[H]
-			\centering
-			\includegraphics[width=\textwidth]{img/visu0.png}
-			\caption{Début d'une simulation avec des agents aux positions, vitesses, et directions aléatoires}
-		\end{figure}
-	\end{flushleft}
-\end{minipage}
-\begin{minipage}{0.33\textwidth}
-	\begin{flushright}
-		\begin{figure}[H]
-			\centering
-			\includegraphics[width=\textwidth]{img/visu.png}
-			\caption{Visualisation d'un essaim de particules formé durant la simulation}
-		\end{figure}
-	\end{flushright}
-\end{minipage}\\
+\subsection{CPU bruteforce}
+\subsection{GPU bruteforce}
+\subsection{GPU efficace}
+
+\begin{figure}[H]
+    \begin{center}$
+        \begin{array}{cc}
+            \includegraphics[width=3in, height=2in]{img/visu0.png} &
+            \includegraphics[width=3in, height=2in]{img/visu.png}
+        \end{array}$
+        \caption{Début d'une simulation avec des agents aux positions, vitesses, et directions aléatoires à gauche et visualisation d'un essaim de particules formé durant la simulation à droite.}
+    \end{center}
+\end{figure}
 
 
-
-\section{Analyse des résultats}
 
 \subsection{Performances}
 % Tableau comparatif : méthode(sequential, mpi seul, cuda seul, hybride) / nombre de boids (100-1000-10k-1M-...) [/ nombre de process / gpu]
@@ -187,8 +262,17 @@ Nous avons réfléchi à l'ajout de surfaces non traversables par les agents nor
 Nous avons également pensé ajouter des agents prédateurs qui produiraient une force de répulsion importante à l'encontre des autres agents qui seraient ses proies.
 
 
-% TODO: Poulpy t'as des idées? 
+\section{Conclusion}
 
-
+Nous n'avons pas pu implémenter tout ce que nous avions prévu, ni assembler toutes les briques de nos programmes. 
+Les diverses implémentation proposées performent plus ou moins efficacement sur le problème de la simulation d'essaim.
+\vskip 0.2cm
+Sans même avoir des kernels super optimisés, les GPU offrent des performances toujours bluffantes quand l'algorithme le permet et quand les structures sont adapatés au modèle SIMD comme c'est le cas ici.
+\vskip 0.2cm
+A cause de la lattence réseau (100Mbps), l'implémentation efficace en GPU locale exécuté un GPU correct est certainement plus efficace que tout les GPUs de l'Ensimag réunnis. Nous n'avons malheuresement pas pu effectuer une simulation de cette échelle à l'Ensimag car c'est tout simplement impossible.
+\vskip 0.2cm
+Grosse deception du coté de MPI qui ne semble pas pouvoir gérer la mémoire paginée et surtout pour Thrust qui ne semble pas gérer la mémoire sur plusieurs cartes graphiques. Des problemes mémoires, encore présents dans le rendu, sont tout simplement impossible à déboguer car l'execution de cuda-gdb, cuda-memcheck ou encore nsight sur les cas de faute mémoire génère un deadlock de driver nvidia (340.65) qui se bloque dans un mutex dans la libcuda... La seule solution restante étant de redémarer le système pour reinitialiser les GPUs.
+\vskip 0.2cm
+Il faudrait clairement commencer le projet plus tôt dans l'année. En plus de posséder des librairies et compilateurs du néendertal, les architectures de l'école sont bien sont trop héréroclites et avec une période de fonctionnement aléatoire ce qui rend la tache très complexe. On rapellera la disparition soudaine et tragique du cuda toolkit 6.5 qui a marqué tous les esprits en ce début d'année alors qu'elle permettait le support experimental du C++11 ! De plus le nouveau serveur de cette année (pcserveur) ne permet plus que d'utiliser 2 coeurs virtuels (depuis le projet GL), ce qui est une régression énorme depuis l'age d'or de telesun et ses 48 coeurs accessibles à tout Ensimag lambda en ssh (et sans VPN) qui faisait tourner fièrement nos programmes multithreadés en ADA83. 
 
 \end{document}

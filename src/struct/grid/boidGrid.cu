@@ -44,20 +44,20 @@ namespace kernel {
         template <typename T>
             __launch_bounds__(MAX_THREAD_PER_BLOCK)
             __global__ void computeForces(
-                    T                   *const __restrict__ boidData,              // boids with allocated and precomputed cell id : x y z vx vy vz id, sorted by cell id, contains all the nBoids boids !
-                    int                 *const __restrict__ outOfDomain,           // direction of output 0 -- 26 for the 27 cases (0==stay in its local domain), contains nBoids elements
-                    T            const  *const __restrict__ meanBoidData,          // local structure means of non void cells : x y z vx vy vz, contains nUniqueIds elements 
-                    T            const  *const __restrict__ meanNeighborBoidData,  // local structure neighbors (not in local domain), contains 2*(wh + wd + hd) + 4(h+w+l) + 8 elements
-                    unsigned int const  *const __restrict__ uniqueCellIds,         // increasing sequence of non void cell ids, contains nUniqueIds elements
-                    unsigned int const  *const __restrict__ uniqueCellCount,       // count of boids present in non void cells, contains nUniqueIds elements
-                    unsigned int const  *const __restrict__ uniqueCellOffsets,     // offset of in the boid array, 
-                    int          const  *const __restrict__ validCells,            // array to check if the cell is empty or not (empty == -1, else int value is the offset in all unique* arrays), contains nCells elements
-                    const Domain<T> localDomain,                                   // to compute local id (and clamp boid positions to local domain if enabled, see keepInLocalDomain parameter)
-                    const Domain<T> globalDomain,                                  // to compute global id and clamp boif positions to global domain
-                    unsigned int const nAgents,                                    // boid count in the current computed local domain
-                    unsigned int const nUniqueIds,                                 // non void cell count (ie. cells that contains at least 1 boid)
-                    unsigned int const nCells,                                     // cell count in the current computed local domain
-                    bool         const keepInLocalDomain) {                        // should the boids be clamped to local domain instead of global domain ?
+                    T                   *const __restrict__ boidData,              				// boids with allocated and precomputed cell id : x y z vx vy vz id, sorted by cell id, contains all the nBoids boids !
+                    int                 *const __restrict__ outOfDomain,           				// direction of output 0 -- 26 for the 27 cases (0==stay in its local domain), contains nBoids elements
+                    T            const  *const __restrict__ meanBoidData,          				// local structure means of non void cells : x y z vx vy vz, contains nUniqueIds elements 
+                    T            const  *const __restrict__ meanNeighborBoidData,  				// local structure neighbors (not in local domain), contains 2*(wh + wd + hd) + 4(h+w+l) + 8 elements
+                    unsigned int const  *const __restrict__ uniqueCellIds,         				// increasing sequence of non void cell ids, contains nUniqueIds elements
+                    unsigned int const  *const __restrict__ uniqueCellCount,       				// count of boids present in non void cells, contains nUniqueIds elements
+                    unsigned int const  *const __restrict__ uniqueCellOffsets,     				// offset of in the boid array, 
+                    int          const  *const __restrict__ validCells,            				// array to check if the cell is empty or not (empty == -1, else int value is the offset in all unique* arrays), contains nCells elements
+                    const Domain<T> localDomain,                                   				// to compute local id (and clamp boid positions to local domain if enabled, see keepInLocalDomain parameter)
+                    const Domain<T> globalDomain,                                  				// to compute global id and clamp boif positions to global domain
+                    unsigned int const nAgents,                                    				// boid count in the current computed local domain
+                    unsigned int const nUniqueIds,                                 				// non void cell count (ie. cells that contains at least 1 boid)
+                    unsigned int const nCells,                                     				// cell count in the current computed local domain
+                    bool         const keepInLocalDomain) {                        				// should the boids be clamped to local domain instead of global domain ?
 
                 typedef typename MakeCudaVec<T,3>::type vec3; //either float3 or double3
 

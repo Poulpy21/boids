@@ -30,7 +30,8 @@ struct Trunk {
 struct Boid : public Localized<3u,float> {
     Boid() {
         using Random::randf;
-        _pos = Vec<3u,float>(Vec3<float>(randf(),randf(),randf()));
+        float a = 1.0; //CHANGE HERE TO A SMALL VALUE
+        _pos = Vec<3u,float>(Vec3<float>(a*randf(),a*randf(),a*randf()));
     }
     ~Boid() {}
     Vec<3u,float> position() const override {
